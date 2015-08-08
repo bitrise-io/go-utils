@@ -9,9 +9,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// --------------------
-// Git
-
 // DoGitClone ...
 func DoGitClone(uri, pth string) (err error) {
 	if uri == "" {

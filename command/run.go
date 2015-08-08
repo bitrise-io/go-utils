@@ -8,9 +8,6 @@ import (
 	"syscall"
 )
 
-// ------------------
-// --- Common
-
 // RunCommandInDir ...
 func RunCommandInDir(dir, name string, args ...string) error {
 	cmd := exec.Command(name, args...)

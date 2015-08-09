@@ -1,6 +1,7 @@
 package bitrise
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -9,19 +10,27 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 )
 
-// RunEnvmanInit ...
-func RunEnvmanInit() error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "init"}
-	return command.RunCommand("envman", args...)
+// EnvmanInit ...
+func EnvmanInit(logLevel log.Level, clear bool) error {
+	if clear {
+		return command.RunCommand("envman", "--loglevel", logLevel.String(), "init", "--clear")
+	}
+	return command.RunCommand("envman", "--loglevel", logLevel.String(), "init", "")
 }
 
-// RunEnvmanAdd ...
-func RunEnvmanAdd(key, value string, expand bool) error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "add", "--key", key, "--append"}
-	if !expand {
-		args = []string{"--loglevel", logLevel, "add", "--key", key, "--no-expand", "--append"}
+// EnvmanInitWithoutClear ...
+func EnvmanInitWithoutClear(logLevel log.Level) error {
+	return EnvmanInit(logLevel, false)
+}
+
+// EnvmanAdd ...
+func EnvmanAdd(logLevel log.Level, key, value string, isExpand, isAppend bool) error {
+	args := []string{"--loglevel", logLevel.String(), "add", "--key", key}
+	if !isExpand {
+		args = append(args, "--no-expand")
+	}
+	if isAppend {
+		args = append(args, "--append")
 	}
 
 	envman := exec.Command("envman", args...)
@@ -31,26 +40,40 @@ func RunEnvmanAdd(key, value string, expand bool) error {
 	return envman.Run()
 }
 
-// RunEnvmanRunInDir ...
-func RunEnvmanRunInDir(dir string, cmd []string, logLevel string) (int, error) {
-	if logLevel == "" {
-		logLevel = log.GetLevel().String()
+// EnvmanAddModeAppend ...
+func EnvmanAddModeAppend(logLevel log.Level, key, value string, isExpand bool) error {
+	return EnvmanAdd(logLevel, key, value, isExpand, true)
+}
+
+// EnvmanAddFromFile ...
+func EnvmanAddFromFile(logLevel log.Level, key, valueFilePth string, isExpand, isAppend bool) error {
+	bytes, err := ioutil.ReadFile(valueFilePth)
+	if err != nil {
+		return err
 	}
-	args := []string{"--loglevel", logLevel, "run"}
-	args = append(args, cmd...)
+	return EnvmanAdd(logLevel, key, string(bytes), isExpand, isAppend)
+}
+
+// EnvmanRunInDir ...
+func EnvmanRunInDir(logLevel log.Level, dir string, cmd []string) (int, error) {
+	args := []string{"--loglevel", logLevel.String(), "run"}
+	for _, command := range cmd {
+		args = append(args, command)
+	}
 	return command.RunCommandInDirWithExitCode(dir, "envman", args...)
 }
 
-// RunEnvmanRun ...
-func RunEnvmanRun(cmd []string) (int, error) {
-	return RunEnvmanRunInDir("", cmd, "")
+// EnvmanRun ...
+func EnvmanRun(logLevel log.Level, cmd []string) (int, error) {
+	return EnvmanRunInDir(logLevel, "", cmd)
 }
 
-// RunEnvmanEnvstoreTest ...
-func RunEnvmanEnvstoreTest(pth string) error {
-	logLevel := log.GetLevel().String()
-	args := []string{"--loglevel", logLevel, "--path", pth, "print"}
-	cmd := exec.Command("envman", args...)
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+// EnvmanPrint ...
+func EnvmanPrint(logLevel log.Level, pth string) error {
+	return command.RunCommand("envman", "--loglevel", logLevel.String(), "--path", pth, "print")
+}
+
+// EnvmanClear ...
+func EnvmanClear(logLevel log.Level, pth string) error {
+	return command.RunCommand("envman", "--loglevel", logLevel.String(), "--path", pth, "clear")
 }

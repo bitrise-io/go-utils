@@ -7,20 +7,14 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// RunCopy ...
-func RunCopy(src, dst string) error {
+// CopyFile ...
+func CopyFile(src, dst string) error {
 	args := []string{src, dst}
 	return RunCommand("rsync", args...)
 }
 
-// RunCopyFile ...
-func RunCopyFile(src, dst string) error {
-	args := []string{src, dst}
-	return RunCommand("rsync", args...)
-}
-
-// RunCopyDir ...
-func RunCopyDir(src, dst string, isOnlyContent bool) error {
+// CopyDir ...
+func CopyDir(src, dst string, isOnlyContent bool) error {
 	if isOnlyContent && !strings.HasSuffix(src, "/") {
 		src = src + "/"
 	}

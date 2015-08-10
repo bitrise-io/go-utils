@@ -9,8 +9,8 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// DoGitClone ...
-func DoGitClone(uri, pth string) (err error) {
+// GitClone ...
+func GitClone(uri, pth string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -24,8 +24,8 @@ func DoGitClone(uri, pth string) (err error) {
 	return
 }
 
-// RunGitCloneAndCheckoutTagOrBranch ...
-func RunGitCloneAndCheckoutTagOrBranch(uri, pth, tagOrBranch string) error {
+// GitCloneAndCheckoutTagOrBranch ...
+func GitCloneAndCheckoutTagOrBranch(uri, pth, tagOrBranch string) error {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -38,8 +38,8 @@ func RunGitCloneAndCheckoutTagOrBranch(uri, pth, tagOrBranch string) error {
 	return RunCommand("git", []string{"clone", "--recursive", "--branch", tagOrBranch, uri, pth}...)
 }
 
-// RunGitCloneAndCheckoutTagOrBranchAndCheckHeadState ...
-func RunGitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commithash string) (err error) {
+// GitCloneAndCheckoutTagOrBranchAndCheckHeadState ...
+func GitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commithash string) (err error) {
 	if uri == "" {
 		return errors.New("Git Clone 'uri' missing")
 	}
@@ -65,19 +65,19 @@ func RunGitCloneAndCheckoutTagOrBranchAndCheckHeadState(uri, pth, version, commi
 		}
 	}()
 
-	latestCommit, err := GetLatestGitCommitHashOnHead(pth)
+	latestCommit, err := GitGetLatestCommitHashOnHead(pth)
 	if err != nil {
 		return
 	}
 	if commithash != latestCommit {
-		return fmt.Errorf("Commit hash doesn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
+		return fmt.Errorf("Commit hash esn't match the one specified for the version tag. (version tag: %s) (expected: %s) (got: %s)", version, latestCommit, commithash)
 	}
 
 	return
 }
 
-// DoGitPull ...
-func DoGitPull(pth string) error {
+// GitPull ...
+func GitPull(pth string) error {
 	err := RunCommandInDir(pth, "git", []string{"pull"}...)
 	if err != nil {
 		fmt.Errorf("Git pull failed, error (%v)", err)
@@ -86,69 +86,69 @@ func DoGitPull(pth string) error {
 	return nil
 }
 
-// DoGitUpdate ...
-func DoGitUpdate(git, pth string) error {
+// GitUpdate ...
+func GitUpdate(git, pth string) error {
 	if exists, err := pathutil.IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
 		fmt.Println("[STEPMAN] - Git path does not exist, do clone")
-		return DoGitClone(git, pth)
+		return GitClone(git, pth)
 	}
 
 	fmt.Println("[STEPMAN] - Git path exist, do pull")
-	return DoGitPull(pth)
+	return GitPull(pth)
 }
 
-// DoGitCheckout ...
-func DoGitCheckout(dir, commithash string) error {
+// GitCheckout ...
+func GitCheckout(dir, commithash string) error {
 	if commithash == "" {
 		return errors.New("Git Clone 'hash' missing")
 	}
 	return RunCommandInDir(dir, "git", "checkout", commithash)
 }
 
-// DoGitCheckoutBranch ...
-func DoGitCheckoutBranch(repoPath, branch string) error {
+// GitCheckoutBranch ...
+func GitCheckoutBranch(repoPath, branch string) error {
 	if branch == "" {
 		return errors.New("Git checkout 'branch' missing")
 	}
-	if err := DoGitCheckout(repoPath, branch); err != nil {
+	if err := GitCheckout(repoPath, branch); err != nil {
 		return RunCommandInDir(repoPath, "git", "checkout", "-b", branch)
 	}
 	return nil
 }
 
-// DoGitAddFile ...
-func DoGitAddFile(repoPath, filePath string) error {
+// GitAddFile ...
+func GitAddFile(repoPath, filePath string) error {
 	if filePath == "" {
 		return errors.New("Git add 'file' missing")
 	}
 	return RunCommandInDir(repoPath, "git", "add", filePath)
 }
 
-// DoGitPushToOrigin ...
-func DoGitPushToOrigin(repoPath, branch string) error {
+// GitPushToOrigin ...
+func GitPushToOrigin(repoPath, branch string) error {
 	return RunCommandInDir(repoPath, "git", "push", "-u", "origin", branch)
 }
 
-// CheckIsNoGitChanges ...
-func CheckIsNoGitChanges(repoPath string) error {
+// GitCheckIsNoChanges ...
+func GitCheckIsNoChanges(repoPath string) error {
 	return RunCommandInDir(repoPath, "git", "diff", "--cached", "--exit-code", "--quiet")
 }
 
-// DoGitCommit ...
-func DoGitCommit(repoPath string, message string) error {
+// GitCommit ...
+func GitCommit(repoPath string, message string) error {
 	if message == "" {
 		return errors.New("Git commit 'message' missing")
 	}
-	if err := CheckIsNoGitChanges(repoPath); err != nil {
+	if err := GitCheckIsNoChanges(repoPath); err != nil {
 		return RunCommandInDir(repoPath, "git", "commit", "-m", message)
 	}
 	return nil
 }
 
-// GetLatestGitCommitHashOnHead ...
-func GetLatestGitCommitHashOnHead(pth string) (string, error) {
+// GitGetLatestCommitHashOnHead ...
+func GitGetLatestCommitHashOnHead(pth string) (string, error) {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	cmd.Dir = pth
 	bytes, err := cmd.CombinedOutput()
@@ -160,8 +160,8 @@ func GetLatestGitCommitHashOnHead(pth string) (string, error) {
 	return strings.TrimSpace(cmdOutput), nil
 }
 
-// DoGitGetCommit ...
-func DoGitGetCommit(pth string) (string, error) {
+// GitGetCommit ...
+func GitGetCommit(pth string) (string, error) {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	cmd.Dir = pth
 	bytes, err := cmd.CombinedOutput()

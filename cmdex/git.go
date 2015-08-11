@@ -161,8 +161,8 @@ func GitGetLatestCommitHashOnHead(pth string) (string, error) {
 	return strings.TrimSpace(cmdOutput), nil
 }
 
-// GitGetCommit ...
-func GitGetCommit(pth string) (string, error) {
+// GitGetCommitHashOfHEAD ...
+func GitGetCommitHashOfHEAD(pth string) (string, error) {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	cmd.Dir = pth
 	bytes, err := cmd.CombinedOutput()
@@ -171,5 +171,5 @@ func GitGetCommit(pth string) (string, error) {
 		log.Printf(" [!] Output: %s", cmdOutput)
 		return "", err
 	}
-	return cmdOutput, nil
+	return strings.TrimSpace(cmdOutput), nil
 }

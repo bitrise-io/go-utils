@@ -101,22 +101,19 @@ func GitUpdate(git, pth string) error {
 }
 
 // GitCheckout ...
-func GitCheckout(dir, commithash string) error {
-	if commithash == "" {
-		return errors.New("Git Clone 'hash' missing")
+func GitCheckout(dir, branchOrTag string) error {
+	if branchOrTag == "" {
+		return errors.New("Git Clone 'branchOrTag' missing")
 	}
-	return RunCommandInDir(dir, "git", "checkout", commithash)
+	return RunCommandInDir(dir, "git", "checkout", branchOrTag)
 }
 
-// GitCheckoutBranch ...
-func GitCheckoutBranch(repoPath, branch string) error {
+// GitCreateAndCheckoutBranch ...
+func GitCreateAndCheckoutBranch(repoPath, branch string) error {
 	if branch == "" {
 		return errors.New("Git checkout 'branch' missing")
 	}
-	if err := GitCheckout(repoPath, branch); err != nil {
-		return RunCommandInDir(repoPath, "git", "checkout", "-b", branch)
-	}
-	return nil
+	return RunCommandInDir(repoPath, "git", "checkout", "-b", branch)
 }
 
 // GitAddFile ...
@@ -134,7 +131,15 @@ func GitPushToOrigin(repoPath, branch string) error {
 
 // GitCheckIsNoChanges ...
 func GitCheckIsNoChanges(repoPath string) error {
-	return RunCommandInDir(repoPath, "git", "diff", "--cached", "--exit-code", "--quiet")
+	out, err := RunCommandInDirAndReturnCombinedStdoutAndStderr(repoPath, "git", "status", "--porcelain")
+	if err != nil {
+		log.Println(" [!] Failed to git check changes:", out)
+		return err
+	}
+	if out != "" {
+		return errors.New("Uncommited changes: " + out)
+	}
+	return nil
 }
 
 // GitCommit ...
@@ -143,9 +148,9 @@ func GitCommit(repoPath string, message string) error {
 		return errors.New("Git commit 'message' missing")
 	}
 	if err := GitCheckIsNoChanges(repoPath); err != nil {
-		return RunCommandInDir(repoPath, "git", "commit", "-m", message)
+		return err
 	}
-	return nil
+	return RunCommandInDir(repoPath, "git", "commit", "-m", message)
 }
 
 // GitGetLatestCommitHashOnHead ...

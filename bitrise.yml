@@ -4,18 +4,32 @@ workflows:
   ci:
     steps:
     - script:
-        title: CI Workflow
+        title: Go Test
         inputs:
         - content: |-
             #!/bin/bash
             set -e
             set -v
             go test ./...
+    - script:
+        title: Err check
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
 
             # Check for unhandled errors
             go get -u github.com/kisielk/errcheck
             go install github.com/kisielk/errcheck
             errcheck -asserts=true -blank=true $(go list ./...)
+    - script:
+        title: Go Lint
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
 
             # Go lint
             go get -u github.com/golang/lint/golint

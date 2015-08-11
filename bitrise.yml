@@ -1,0 +1,22 @@
+format_version: 0.9.8
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+workflows:
+  ci:
+    steps:
+    - script:
+        title: CI Workflow
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -e
+            set -v
+            go test ./...
+
+            # Check for unhandled errors
+            go get -u github.com/kisielk/errcheck
+            go install github.com/kisielk/errcheck
+            errcheck -asserts=true -blank=true $(go list ./...)
+
+            # Go lint
+            go get -u github.com/golang/lint/golint
+            golint ./...

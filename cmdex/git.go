@@ -126,6 +126,9 @@ func GitAddFile(repoPath, filePath string) error {
 
 // GitPushToOrigin ...
 func GitPushToOrigin(repoPath, branch string) error {
+	if branch == "" {
+		return errors.New("Git push 'branch' missing")
+	}
 	return RunCommandInDir(repoPath, "git", "push", "-u", "origin", branch)
 }
 
@@ -146,9 +149,6 @@ func GitCheckIsNoChanges(repoPath string) error {
 func GitCommit(repoPath string, message string) error {
 	if message == "" {
 		return errors.New("Git commit 'message' missing")
-	}
-	if err := GitCheckIsNoChanges(repoPath); err != nil {
-		return err
 	}
 	return RunCommandInDir(repoPath, "git", "commit", "-m", message)
 }

@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -73,6 +74,44 @@ func AppendBytesToFile(pth string, fileCont []byte) error {
 	}
 
 	return nil
+}
+
+// JSONUnmarshalFromBytes ...
+func JSONUnmarshalFromBytes(cont []byte, v interface{}) error {
+	return json.Unmarshal(cont, &v)
+}
+
+// JSONUnmarshalFromFile ...
+func JSONUnmarshalFromFile(pth string, v interface{}) error {
+	bytes, err := ReadBytesFromFile(pth)
+	if err != nil {
+		return err
+	}
+	return JSONUnmarshalFromBytes(bytes, &v)
+}
+
+// JSONMarshall ...
+func JSONMarshall(v interface{}, pretty bool) ([]byte, error) {
+	var bytes []byte
+	var err error
+	if pretty {
+		bytes, err = json.MarshalIndent(v, "", "\t")
+	} else {
+		bytes, err = json.Marshal(v)
+	}
+	if err != nil {
+		return []byte{}, err
+	}
+	return bytes, nil
+}
+
+// JSONMarshalAndWriteToFile ...
+func JSONMarshalAndWriteToFile(pth string, v interface{}, pretty bool) error {
+	bytes, err := JSONMarshall(v, pretty)
+	if err != nil {
+		return err
+	}
+	return WriteBytesToFile(pth, bytes)
 }
 
 // ReadBytesFromFile ...

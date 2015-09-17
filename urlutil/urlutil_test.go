@@ -23,6 +23,11 @@ func TestJoin(t *testing.T) {
 		testElem{[]string{"https://bitrise.io", "/something/a/b"}, "https://bitrise.io/something/a/b"},
 		testElem{[]string{"https://bitrise.io", "/something/a/b/"}, "https://bitrise.io/something/a/b/"},
 
+		testElem{[]string{"https://bitrise.io/", "/something"}, "https://bitrise.io/something"},
+		testElem{[]string{"https://bitrise.io/", "/something/a"}, "https://bitrise.io/something/a"},
+		testElem{[]string{"https://bitrise.io/", "/something/a/b"}, "https://bitrise.io/something/a/b"},
+		testElem{[]string{"https://bitrise.io/", "/something/a/b/"}, "https://bitrise.io/something/a/b/"},
+
 		testElem{[]string{"https://bitrise.io//", "//something"}, "https://bitrise.io/something"},
 		testElem{[]string{"https://bitrise.io//", "//something/a"}, "https://bitrise.io/something/a"},
 		testElem{[]string{"https://bitrise.io//", "//something/a/b"}, "https://bitrise.io/something/a/b"},

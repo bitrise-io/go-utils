@@ -1,12 +1,22 @@
 package cmdex
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 )
+
+// RunCommandWithBuffers ...
+func RunCommandWithBuffers(outBuffer, errBuffer *bytes.Buffer, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = io.Writer(outBuffer)
+	cmd.Stderr = io.Writer(errBuffer)
+	return cmd.Run()
+}
 
 // RunCommandInDirWithEnvsAndReturnExitCode ...
 func RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error) {

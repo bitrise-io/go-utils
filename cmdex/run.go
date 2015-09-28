@@ -1,7 +1,6 @@
 package cmdex
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"os"
@@ -10,11 +9,11 @@ import (
 	"syscall"
 )
 
-// RunCommandWithBuffers ...
-func RunCommandWithBuffers(outBuffer, errBuffer *bytes.Buffer, name string, args ...string) error {
+// RunCommandWithWriters ...
+func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
-	cmd.Stdout = io.Writer(outBuffer)
-	cmd.Stderr = io.Writer(errBuffer)
+	cmd.Stdout = outWriter
+	cmd.Stderr = errWriter
 	return cmd.Run()
 }
 

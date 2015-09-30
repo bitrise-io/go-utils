@@ -28,15 +28,28 @@ func TestCastInterfaceToInterfaceSlice(t *testing.T) {
 }
 
 func TestDeepEqualSlices(t *testing.T) {
+	//
 	s1 := []string{"a", "b"}
-	interfaceS1, _ := CastInterfaceToInterfaceSlice(s1)
+	interfaceS1, err := CastInterfaceToInterfaceSlice(s1)
+	require.NoError(t, err)
+	//
 	s2 := []string{"b", "a"}
-	interfaceS2, _ := CastInterfaceToInterfaceSlice(s2)
+	interfaceS2, err := CastInterfaceToInterfaceSlice(s2)
+	require.NoError(t, err)
+	// equal, order doesn't matter
 	require.True(t, DeepEqualSlices(interfaceS1, interfaceS2))
 
+	// NOT equal
 	s3 := []string{"b", "a", "c"}
-	interfaceS3, _ := CastInterfaceToInterfaceSlice(s3)
+	interfaceS3, err := CastInterfaceToInterfaceSlice(s3)
+	require.NoError(t, err)
 	require.False(t, DeepEqualSlices(interfaceS1, interfaceS3))
+
+	// NOT equal - same length but element differs
+	s4 := []string{"b", "x"}
+	interfaceS4, err := CastInterfaceToInterfaceSlice(s4)
+	require.NoError(t, err)
+	require.False(t, DeepEqualSlices(interfaceS1, interfaceS4))
 
 	// empty
 	require.True(t, DeepEqualSlices([]interface{}{}, []interface{}{}))

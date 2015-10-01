@@ -16,3 +16,14 @@ func TestMaxLastChars(t *testing.T) {
 
 	require.Equal(t, "llo world!", MaxLastChars("hello world!", 10))
 }
+
+func TestMaxFirstChars(t *testing.T) {
+	require.Equal(t, "", MaxFirstChars("", 10))
+	require.Equal(t, "a", MaxFirstChars("a", 1))
+	require.Equal(t, "b", MaxFirstChars("ba", 1))
+	require.Equal(t, "ba", MaxFirstChars("ba", 10))
+	require.Equal(t, "c", MaxFirstChars("cba", 1))
+	require.Equal(t, "cba", MaxFirstChars("cba", 10))
+
+	require.Equal(t, "hello worl", MaxFirstChars("hello world!", 10))
+}

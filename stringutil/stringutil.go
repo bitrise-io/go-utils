@@ -10,3 +10,12 @@ func MaxLastChars(inStr string, maxCharCount int) string {
 	}
 	return inStr[strLen-maxCharCount:]
 }
+
+// MaxFirstChars ...
+func MaxFirstChars(inStr string, maxCharCount int) string {
+	strLen := len(inStr)
+	if maxCharCount >= strLen {
+		return inStr
+	}
+	return inStr[:maxCharCount]
+}

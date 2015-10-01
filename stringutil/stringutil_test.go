@@ -17,6 +17,16 @@ func TestMaxLastChars(t *testing.T) {
 	require.Equal(t, "llo world!", MaxLastChars("hello world!", 10))
 }
 
+func TestMaxLastCharsWithDots(t *testing.T) {
+	require.Equal(t, "", MaxLastCharsWithDots("", 10))
+	require.Equal(t, "", MaxLastCharsWithDots("1234", 1))
+	require.Equal(t, "...56", MaxLastCharsWithDots("123456", 5))
+	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 6))
+	require.Equal(t, "123456", MaxLastCharsWithDots("123456", 10))
+
+	require.Equal(t, "... world!", MaxLastCharsWithDots("hello world!", 10))
+}
+
 func TestMaxFirstChars(t *testing.T) {
 	require.Equal(t, "", MaxFirstChars("", 10))
 	require.Equal(t, "a", MaxFirstChars("a", 1))
@@ -26,4 +36,14 @@ func TestMaxFirstChars(t *testing.T) {
 	require.Equal(t, "cba", MaxFirstChars("cba", 10))
 
 	require.Equal(t, "hello worl", MaxFirstChars("hello world!", 10))
+}
+
+func TestMaxFirstCharsWithDots(t *testing.T) {
+	require.Equal(t, "", MaxFirstCharsWithDots("", 10))
+	require.Equal(t, "", MaxFirstCharsWithDots("1234", 1))
+	require.Equal(t, "12...", MaxFirstCharsWithDots("123456", 5))
+	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 6))
+	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 10))
+
+	require.Equal(t, "hello w...", MaxFirstCharsWithDots("hello world!", 10))
 }

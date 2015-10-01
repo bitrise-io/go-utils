@@ -6,6 +6,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGenericTrim(t *testing.T) {
+	require.Equal(t, "", genericTrim("", 4, false, false))
+	require.Equal(t, "", genericTrim("", 4, false, true))
+	require.Equal(t, "", genericTrim("", 4, true, false))
+	require.Equal(t, "", genericTrim("", 4, true, true))
+
+	require.Equal(t, "1234", genericTrim("123456789", 4, false, false))
+	require.Equal(t, "1...", genericTrim("123456789", 4, false, true))
+	require.Equal(t, "6789", genericTrim("123456789", 4, true, false))
+	require.Equal(t, "...9", genericTrim("123456789", 4, true, true))
+}
+
 func TestMaxLastChars(t *testing.T) {
 	require.Equal(t, "", MaxLastChars("", 10))
 	require.Equal(t, "a", MaxLastChars("a", 1))

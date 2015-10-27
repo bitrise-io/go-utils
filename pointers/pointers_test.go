@@ -93,7 +93,7 @@ func TestNewIntPtr(t *testing.T) {
 	if *myintPtr != 2 {
 		t.Fatal("Invalid pointer - original value")
 	}
-
+	*myintPtr = 3
 	// the original var should remain intact!
 	if myint != 2 {
 		t.Fatal("The original var was affected!!")

@@ -75,3 +75,30 @@ func TestNewTimePtr(t *testing.T) {
 		t.Fatal("The original var was affected!!")
 	}
 }
+
+func TestNewIntPtr(t *testing.T) {
+	t.Log("Create 1 ptr")
+	if *NewIntPtr(1) != 1 {
+		t.Fatal("Invalid pointer")
+	}
+
+	t.Log("Create 0 ptr")
+	if *NewIntPtr(0) != 0 {
+		t.Fatal("Invalid pointer")
+	}
+
+	t.Log("Try to change the original value - should not be affected!")
+	myint := 2
+	myintPtr := NewIntPtr(myint)
+	if *myintPtr != 2 {
+		t.Fatal("Invalid pointer - original value")
+	}
+	*myintPtr = 3
+	if *myintPtr != 3 {
+		t.Fatal("Invalid pointer - changed value")
+	}
+	// the original var should remain intact!
+	if myint != 2 {
+		t.Fatal("The original var was affected!!")
+	}
+}

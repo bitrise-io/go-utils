@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+// EnsureDirExist ...
+func EnsureDirExist(dir string) error {
+	exist, err := IsDirExists(dir)
+	if !exist || err != nil {
+		return os.MkdirAll(dir, 0777)
+	}
+	return nil
+}
+
 // IsRelativePath ...
 func IsRelativePath(pth string) bool {
 	if strings.HasPrefix(pth, "./") {

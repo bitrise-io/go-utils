@@ -4,7 +4,6 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 app:
   envs:
   - BITRISE_BIN_NAME: go-utils
-  - GITHUB_RELEASES_URL: https://github.com/bitrise-io/${BITRISE_BIN_NAME}/releases
 
 workflows:
 
@@ -70,8 +69,8 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -v
             set -e
+            set -x
             rm -rf ./Godeps
             godep save ./...
 

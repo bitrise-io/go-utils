@@ -1,4 +1,4 @@
-package pointers
+package sliceutil
 
 // IndexOfStringInSlice ...
 func IndexOfStringInSlice(searchFor string, searchIn []string) int {

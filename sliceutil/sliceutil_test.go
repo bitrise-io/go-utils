@@ -1,4 +1,4 @@
-package pointers
+package sliceutil
 
 import (
 	"testing"

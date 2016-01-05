@@ -10,17 +10,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// GetFileModeOfFile ...
-//  this is the "permissions" info, which can be passed directly to
-//  functions like WriteBytesToFileWithPermission or os.OpenFile
-func GetFileModeOfFile(pth string) (os.FileMode, error) {
-	finfo, err := os.Stat(pth)
-	if err != nil {
-		return 0, err
-	}
-	return finfo.Mode(), nil
-}
-
 // WriteStringToFile ...
 func WriteStringToFile(pth string, fileCont string) error {
 	return WriteBytesToFile(pth, []byte(fileCont))
@@ -124,12 +113,21 @@ func ReadStringFromFile(pth string) (string, error) {
 	return string(contBytes), nil
 }
 
-// GetFilePermissions ...
-func GetFilePermissions(filePth string) (os.FileMode, error) {
-	info, err := os.Stat(filePth)
+// GetFileModeOfFile ...
+//  this is the "permissions" info, which can be passed directly to
+//  functions like WriteBytesToFileWithPermission or os.OpenFile
+func GetFileModeOfFile(pth string) (os.FileMode, error) {
+	finfo, err := os.Stat(pth)
 	if err != nil {
 		return 0, err
 	}
-	mode := info.Mode()
-	return mode, nil
+	return finfo.Mode(), nil
+}
+
+// GetFilePermissions ...
+// - alias of: GetFileModeOfFile
+//  this is the "permissions" info, which can be passed directly to
+//  functions like WriteBytesToFileWithPermission or os.OpenFile
+func GetFilePermissions(filePth string) (os.FileMode, error) {
+	return GetFileModeOfFile(filePth)
 }

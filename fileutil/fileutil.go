@@ -15,6 +15,11 @@ func WriteStringToFile(pth string, fileCont string) error {
 	return WriteBytesToFile(pth, []byte(fileCont))
 }
 
+// WriteStringToFileWithPermission ...
+func WriteStringToFileWithPermission(pth string, fileCont string, perm os.FileMode) error {
+	return WriteBytesToFileWithPermission(pth, []byte(fileCont), perm)
+}
+
 // WriteBytesToFileWithPermission ...
 func WriteBytesToFileWithPermission(pth string, fileCont []byte, perm os.FileMode) error {
 	if pth == "" {

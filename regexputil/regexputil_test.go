@@ -31,6 +31,16 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 		}, results)
 	}
 
+	t.Log("Includes an additional name at the start")
+	{
+		results, err := NamedFindStringSubmatch(rexp, "AnotherName MyName 42")
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{
+			"name": "MyName",
+			"age":  "42",
+		}, results)
+	}
+
 	t.Log("Missing name group - should error")
 	{
 		_, err := NamedFindStringSubmatch(rexp, " 42")

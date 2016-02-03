@@ -24,20 +24,20 @@ func TestIndexOfStringInSlice(t *testing.T) {
 	require.Equal(t, -1, IndexOfStringInSlice("cba", testSlice))
 }
 
-func TestIsSliceIncludesString(t *testing.T) {
+func TestIsStringInSlice(t *testing.T) {
 	t.Log("Empty slice")
-	require.Equal(t, false, IsSliceIncludesString("abc", []string{}))
+	require.Equal(t, false, IsStringInSlice("abc", []string{}))
 
 	testSlice := []string{"abc", "def", "123", "456", "123"}
 
 	t.Log("Find item")
-	require.Equal(t, true, IsSliceIncludesString("abc", testSlice))
-	require.Equal(t, true, IsSliceIncludesString("def", testSlice))
-	require.Equal(t, true, IsSliceIncludesString("456", testSlice))
+	require.Equal(t, true, IsStringInSlice("abc", testSlice))
+	require.Equal(t, true, IsStringInSlice("def", testSlice))
+	require.Equal(t, true, IsStringInSlice("456", testSlice))
 
 	t.Log("Find first item, if multiple")
-	require.Equal(t, true, IsSliceIncludesString("123", testSlice))
+	require.Equal(t, true, IsStringInSlice("123", testSlice))
 
 	t.Log("Item is not in the slice")
-	require.Equal(t, false, IsSliceIncludesString("cba", testSlice))
+	require.Equal(t, false, IsStringInSlice("cba", testSlice))
 }

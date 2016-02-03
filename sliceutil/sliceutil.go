@@ -9,3 +9,8 @@ func IndexOfStringInSlice(searchFor string, searchIn []string) int {
 	}
 	return -1
 }
+
+// IsSliceIncludesString ...
+func IsSliceIncludesString(searchFor string, searchIn []string) bool {
+	return IndexOfStringInSlice(searchFor, searchIn) >= 0
+}

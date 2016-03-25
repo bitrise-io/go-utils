@@ -55,6 +55,11 @@ func IsPathExists(pth string) (bool, error) {
 	return isExists, err
 }
 
+// PathCheckAndInfos ...
+func PathCheckAndInfos(pth string) (os.FileInfo, bool, error) {
+	return genericIsPathExists(pth)
+}
+
 // IsDirExists ...
 func IsDirExists(pth string) (bool, error) {
 	fileInf, isExists, err := genericIsPathExists(pth)

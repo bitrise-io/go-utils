@@ -56,6 +56,10 @@ func IsPathExists(pth string) (bool, error) {
 }
 
 // PathCheckAndInfos ...
+// Returns:
+// 1. file info or nil
+// 2. bool, indicating whether the path exists
+// 3. error, if any error happens during the check
 func PathCheckAndInfos(pth string) (os.FileInfo, bool, error) {
 	return genericIsPathExists(pth)
 }

@@ -23,3 +23,63 @@ func TestKeysOfStringStringMap(t *testing.T) {
 	require.Equal(t, 2, len(keys))
 	testutil.EqualSlicesWithoutOrder(t, []string{"a", "b"}, keys)
 }
+
+func TestCloneStringStringMap(t *testing.T) {
+	t.Log("Should copy the map")
+	{
+		m1 := map[string]string{"key": "v1"}
+		m1Clone := CloneStringStringMap(m1)
+		require.Equal(t, map[string]string{"key": "v1"}, m1)
+		require.Equal(t, map[string]string{"key": "v1"}, m1Clone)
+		m1["key"] = "v2"
+		require.Equal(t, map[string]string{"key": "v2"}, m1)
+		require.Equal(t, map[string]string{"key": "v1"}, m1Clone)
+	}
+
+	t.Log("Should also work for empty map")
+	{
+		m1 := map[string]string{}
+		m1Clone := CloneStringStringMap(m1)
+		require.Equal(t, map[string]string{}, m1)
+		require.Equal(t, map[string]string{}, m1Clone)
+		m1["key"] = "v2"
+		require.Equal(t, map[string]string{"key": "v2"}, m1)
+		require.Equal(t, map[string]string{}, m1Clone)
+	}
+}
+
+func TestMergeStringStringMap(t *testing.T) {
+	t.Log("Merge maps - target should overwrite source's value, but should not modify either input map")
+	{
+		m1 := map[string]string{"key": "v1", "m1": "yes"}
+		m2 := map[string]string{"key": "v2", "m2": "yes"}
+		merged := MergeStringStringMap(m1, m2)
+		require.Equal(t, map[string]string{"key": "v1", "m1": "yes"}, m1)
+		require.Equal(t, map[string]string{"key": "v2", "m2": "yes"}, m2)
+		require.Equal(t, map[string]string{"key": "v2", "m1": "yes", "m2": "yes"}, merged)
+	}
+
+	t.Log("Merge empty maps")
+	{
+		m1 := map[string]string{}
+		m2 := map[string]string{}
+		merged := MergeStringStringMap(m1, m2)
+		require.Equal(t, map[string]string{}, merged)
+	}
+
+	t.Log("Merge maps where source is empty")
+	{
+		m1 := map[string]string{}
+		m2 := map[string]string{"key": "v2", "m2": "yes"}
+		merged := MergeStringStringMap(m1, m2)
+		require.Equal(t, map[string]string{"key": "v2", "m2": "yes"}, merged)
+	}
+
+	t.Log("Merge maps where target is empty")
+	{
+		m1 := map[string]string{"key": "v1", "m1": "yes"}
+		m2 := map[string]string{}
+		merged := MergeStringStringMap(m1, m2)
+		require.Equal(t, map[string]string{"key": "v1", "m1": "yes"}, merged)
+	}
+}

@@ -4,7 +4,8 @@ import (
 	"fmt"
 )
 
-// Color type
+// Color ...
+// ANSI color escape sequences
 type Color string
 
 const (

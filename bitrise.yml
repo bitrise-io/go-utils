@@ -10,12 +10,12 @@ workflows:
   _install_test_tools:
     steps:
     - script:
+        run_if: .IsCI
         title: Install required testing tools
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -v
+            set -ex
 
             # Install dependencies
             go get -u github.com/tools/godep
@@ -29,38 +29,46 @@ workflows:
   test:
     steps:
     - script:
-        title: Godeps - GOPATH patch
+        title: Print go environment
         inputs:
         - content: |-
-            set -e
-            set -v
-            envman add --key ORIG_GOPATH --value "$GOPATH"
-            envman add --key GOPATH --value "$(godep path):$GOPATH"
+            set -ex
+
+            go version
+            echo $GO15VENDOREXPERIMENT
+
+            go get -u github.com/stretchr/testify/require
     - script:
-        title: Go Test
+        title: Export go files to test
         inputs:
-        - content: godep go test ./...
+        - content: |-
+            set -ex
+
+            no_vendor_paths="$(go list ./... | grep -v vendor)"
+            envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
     - script:
         title: Err check
         inputs:
-        - content: errcheck -asserts=true -blank=true $(godep go list ./...)
+        - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
     - script:
-        title: Go Lint
+        title: Go lint
         inputs:
         - content: |-
             #!/bin/bash
             set -e
-
-            golint_out="$(golint ./...)"
-            if [[ "${golint_out}" != "" ]] ; then
-              echo "=> Golint issues found:"
-              echo "${golint_out}"
-              exit 1
-            fi
+            while read -r line; do
+              echo "-> Linting: $line"
+              golint_out="$(golint $line)"
+              if [[ "${golint_out}" != "" ]] ; then
+                echo "=> Golint issues found:"
+                echo "${golint_out}"
+                exit 1
+              fi
+            done <<< "$GOLIST_WITHOUT_VENDOR"
     - script:
-        title: Restore original GOPATH
+        title: Go test
         inputs:
-        - content: envman add --key GOPATH --value "$ORIG_GOPATH"
+        - content: go test ./...
 
   godeps-update:
     steps:
@@ -69,8 +77,8 @@ workflows:
         inputs:
         - content: |-
             #!/bin/bash
-            set -e
-            set -x
+            set -ex
+            
             rm -rf ./Godeps
             godep save ./...
 

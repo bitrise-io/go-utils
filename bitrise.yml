@@ -10,15 +10,11 @@ workflows:
   _install_test_tools:
     steps:
     - script:
-        run_if: .IsCI
         title: Install required testing tools
         inputs:
         - content: |-
             #!/bin/bash
             set -ex
-
-            # Install dependencies
-            go get -u github.com/tools/godep
 
             # Check for unhandled errors
             go get -u github.com/kisielk/errcheck
@@ -37,19 +33,18 @@ workflows:
             set -ex
 
             go version
-            echo $GO15VENDOREXPERIMENT
     - script:
         title: Export go files to test
         inputs:
         - content: |-
             set -ex
 
-            no_vendor_paths="$(go list ./... | grep -v vendor)"
-            envman add --key GOLIST_WITHOUT_VENDOR --value "$no_vendor_paths"
+            go_list="$(go list ./...)"
+            envman add --key GOLIST --value "$go_list"
     - script:
         title: Err check
         inputs:
-        - content: errcheck -asserts=true -blank=true $GOLIST_WITHOUT_VENDOR
+        - content: errcheck -asserts=true -blank=true $GOLIST
     - script:
         title: Go lint
         inputs:
@@ -64,7 +59,7 @@ workflows:
                 echo "${golint_out}"
                 exit 1
               fi
-            done <<< "$GOLIST_WITHOUT_VENDOR"
+            done <<< "$GOLIST"
     - script:
         title: Go test
         inputs:

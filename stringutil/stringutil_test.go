@@ -6,6 +6,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCaseInsensitiveEquals(t *testing.T) {
+	require.Equal(t, true, CaseInsensitiveEquals("a", "a"))
+	require.Equal(t, true, CaseInsensitiveEquals("a", "A"))
+
+	require.Equal(t, true, CaseInsensitiveEquals("ab", "Ab"))
+
+	require.Equal(t, false, CaseInsensitiveEquals("ab", "ba"))
+	require.Equal(t, false, CaseInsensitiveEquals("ab", "Ba"))
+}
+
+func TestCaseInsensitiveContains(t *testing.T) {
+	require.Equal(t, true, CaseInsensitiveContains("a", "a"))
+	require.Equal(t, true, CaseInsensitiveContains("A", "a"))
+
+	require.Equal(t, true, CaseInsensitiveContains("abc", "a"))
+	require.Equal(t, true, CaseInsensitiveContains("abc", "B"))
+	require.Equal(t, true, CaseInsensitiveContains("abc", "BC"))
+	require.Equal(t, true, CaseInsensitiveContains("abc", "ABC"))
+
+	require.Equal(t, false, CaseInsensitiveContains("abc", "d"))
+	require.Equal(t, false, CaseInsensitiveContains("abc", "ba"))
+	require.Equal(t, false, CaseInsensitiveContains("abc", "BAC"))
+}
+
 func TestGenericTrim(t *testing.T) {
 	require.Equal(t, "", genericTrim("", 4, false, false))
 	require.Equal(t, "", genericTrim("", 4, false, true))

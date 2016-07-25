@@ -7,6 +7,17 @@ import (
 )
 
 func TestCaseInsensitiveEquals(t *testing.T) {
+	var emptyStr string // ""
+
+	require.Equal(t, true, CaseInsensitiveEquals(emptyStr, emptyStr))
+	require.Equal(t, true, CaseInsensitiveEquals("", ""))
+
+	require.Equal(t, true, CaseInsensitiveEquals(emptyStr, ""))
+	require.Equal(t, true, CaseInsensitiveEquals("", emptyStr))
+
+	require.Equal(t, false, CaseInsensitiveEquals(emptyStr, "a"))
+	require.Equal(t, false, CaseInsensitiveEquals("a", emptyStr))
+
 	require.Equal(t, true, CaseInsensitiveEquals("a", "a"))
 	require.Equal(t, true, CaseInsensitiveEquals("a", "A"))
 
@@ -17,6 +28,17 @@ func TestCaseInsensitiveEquals(t *testing.T) {
 }
 
 func TestCaseInsensitiveContains(t *testing.T) {
+	var emptyStr string // ""
+
+	require.Equal(t, true, CaseInsensitiveContains(emptyStr, emptyStr))
+	require.Equal(t, true, CaseInsensitiveContains("", ""))
+
+	require.Equal(t, true, CaseInsensitiveContains(emptyStr, ""))
+	require.Equal(t, true, CaseInsensitiveContains("", emptyStr))
+
+	require.Equal(t, false, CaseInsensitiveContains(emptyStr, "a"))
+	require.Equal(t, true, CaseInsensitiveContains("a", emptyStr))
+
 	require.Equal(t, true, CaseInsensitiveContains("a", "a"))
 	require.Equal(t, true, CaseInsensitiveContains("A", "a"))
 

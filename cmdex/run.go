@@ -18,8 +18,8 @@ const (
 	brewRubyPth   = "/usr/local/bin/ruby"
 )
 
-// BitriseDeveloperModeEnvKey ...
-const BitriseDeveloperModeEnvKey = "BITRISE_DEVELOPER_MODE"
+// DeveloperModeEnvKey ...
+const DeveloperModeEnvKey = "DEVELOPER_MODE"
 
 // CommandModel ...
 type CommandModel struct {
@@ -150,7 +150,7 @@ func runCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.
 
 // RunCommandWithReaderAndWriters ...
 func RunCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.Writer, name string, args ...string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.Writer, name string, args ...string) error
 USE INSTEAD! - NewCommand(name, args...).Stdin(inReader).Stdout(outWriter).Stderr(errWriter).Run()
 `
@@ -171,7 +171,7 @@ func runCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...
 
 // RunCommandWithWriters ...
 func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error
 USE INSTEAD! - NewCommand(name, args...).Stdout(outWriter).Stderr(errWriter).Run()
 `
@@ -191,7 +191,7 @@ func runCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, a
 
 // RunCommandInDirWithEnvsAndReturnExitCode ...
 func RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error)
 USE INSTEAD! - NewCommand(name, args...).Envs(envs).Dir(dir).RunForExitCode()
 `
@@ -231,7 +231,7 @@ func runCommandInDirAndReturnExitCode(dir, name string, args ...string) (int, er
 
 // RunCommandInDirAndReturnExitCode ...
 func RunCommandInDirAndReturnExitCode(dir, name string, args ...string) (int, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandInDirAndReturnExitCode(dir, name string, args ...string) (int, error)
 USE INSTEAD! - NewCommand(name, args...).Dir(dir).RunForExitCode()
 `
@@ -248,7 +248,7 @@ func runCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...str
 
 // RunCommandWithEnvsAndReturnExitCode ...
 func RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error)
 USE INSTEAD! - NewCommand(name, args...).Envs(envs).RunForExitCode()
 `
@@ -265,7 +265,7 @@ func runCommandInDir(dir, name string, args ...string) error {
 
 // RunCommandInDir ...
 func RunCommandInDir(dir, name string, args ...string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandInDir(dir, name string, args ...string) error
 USE INSTEAD! - NewCommand(name, args...).Dir(dir).Run()
 `
@@ -289,7 +289,7 @@ func runCommand(name string, args ...string) error {
 
 // RunCommand ...
 func RunCommand(name string, args ...string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommand(name string, args ...string) error
 USE INSTEAD! - NewCommand(name, args...).Run()
 `
@@ -306,7 +306,7 @@ func runCommandAndReturnStdout(name string, args ...string) (string, error) {
 
 // RunCommandAndReturnStdout ..
 func RunCommandAndReturnStdout(name string, args ...string) (string, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandAndReturnStdout(name string, args ...string) (string, error)
 USE INSTEAD! - NewCommand(name, args...).RunForOutput()
 `
@@ -326,7 +326,7 @@ func runCommandInDirAndReturnCombinedStdoutAndStderr(dir, name string, args ...s
 
 // RunCommandInDirAndReturnCombinedStdoutAndStderr ...
 func RunCommandInDirAndReturnCombinedStdoutAndStderr(dir, name string, args ...string) (string, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandInDirAndReturnCombinedStdoutAndStderr(dir, name string, args ...string) (string, error)
 USE INSTEAD! - NewCommand(name, args...).Dir(dir).RunForCombinedOutput()
 `
@@ -349,7 +349,7 @@ func runCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (st
 
 // RunCommandAndReturnCombinedStdoutAndStderr ..
 func RunCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (string, error) {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (string, error)
 USE INSTEAD! - NewCommand(name, args...).RunForCombinedOutput()
 `
@@ -372,7 +372,7 @@ func betterRunBashCommand(name string, args ...string) error {
 
 // RunBashCommand ...
 func RunBashCommand(cmdStr string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunBashCommand(cmdStr string) error
 USE INSTEAD! - NewBashCommand(name, args...).Run()
 `
@@ -394,7 +394,7 @@ func runBashCommandLines(cmdLines []string) error {
 
 // RunBashCommandLines ...
 func RunBashCommandLines(cmdLines []string) error {
-	if os.Getenv(BitriseDeveloperModeEnvKey) == "1" {
+	if os.Getenv(DeveloperModeEnvKey) == "1" {
 		deprecationMsg := `DEPRECATED METHOD! - RunBashCommandLines(cmdLines []string) error
 USE INSTEAD! - NewBashCommand(aLine).Run()
 `

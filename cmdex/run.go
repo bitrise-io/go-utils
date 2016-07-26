@@ -10,6 +10,120 @@ import (
 	"syscall"
 )
 
+// ----------
+
+const (
+	systemRubyPth = "/usr/bin/ruby"
+)
+
+// CommandModel ...
+type CommandModel struct {
+	cmd *exec.Cmd
+}
+
+// NewCommand ...
+func NewCommand(name string, args ...string) *CommandModel {
+	return &CommandModel{
+		cmd: exec.Command(name, args...),
+	}
+}
+
+// NewBashCommand ...
+func NewBashCommand(name string, args ...string) *CommandModel {
+	args = append([]string{"-c", name}, args...)
+	return &CommandModel{
+		cmd: exec.Command("bash", args...),
+	}
+}
+
+// NewRubyCommand ...
+func NewRubyCommand(whichRuby, name string, args ...string) *CommandModel {
+	if whichRuby == systemRubyPth {
+		args = append([]string{name}, args...)
+		name = "sudo"
+	}
+
+	return &CommandModel{
+		cmd: exec.Command(name, args...),
+	}
+}
+
+// NewBundleCommandModel ...
+func NewBundleCommandModel(name string, args ...string) *CommandModel {
+	args = append([]string{name}, args...)
+	return &CommandModel{
+		cmd: exec.Command("bundle", args...),
+	}
+}
+
+// Dir ...
+func (command *CommandModel) Dir(dir string) *CommandModel {
+	command.cmd.Dir = dir
+	return command
+}
+
+// Envs ...
+func (command *CommandModel) Envs(envs []string) *CommandModel {
+	command.cmd.Env = envs
+	return command
+}
+
+// Stdin ...
+func (command *CommandModel) Stdin(in io.Reader) *CommandModel {
+	command.cmd.Stdin = in
+	return command
+}
+
+// Stdout ...
+func (command *CommandModel) Stdout(out io.Writer) *CommandModel {
+	command.cmd.Stdout = out
+	return command
+}
+
+// Stderr ...
+func (command *CommandModel) Stderr(err io.Writer) *CommandModel {
+	command.cmd.Stderr = err
+	return command
+}
+
+// Run ...
+func (command CommandModel) Run() error {
+	return command.cmd.Run()
+}
+
+// RunForExitCode ...
+func (command CommandModel) RunForExitCode() (int, error) {
+	cmdExitCode := 0
+	if err := command.cmd.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
+			if !ok {
+				return 1, errors.New("Failed to cast exit status")
+			}
+			cmdExitCode = waitStatus.ExitStatus()
+		}
+		return cmdExitCode, err
+	}
+
+	return 0, nil
+}
+
+// RunForOutput ...
+func (command CommandModel) RunForOutput() (string, error) {
+	outBytes, err := command.cmd.Output()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
+}
+
+// RunForCombinedOutput ...
+func (command CommandModel) RunForCombinedOutput() (string, error) {
+	outBytes, err := command.cmd.CombinedOutput()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
+}
+
+// ----------
+
 // PrintableCommandArgs ...
 func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	cmdArgsDecorated := []string{}

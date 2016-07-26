@@ -49,11 +49,6 @@ func (command *CommandModel) SetEnvs(envs []string) *CommandModel {
 	return command
 }
 
-// AddEnvs ...
-func (command *CommandModel) AddEnvs(env ...string) *CommandModel {
-	return command.SetEnvs(append(command.cmd.Env, env...))
-}
-
 // SetStdin ...
 func (command *CommandModel) SetStdin(in io.Reader) *CommandModel {
 	command.cmd.Stdin = in

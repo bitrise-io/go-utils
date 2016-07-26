@@ -1,13 +1,14 @@
 package cmdex
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"github.com/bitrise-io/go-utils/errorutil"
 )
 
 // ----------
@@ -104,16 +105,14 @@ func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 
 // RunCmdAndReturnExitCode ...
 func RunCmdAndReturnExitCode(cmd *exec.Cmd) (int, error) {
-	cmdExitCode := 0
-	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
-			if !ok {
-				return 1, errors.New("Failed to cast exit status")
-			}
-			cmdExitCode = waitStatus.ExitStatus()
+	err := cmd.Run()
+	if err != nil {
+		exitCode, castErr := errorutil.CmdExitCodeFromError(err)
+		if castErr != nil {
+			return 1, fmt.Errorf("failed get exit code from error: %s, error: %s", err, castErr)
 		}
-		return cmdExitCode, err
+
+		return exitCode, err
 	}
 
 	return 0, nil

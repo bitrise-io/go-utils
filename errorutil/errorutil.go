@@ -34,14 +34,3 @@ func CmdExitCodeFromError(err error) (int, error) {
 	}
 	return 0, nil
 }
-
-// ProperError ...
-func ProperError(err error, out string) error {
-	if err == nil {
-		return nil
-	}
-	if IsExitStatusError(err) && out != "" {
-		return errors.New(out)
-	}
-	return err
-}

@@ -30,7 +30,7 @@ func CmdExitCodeFromError(err error) (int, error) {
 			}
 			cmdExitCode = waitStatus.ExitStatus()
 		}
-		return cmdExitCode, err
+		return cmdExitCode, nil
 	}
 	return 0, nil
 }

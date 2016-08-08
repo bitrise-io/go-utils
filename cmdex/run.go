@@ -1,6 +1,7 @@
 package cmdex
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,6 +24,17 @@ func NewCommand(name string, args ...string) *CommandModel {
 	return &CommandModel{
 		cmd: exec.Command(name, args...),
 	}
+}
+
+// NewCommandFromSlice ...
+func NewCommandFromSlice(cmdSlice []string) (*CommandModel, error) {
+	if len(cmdSlice) == 0 {
+		return nil, errors.New("no command provided")
+	} else if len(cmdSlice) == 1 {
+		return NewCommand(cmdSlice[0]), nil
+	}
+
+	return NewCommand(cmdSlice[0], cmdSlice[1:]...), nil
 }
 
 // NewCommandWithCmd ...

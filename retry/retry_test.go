@@ -93,7 +93,7 @@ func TestRetry(t *testing.T) {
 		require.Equal(t, "error", err.Error())
 		require.Equal(t, 2, attemptCnt)
 		if duration >= time.Duration(4)*time.Second {
-			t.Fatalf("Should take no more than 10 sec, but got: %s", duration)
+			t.Fatalf("Should take no more than 4 sec, but got: %s", duration)
 		}
 	}
 
@@ -113,7 +113,7 @@ func TestRetry(t *testing.T) {
 		require.Equal(t, "error", err.Error())
 		require.Equal(t, 2, attemptCnt)
 		if duration < time.Duration(3)*time.Second {
-			t.Fatalf("Should take at least 10 sec, but got: %s", duration)
+			t.Fatalf("Should take at least 3 sec, but got: %s", duration)
 		}
 	}
 }

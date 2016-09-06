@@ -82,7 +82,7 @@ func TestRetry(t *testing.T) {
 		attemptCnt := 0
 		startTime := time.Now()
 
-		err := Times(1).Wait(3).Try(func(attempt uint) error {
+		err := Times(1).Wait(3 * time.Second).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -102,7 +102,7 @@ func TestRetry(t *testing.T) {
 		attemptCnt := 0
 		startTime := time.Now()
 
-		err := Times(1).Wait(4).Try(func(attempt uint) error {
+		err := Times(1).Wait(4 * time.Second).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -121,15 +121,15 @@ func TestRetry(t *testing.T) {
 func TestWait(t *testing.T) {
 	t.Log("it creates retry model with wait time")
 	{
-		helper := Wait(3)
-		require.Equal(t, uint(3), helper.waitSec)
+		helper := Wait(3 * time.Second)
+		require.Equal(t, 3*time.Second, helper.waitTime)
 	}
 
 	t.Log("it creates retry model with wait time")
 	{
-		helper := Wait(3)
-		helper.Wait(5)
-		require.Equal(t, uint(5), helper.waitSec)
+		helper := Wait(3 * time.Second)
+		helper.Wait(5 * time.Second)
+		require.Equal(t, 5*time.Second, helper.waitTime)
 	}
 }
 

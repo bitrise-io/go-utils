@@ -9,7 +9,9 @@ func TestSimpleProgress(t *testing.T) {
 	startTime := time.Now()
 
 	SimpleProgress(".", 2*time.Second, func() {
-		time.Sleep(5)
+		t.Log("- SimpleProgress [start] -")
+		time.Sleep(5 * time.Second)
+		t.Log("- SimpleProgress [end] -")
 	})
 
 	duration := time.Now().Sub(startTime)

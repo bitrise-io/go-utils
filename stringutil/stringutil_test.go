@@ -6,6 +6,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestReadFirstLine(t *testing.T) {
+	t.Log("Empty input")
+	{
+		require.Equal(t, "", ReadFirstLine("", false))
+		require.Equal(t, "", ReadFirstLine("", true))
+	}
+
+	t.Log("Multiline empty input - ignore-empty-lines:false")
+	{
+		firstLine := ReadFirstLine(`
+
+
+`, false)
+		require.Equal(t, "", firstLine)
+	}
+
+	t.Log("Multiline empty input - ignore-empty-lines:true")
+	{
+		firstLine := ReadFirstLine(`
+
+
+`, true)
+		require.Equal(t, "", firstLine)
+	}
+
+	t.Log("Multiline non empty input - ignore-empty-lines:false")
+	{
+		firstLine := ReadFirstLine(`first line
+
+second line`, false)
+		require.Equal(t, "first line", firstLine)
+	}
+
+	t.Log("Multiline empty input - ignore-empty-lines:true")
+	{
+		firstLine := ReadFirstLine(`first line
+
+second line`, true)
+		require.Equal(t, "first line", firstLine)
+	}
+
+	t.Log("Multiline non empty input, with leading empty line - ignore-empty-lines:false")
+	{
+		firstLine := ReadFirstLine(`
+
+first line
+
+second line`, false)
+		require.Equal(t, "", firstLine)
+	}
+
+	t.Log("Multiline non empty input, with leading empty line - ignore-empty-lines:true")
+	{
+		firstLine := ReadFirstLine(`
+
+first line
+
+second line`, true)
+		require.Equal(t, "first line", firstLine)
+	}
+}
+
 func TestCaseInsensitiveEquals(t *testing.T) {
 	var emptyStr string // ""
 

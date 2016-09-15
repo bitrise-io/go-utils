@@ -2,17 +2,9 @@ package log
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bitrise-io/go-utils/colorstring"
 )
-
-// Fail ...
-func Fail(format string, v ...interface{}) {
-	message := fmt.Sprintf(format, v...)
-	fmt.Println(colorstring.Red(message))
-	os.Exit(1)
-}
 
 // Error ...
 func Error(format string, v ...interface{}) {

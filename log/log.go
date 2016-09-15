@@ -17,19 +17,19 @@ func Fail(format string, v ...interface{}) {
 // Error ...
 func Error(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
-	fmt.Printf(colorstring.Red(message))
+	fmt.Println(colorstring.Red(message))
 }
 
 // Warn ...
 func Warn(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
-	fmt.Printf(colorstring.Yellow(message))
+	fmt.Println(colorstring.Yellow(message))
 }
 
 // Info ...
 func Info(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
-	fmt.Printf(colorstring.Blue(message))
+	fmt.Println(colorstring.Blue(message))
 }
 
 // Detail ...
@@ -41,5 +41,5 @@ func Detail(format string, v ...interface{}) {
 // Done ...
 func Done(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
-	fmt.Printf(colorstring.Green(message))
+	fmt.Println(colorstring.Green(message))
 }

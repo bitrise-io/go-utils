@@ -65,18 +65,6 @@ workflows:
         inputs:
         - content: go test ./...
 
-  godeps-update:
-    steps:
-    - script:
-        title: Dependency update
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            
-            rm -rf ./Godeps
-            godep save ./...
-
   ci:
     before_run:
     - _install_test_tools

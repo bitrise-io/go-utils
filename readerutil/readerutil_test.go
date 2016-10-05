@@ -77,13 +77,13 @@ third, really long line: %s
 	}
 }
 
-func TestWalkLines(t *testing.T) {
+func TestWalkLinesString(t *testing.T) {
 	t.Log("Empty string")
 	{
 		inputStr := ``
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			lines = append(lines, line)
 			return nil
 		})
@@ -96,7 +96,7 @@ func TestWalkLines(t *testing.T) {
 		inputStr := `a single line`
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			lines = append(lines, line)
 			return nil
 		})
@@ -110,7 +110,7 @@ func TestWalkLines(t *testing.T) {
 second line`
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			lines = append(lines, line)
 			return nil
 		})
@@ -128,7 +128,7 @@ third, really long line: %s
 
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			lines = append(lines, line)
 			return nil
 		})
@@ -150,7 +150,7 @@ break here
 this should not be included`
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			if line == "break here" {
 				return io.EOF
 			}
@@ -169,7 +169,7 @@ break here
 this should not be included`
 		//
 		lines := []string{}
-		err := WalkLines(inputStr, func(line string) error {
+		err := WalkLinesString(inputStr, func(line string) error {
 			if line == "break here" {
 				return errors.New("Please stop!")
 			}

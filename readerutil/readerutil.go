@@ -33,8 +33,8 @@ func ReadLongLine(r *bufio.Reader) (string, error) {
 type WalkLineFn func(string) error
 
 // WalkLines ...
-func WalkLines(inputStr string, walkFn WalkLineFn) error {
-	reader := bufio.NewReader(strings.NewReader(inputStr))
+func WalkLines(inpReader io.Reader, walkFn WalkLineFn) error {
+	reader := bufio.NewReader(inpReader)
 
 	var walkErr error
 	line, readErr := ReadLongLine(reader)
@@ -54,4 +54,9 @@ func WalkLines(inputStr string, walkFn WalkLineFn) error {
 	}
 
 	return nil
+}
+
+// WalkLinesString ...
+func WalkLinesString(inputStr string, walkFn WalkLineFn) error {
+	return WalkLines(strings.NewReader(inputStr), walkFn)
 }

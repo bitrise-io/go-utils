@@ -13,8 +13,8 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 
 	t.Log("Simple name+age example")
 	{
-		results, err := NamedFindStringSubmatch(rexp, "MyName 42")
-		require.NoError(t, err)
+		results, isFound := NamedFindStringSubmatch(rexp, "MyName 42")
+		require.Equal(t, true, isFound)
 		require.Equal(t, map[string]string{
 			"name": "MyName",
 			"age":  "42",
@@ -23,8 +23,8 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 
 	t.Log("Includes an additional name at the end")
 	{
-		results, err := NamedFindStringSubmatch(rexp, "MyName 42 AnotherName")
-		require.NoError(t, err)
+		results, isFound := NamedFindStringSubmatch(rexp, "MyName 42 AnotherName")
+		require.Equal(t, true, isFound)
 		require.Equal(t, map[string]string{
 			"name": "MyName",
 			"age":  "42",
@@ -33,8 +33,8 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 
 	t.Log("Includes an additional name at the start")
 	{
-		results, err := NamedFindStringSubmatch(rexp, "AnotherName MyName 42")
-		require.NoError(t, err)
+		results, isFound := NamedFindStringSubmatch(rexp, "AnotherName MyName 42")
+		require.Equal(t, true, isFound)
 		require.Equal(t, map[string]string{
 			"name": "MyName",
 			"age":  "42",
@@ -43,20 +43,23 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 
 	t.Log("Missing name group - should error")
 	{
-		_, err := NamedFindStringSubmatch(rexp, " 42")
-		require.EqualError(t, err, "No match found")
+		results, isFound := NamedFindStringSubmatch(rexp, " 42")
+		require.Equal(t, false, isFound)
+		require.Equal(t, map[string]string(nil), results)
 	}
 
 	t.Log("Missing age group - should error")
 	{
-		_, err := NamedFindStringSubmatch(rexp, "MyName ")
-		require.EqualError(t, err, "No match found")
+		results, isFound := NamedFindStringSubmatch(rexp, "MyName ")
+		require.Equal(t, false, isFound)
+		require.Equal(t, map[string]string(nil), results)
 	}
 
 	t.Log("Missing both groups - should error")
 	{
-		_, err := NamedFindStringSubmatch(rexp, "")
-		require.EqualError(t, err, "No match found")
+		results, isFound := NamedFindStringSubmatch(rexp, "")
+		require.Equal(t, false, isFound)
+		require.Equal(t, map[string]string(nil), results)
 	}
 
 	t.Log("Optional name part")
@@ -64,8 +67,8 @@ func TestNamedFindStringSubmatch(t *testing.T) {
 
 	t.Log("Name can now be empty - but should be included in the result!")
 	{
-		results, err := NamedFindStringSubmatch(rexp, " 42")
-		require.NoError(t, err)
+		results, isFound := NamedFindStringSubmatch(rexp, " 42")
+		require.Equal(t, true, isFound)
 		require.Equal(t, map[string]string{
 			"name": "",
 			"age":  "42",

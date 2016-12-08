@@ -3,6 +3,8 @@ package pointers
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewBoolPtr(t *testing.T) {
@@ -102,4 +104,70 @@ func TestNewIntPtr(t *testing.T) {
 	if myint != 2 {
 		t.Fatal("The original var was affected!!")
 	}
+}
+
+func TestBool(t *testing.T) {
+	require.Equal(t, false, Bool(nil))
+
+	sampleVal := true
+	sampleValPtr := &sampleVal
+	require.Equal(t, true, Bool(sampleValPtr))
+}
+
+func TestBoolWithDefault(t *testing.T) {
+	require.Equal(t, false, BoolWithDefault(nil, false))
+	require.Equal(t, true, BoolWithDefault(nil, true))
+
+	sampleVal := true
+	sampleValPtr := &sampleVal
+	require.Equal(t, true, BoolWithDefault(sampleValPtr, false))
+}
+
+func TestString(t *testing.T) {
+	require.Equal(t, "", String(nil))
+
+	sampleStr := "sample string"
+	sampleStrPtr := &sampleStr
+	require.Equal(t, "sample string", String(sampleStrPtr))
+}
+
+func TestStringWithDefault(t *testing.T) {
+	require.Equal(t, "", StringWithDefault(nil, ""))
+	require.Equal(t, "default value", StringWithDefault(nil, "default value"))
+
+	sampleStr := "sample string"
+	sampleStrPtr := &sampleStr
+	require.Equal(t, "sample string", StringWithDefault(sampleStrPtr, "default value"))
+}
+
+func TestTimeWithDefault(t *testing.T) {
+	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+	defaultTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+	require.NoError(t, err)
+
+	require.Equal(t, defaultTime, TimeWithDefault(nil, defaultTime))
+
+	anotherTime, err := time.Parse(longForm, "Feb 4, 2014 at 8:54pm (PST)")
+	require.NoError(t, err)
+	anotherTimePtr := &anotherTime
+
+	require.Equal(t, anotherTime, TimeWithDefault(anotherTimePtr, defaultTime))
+}
+
+func TestInt(t *testing.T) {
+	require.Equal(t, 0, Int(nil))
+
+	sampleVal := 12
+	sampleValPtr := &sampleVal
+	require.Equal(t, 12, Int(sampleValPtr))
+}
+
+func TestIntWithDefault(t *testing.T) {
+	require.Equal(t, 0, IntWithDefault(nil, 0))
+	require.Equal(t, 12, IntWithDefault(nil, 12))
+	require.Equal(t, -12, IntWithDefault(nil, -12))
+
+	sampleVal := 23
+	sampleValPtr := &sampleVal
+	require.Equal(t, 23, IntWithDefault(sampleValPtr, 1))
 }

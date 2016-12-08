@@ -171,12 +171,12 @@ this should not be included`
 		lines := []string{}
 		err := WalkLinesString(inputStr, func(line string) error {
 			if line == "break here" {
-				return errors.New("Please stop!")
+				return errors.New("Please stop")
 			}
 			lines = append(lines, line)
 			return nil
 		})
-		require.EqualError(t, err, "Please stop!")
+		require.EqualError(t, err, "Please stop")
 		require.Equal(t, []string{"first line", "second line"}, lines)
 	}
 }

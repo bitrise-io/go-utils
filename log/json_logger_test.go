@@ -2,20 +2,28 @@ package log
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestJSONPrint(t *testing.T) {
-	t.Log("Default Formattable (Message)")
-	{
-		var b bytes.Buffer
-		logger := NewJSONLoger(&b)
+type TestFormattable struct {
+	A string `json:"a,omitempty"`
+	B string `json:"b,omitempty"`
+}
 
-		logger.Printd(Message{Content: "test"})
-		require.Equal(t, `{"content":"test"}`+"\n", b.String())
-	}
+// String ...
+func (f TestFormattable) String() string {
+	return fmt.Sprintf("%s %s", f.A, f.B)
+}
+
+// JSON ...
+func (f TestFormattable) JSON() string {
+	return fmt.Sprintf(`{"a":"%s","b":"%s"}`, f.A, f.B)
+}
+
+func TestJSONPrint(t *testing.T) {
 
 	t.Log("Custom Formattable")
 	{
@@ -23,40 +31,11 @@ func TestJSONPrint(t *testing.T) {
 		logger := NewJSONLoger(&b)
 
 		test := TestFormattable{
-			a: "log",
-			b: "test",
+			A: "log",
+			B: "test",
 		}
 
-		logger.Printd(test)
-		require.Equal(t, `{"a":"log","b":"test"}`+"\n", b.String())
-	}
-}
-
-func TestJSONPrintf(t *testing.T) {
-	t.Log("string")
-	{
-		var b bytes.Buffer
-		logger := NewJSONLoger(&b)
-
-		logger.Printf("test")
-		require.Equal(t, `{"content":"test"}`+"\n", b.String())
-	}
-
-	t.Log("format")
-	{
-		var b bytes.Buffer
-		logger := NewJSONLoger(&b)
-
-		logger.Printf("%s", "test")
-		require.Equal(t, `{"content":"test"}`+"\n", b.String())
-	}
-
-	t.Log("complex format")
-	{
-		var b bytes.Buffer
-		logger := NewJSONLoger(&b)
-
-		logger.Printf("%s %s", "log", "test")
-		require.Equal(t, `{"content":"log test"}`+"\n", b.String())
+		logger.Print(test)
+		require.Equal(t, `{"a":"log","b":"test"}`, b.String())
 	}
 }

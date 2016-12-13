@@ -25,13 +25,7 @@ func NewDefaultRawLogger() RawLogger {
 	}
 }
 
-// Printd ...
-func (l RawLogger) Printd(f Formatable) {
+// Print ...
+func (l RawLogger) Print(f Formatable) {
 	fmt.Fprintln(l.writer, f.String())
-}
-
-// Printf ...
-func (l RawLogger) Printf(format string, a ...interface{}) {
-	str := fmt.Sprintf(format, a...)
-	l.Printd(Message{Content: str})
 }

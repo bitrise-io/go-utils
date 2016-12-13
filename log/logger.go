@@ -5,7 +5,7 @@ import "encoding/json"
 
 // Logger ...
 type Logger interface {
-	PrintO(f Formatable)
+	Printd(f Formatable)
 	Printf(format string, a ...interface{})
 }
 

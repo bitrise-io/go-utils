@@ -29,7 +29,7 @@ func TestRawPrint(t *testing.T) {
 		var b bytes.Buffer
 		logger := NewRawLogger(&b)
 
-		logger.PrintO(Message{Content: "test"})
+		logger.Printd(Message{Content: "test"})
 		require.Equal(t, "test\n", b.String())
 	}
 
@@ -43,7 +43,7 @@ func TestRawPrint(t *testing.T) {
 			b: "test",
 		}
 
-		logger.PrintO(test)
+		logger.Printd(test)
 		require.Equal(t, "log test\n", b.String())
 	}
 }

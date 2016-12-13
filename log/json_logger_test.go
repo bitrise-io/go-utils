@@ -13,7 +13,7 @@ func TestJSONPrint(t *testing.T) {
 		var b bytes.Buffer
 		logger := NewJSONLoger(&b)
 
-		logger.PrintO(Message{Content: "test"})
+		logger.Printd(Message{Content: "test"})
 		require.Equal(t, `{"content":"test"}`+"\n", b.String())
 	}
 
@@ -27,7 +27,7 @@ func TestJSONPrint(t *testing.T) {
 			b: "test",
 		}
 
-		logger.PrintO(test)
+		logger.Printd(test)
 		require.Equal(t, `{"a":"log","b":"test"}`+"\n", b.String())
 	}
 }

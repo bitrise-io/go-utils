@@ -25,13 +25,7 @@ func NewDefaultJSONLoger() JSONLoger {
 	}
 }
 
-// Printd ...
-func (l JSONLoger) Printd(f Formatable) {
-	fmt.Fprintln(l.writer, f.JSON())
-}
-
-// Printf ...
-func (l JSONLoger) Printf(format string, a ...interface{}) {
-	str := fmt.Sprintf(format, a...)
-	l.Printd(Message{Content: str})
+// Print ...
+func (l JSONLoger) Print(f Formatable) {
+	fmt.Fprint(l.writer, f.JSON())
 }

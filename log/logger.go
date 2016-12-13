@@ -22,6 +22,15 @@ type Message struct {
 	Warnings []string    `json:"warnings,omitempty"`
 }
 
+// NewMessage ...
+func NewMessage(content interface{}, err string, warnings ...string) Message {
+	return Message{
+		Content:  content,
+		Error:    err,
+		Warnings: warnings,
+	}
+}
+
 // String ...
 func (m Message) String() string {
 	msg := ""

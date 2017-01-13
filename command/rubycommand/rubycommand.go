@@ -33,12 +33,12 @@ const (
 	RbenvRuby
 )
 
-func cmdExist(cmdSlice ...string) bool {
-	if len(cmdSlice) == 0 {
+func cmdExist(slice ...string) bool {
+	if len(slice) == 0 {
 		return false
 	}
 
-	cmd, err := command.NewFromSlice(cmdSlice...)
+	cmd, err := command.NewFromSlice(slice...)
 	if err != nil {
 		return false
 	}

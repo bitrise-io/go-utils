@@ -1,4 +1,4 @@
-package cmdex
+package command
 
 import (
 	"testing"
@@ -7,22 +7,22 @@ import (
 )
 
 func TestNewCommandSlice(t *testing.T) {
-	t.Log("it fails if cmdSlice empty")
+	t.Log("it fails if slice empty")
 	{
-		cmd, err := NewCommandFromSlice([]string{})
+		cmd, err := NewFromSlice()
 		require.Error(t, err)
-		require.Equal(t, (*CommandModel)(nil), cmd)
+		require.Equal(t, (*Model)(nil), cmd)
 	}
 
 	t.Log("it creates cmd if cmdSlice has 1 element")
 	{
-		_, err := NewCommandFromSlice([]string{"ls"})
+		_, err := NewFromSlice("ls")
 		require.NoError(t, err)
 	}
 
 	t.Log("it creates cmd if cmdSlice has multiple elements")
 	{
-		_, err := NewCommandFromSlice([]string{"ls", "-a", "-l", "-h"})
+		_, err := NewFromSlice("ls", "-a", "-l", "-h")
 		require.NoError(t, err)
 	}
 }

@@ -56,28 +56,6 @@ func TestSudoNeeded(t *testing.T) {
 	}
 }
 
-/*
-func findGemInList(gemList, gem, version string) (bool, error) {
-	// minitest (5.10.1, 5.9.1, 5.9.0, 5.8.3, 4.7.5)
-	pattern := fmt.Sprintf(`^%s \(.*%s.*\)`, gem, version)
-	re := regexp.MustCompile(pattern)
-
-	reader := bytes.NewReader([]byte(gemList))
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		match := re.FindString(line)
-		if match != "" {
-			return true, nil
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return false, err
-	}
-	return false, nil
-}
-*/
-
 func TestFindGemInList(t *testing.T) {
 	t.Log("finds gem")
 	{

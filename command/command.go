@@ -43,78 +43,78 @@ func NewFromSlice(slice ...string) (*Model, error) {
 	return New(slice[0], slice[1:]...), nil
 }
 
-// NewCmd ...
-func NewCmd(cmd *exec.Cmd) *Model {
+// NewWithCmd ...
+func NewWithCmd(cmd *exec.Cmd) *Model {
 	return &Model{
 		cmd: cmd,
 	}
 }
 
 // GetCmd ...
-func (command *Model) GetCmd() *exec.Cmd {
-	return command.cmd
+func (m *Model) GetCmd() *exec.Cmd {
+	return m.cmd
 }
 
 // SetDir ...
-func (command *Model) SetDir(dir string) *Model {
-	command.cmd.Dir = dir
-	return command
+func (m *Model) SetDir(dir string) *Model {
+	m.cmd.Dir = dir
+	return m
 }
 
 // SetEnvs ...
-func (command *Model) SetEnvs(envs ...string) *Model {
-	command.cmd.Env = envs
-	return command
+func (m *Model) SetEnvs(envs ...string) *Model {
+	m.cmd.Env = envs
+	return m
 }
 
 // AppendEnvs - appends the envs to the current os.Environ()
 // Calling this multiple times will NOT appens the envs one by one,
 // only the last "envs" set will be appended to os.Environ()!
-func (command *Model) AppendEnvs(envs ...string) *Model {
-	return command.SetEnvs(append(os.Environ(), envs...)...)
+func (m *Model) AppendEnvs(envs ...string) *Model {
+	return m.SetEnvs(append(os.Environ(), envs...)...)
 }
 
 // SetStdin ...
-func (command *Model) SetStdin(in io.Reader) *Model {
-	command.cmd.Stdin = in
-	return command
+func (m *Model) SetStdin(in io.Reader) *Model {
+	m.cmd.Stdin = in
+	return m
 }
 
 // SetStdout ...
-func (command *Model) SetStdout(out io.Writer) *Model {
-	command.cmd.Stdout = out
-	return command
+func (m *Model) SetStdout(out io.Writer) *Model {
+	m.cmd.Stdout = out
+	return m
 }
 
 // SetStderr ...
-func (command *Model) SetStderr(err io.Writer) *Model {
-	command.cmd.Stderr = err
-	return command
+func (m *Model) SetStderr(err io.Writer) *Model {
+	m.cmd.Stderr = err
+	return m
 }
 
 // Run ...
-func (command Model) Run() error {
-	return command.cmd.Run()
+func (m Model) Run() error {
+	return m.cmd.Run()
 }
 
 // RunAndReturnExitCode ...
-func (command Model) RunAndReturnExitCode() (int, error) {
-	return RunCmdAndReturnExitCode(command.cmd)
+func (m Model) RunAndReturnExitCode() (int, error) {
+	return RunCmdAndReturnExitCode(m.cmd)
 }
 
 // RunAndReturnTrimmedOutput ...
-func (command Model) RunAndReturnTrimmedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedOutput(command.cmd)
+func (m Model) RunAndReturnTrimmedOutput() (string, error) {
+	return RunCmdAndReturnTrimmedOutput(m.cmd)
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
-func (command Model) RunAndReturnTrimmedCombinedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedCombinedOutput(command.cmd)
+func (m Model) RunAndReturnTrimmedCombinedOutput() (string, error) {
+	return RunCmdAndReturnTrimmedCombinedOutput(m.cmd)
 }
 
 // PrintableCommandArgs ...
-func (command Model) PrintableCommandArgs() string {
-	return PrintableCommandArgs(false, command.cmd.Args)
+func (m Model) PrintableCommandArgs() string {
+	return PrintableCommandArgs(false, m.cmd.Args)
 }
 
 // ----------

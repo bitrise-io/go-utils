@@ -38,11 +38,6 @@ func CloneTagOrBranch(uri, destination, tagOrBranch string) error {
 	return cmd.Run()
 }
 
-// CloneTagCommand ...
-func CloneTagCommand(uri, destination, tag string) *command.Model {
-	return command.New("git", "clone", "--recursive", "--branch", tag, uri, destination)
-}
-
 // BranchCommand ...
 func BranchCommand() *command.Model {
 	return command.New("git", "branch")
@@ -50,10 +45,10 @@ func BranchCommand() *command.Model {
 
 // CloneTagAndEnsureHead ...
 func CloneTagAndEnsureHead(uri, destination, tag string) error {
-	cmd := CloneTagCommand(uri, destination, tag)
+	cmd := CloneTagOrBranchCommand(uri, destination, tag)
 	setStandardOutAndErr(cmd)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("git clone tag failed, error: %s", err)
+		return fmt.Errorf("(%s) failed, error: %s", cmd.PrintableCommandArgs(), err)
 	}
 
 	cmd = BranchCommand()
@@ -97,19 +92,19 @@ func PullCommand() *command.Model {
 }
 
 // Pull ...
-func Pull(destination string) error {
+func Pull(sourceDir string) error {
 	cmd := PullCommand()
 	setStandardOutAndErr(cmd)
-	cmd.SetDir(destination)
+	cmd.SetDir(sourceDir)
 	return cmd.Run()
 }
 
 // Update ...
-func Update(git, sourceDir string) error {
+func Update(uri, sourceDir string) error {
 	if exists, err := pathutil.IsPathExists(sourceDir); err != nil {
 		return err
 	} else if !exists {
-		return Clone(git, sourceDir)
+		return Clone(uri, sourceDir)
 	}
 
 	return Pull(sourceDir)
@@ -147,8 +142,8 @@ func AddCommand(pth string) *command.Model {
 }
 
 // AddFile ...
-func AddFile(sourceDir, filePath string) error {
-	cmd := AddCommand(filePath)
+func AddFile(sourceDir, filePth string) error {
+	cmd := AddCommand(filePth)
 	setStandardOutAndErr(cmd)
 	cmd.SetDir(sourceDir)
 	return cmd.Run()
@@ -209,7 +204,6 @@ func GetCommitHashOfHeadCommand() *command.Model {
 // GetCommitHashOfHead ...
 func GetCommitHashOfHead(pth string) (string, error) {
 	cmd := GetCommitHashOfHeadCommand()
-	setStandardOutAndErr(cmd)
 	cmd.SetDir(pth)
 	return cmd.RunAndReturnTrimmedCombinedOutput()
 }

@@ -64,6 +64,14 @@ workflows:
         title: Go test
         inputs:
         - content: go test ./...
+    - script:
+        title: Go test coverage
+        description: |
+          To get the HTML report of a single package:
+          go test -coverprofile=coverage.out ./PACKAGE/
+          go tool cover -html coverage.out
+        inputs:
+        - content: go test -cover ./...
 
   ci:
     before_run:

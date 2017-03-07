@@ -64,6 +64,10 @@ workflows:
         title: Go test
         inputs:
         - content: go test ./...
+    - script:
+        title: Go test coverage
+        inputs:
+        - content: go test -cover ./...
 
   ci:
     before_run:

@@ -38,7 +38,7 @@ func cmdExist(slice ...string) bool {
 		return false
 	}
 
-	cmd, err := command.NewFromSlice(slice...)
+	cmd, err := command.NewWithParams(slice...)
 	if err != nil {
 		return false
 	}
@@ -86,24 +86,29 @@ func sudoNeeded(installType InstallType, slice ...string) bool {
 	return false
 }
 
-// NewFromSlice ...
-func NewFromSlice(slice ...string) (*command.Model, error) {
+// NewWithParams ...
+func NewWithParams(params ...string) (*command.Model, error) {
 	rubyInstallType := installType()
 	if rubyInstallType == Unkown {
 		return nil, errors.New("unkown ruby installation type")
 	}
 
-	if sudoNeeded(rubyInstallType, slice...) {
-		slice = append([]string{"sudo"}, slice...)
+	if sudoNeeded(rubyInstallType, params...) {
+		params = append([]string{"sudo"}, params...)
 	}
 
-	return command.NewFromSlice(slice...)
+	return command.NewWithParams(params...)
+}
+
+// NewFromSlice ...
+func NewFromSlice(slice []string) (*command.Model, error) {
+	return NewWithParams(slice...)
 }
 
 // New ...
 func New(name string, args ...string) (*command.Model, error) {
 	slice := append([]string{name}, args...)
-	return NewFromSlice(slice...)
+	return NewWithParams(slice...)
 }
 
 // GemUpdate ...
@@ -139,7 +144,7 @@ func GemInstall(gem, version string) ([]*command.Model, error) {
 		slice = append(slice, "-v", version)
 	}
 
-	cmd, err := NewFromSlice(slice...)
+	cmd, err := NewFromSlice(slice)
 	if err != nil {
 		return []*command.Model{}, err
 	}

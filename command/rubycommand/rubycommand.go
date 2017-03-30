@@ -38,7 +38,7 @@ func cmdExist(slice ...string) bool {
 		return false
 	}
 
-	cmd, err := command.NewFromSlice(slice...)
+	cmd, err := command.NewWithParams(slice...)
 	if err != nil {
 		return false
 	}
@@ -97,7 +97,7 @@ func NewWithParams(params ...string) (*command.Model, error) {
 		params = append([]string{"sudo"}, params...)
 	}
 
-	return command.NewFromSlice(params...)
+	return command.NewWithParams(params...)
 }
 
 // NewFromSlice ...

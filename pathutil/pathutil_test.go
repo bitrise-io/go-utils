@@ -18,12 +18,12 @@ func TestChangeDirForFunction(t *testing.T) {
 
 	// now change dir, but just for the function
 	newDir := UserHomeDir()
-	ChangeDirForFunction(newDir, func() {
+	require.NoError(t, ChangeDirForFunction(newDir, func() {
 		// current dir should be the changed value
 		dir, err := CurrentWorkingDirectoryAbsolutePath()
 		require.NoError(t, err)
 		require.Equal(t, newDir, dir)
-	})
+	}))
 
 	// current dir should be the original value
 	dir, err := CurrentWorkingDirectoryAbsolutePath()

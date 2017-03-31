@@ -18,7 +18,6 @@ func TestChangeDirForFunction(t *testing.T) {
 
 	// now change dir, but just for the function
 	newDir := UserHomeDir()
-	require.NoError(t, err)
 	ChangeDirForFunction(newDir, func() {
 		// current dir should be the changed value
 		dir, err := CurrentWorkingDirectoryAbsolutePath()
@@ -38,8 +37,6 @@ func TestRevokableChangeDir(t *testing.T) {
 
 	// revokable change dir
 	newDir := UserHomeDir()
-	require.NoError(t, err)
-
 	revokeFn, err := RevokableChangeDir(newDir)
 	require.NoError(t, err)
 

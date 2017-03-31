@@ -12,6 +12,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestChangeDirForFunction(t *testing.T) {
+	origDir, err := CurrentWorkingDirectoryAbsolutePath()
+	require.NoError(t, err)
+
+	// now change dir, but just for the function
+	newDir := UserHomeDir()
+	require.NoError(t, err)
+	ChangeDirForFunction(newDir, func() {
+		// current dir should be the changed value
+		dir, err := CurrentWorkingDirectoryAbsolutePath()
+		require.NoError(t, err)
+		require.Equal(t, newDir, dir)
+	})
+
+	// current dir should be the original value
+	dir, err := CurrentWorkingDirectoryAbsolutePath()
+	require.NoError(t, err)
+	require.Equal(t, origDir, dir)
+}
+
+func TestRevokableChangeDir(t *testing.T) {
+	origDir, err := CurrentWorkingDirectoryAbsolutePath()
+	require.NoError(t, err)
+
+	// revokable change dir
+	newDir := UserHomeDir()
+	require.NoError(t, err)
+
+	revokeFn, err := RevokableChangeDir(newDir)
+	require.NoError(t, err)
+
+	{
+		// current dir should be the changed value
+		dir, err := CurrentWorkingDirectoryAbsolutePath()
+		require.NoError(t, err)
+		require.Equal(t, newDir, dir)
+	}
+
+	{
+		// revoke it
+		require.NoError(t, revokeFn())
+
+		// current dir should be the original value
+		dir, err := CurrentWorkingDirectoryAbsolutePath()
+		require.NoError(t, err)
+		require.Equal(t, origDir, dir)
+	}
+
+}
+
 func TestEnsureDirExist(t *testing.T) {
 	// testDir not exist
 

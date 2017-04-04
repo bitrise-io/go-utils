@@ -106,6 +106,34 @@ func TestNewIntPtr(t *testing.T) {
 	}
 }
 
+func TestNewInt64Ptr(t *testing.T) {
+	t.Log("Create 1 ptr")
+	if *NewInt64Ptr(1) != 1 {
+		t.Fatal("Invalid pointer")
+	}
+
+	t.Log("Create 0 ptr")
+	if *NewInt64Ptr(0) != 0 {
+		t.Fatal("Invalid pointer")
+	}
+
+	t.Log("Try to change the original value - should not be affected!")
+	myint := int64(2)
+	myintPtr := NewInt64Ptr(myint)
+	if *myintPtr != 2 {
+		t.Fatal("Invalid pointer - original value")
+	}
+
+	*myintPtr = 3
+	if *myintPtr != 3 {
+		t.Fatal("Invalid pointer - changed value")
+	}
+	// the original var should remain intact!
+	if myint != 2 {
+		t.Fatal("The original var was affected!!")
+	}
+}
+
 func TestBool(t *testing.T) {
 	require.Equal(t, false, Bool(nil))
 

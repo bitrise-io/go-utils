@@ -2,65 +2,73 @@ package ziputil
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// Zip ...
-func Zip(sourcePth, destinationZipPth string) error {
-	parentDir := filepath.Dir(sourcePth)
-	dirName := filepath.Base(sourcePth)
-	cmd := command.New("/usr/bin/zip", "-rTy", destinationZipPth, dirName)
-	cmd.SetDir(parentDir)
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		return fmt.Errorf("Failed to zip: %s, output: %s, error: %s", sourcePth, out, err)
+// ZipDir ...
+func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
+	if exist, err := pathutil.IsDirExists(sourceDirPth); err != nil {
+		return err
+	} else if !exist {
+		return fmt.Errorf("dir (%s) not exist", sourceDirPth)
 	}
+
+	workDir := filepath.Dir(sourceDirPth)
+	if isContentOnly {
+		workDir = sourceDirPth
+	}
+
+	zipTarget := filepath.Base(sourceDirPth)
+	if isContentOnly {
+		zipTarget = "."
+	}
+
+	// -r - Travel the directory structure recursively
+	// -T - Test the integrity of the new zip file
+	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
+	cmd := command.New("/usr/bin/zip", "-rTy", destinationZipPth, zipTarget)
+	cmd.SetDir(workDir)
+	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
+	}
+
+	return nil
+}
+
+// ZipFile ...
+func ZipFile(sourceFilePth, destinationZipPth string) error {
+	if exist, err := pathutil.IsPathExists(sourceFilePth); err != nil {
+		return err
+	} else if !exist {
+		return fmt.Errorf("file (%s) not exist", sourceFilePth)
+	}
+
+	workDir := filepath.Dir(sourceFilePth)
+	zipTarget := filepath.Base(sourceFilePth)
+
+	// -T - Test the integrity of the new zip file
+	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
+	cmd := command.New("/usr/bin/zip", "-Ty", destinationZipPth, zipTarget)
+	cmd.SetDir(workDir)
+	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
+	}
+
 	return nil
 }
 
 // UnZip ...
-func UnZip(sourceZipPth string) (string, error) {
-	// copy zip to tmp dir
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("__unzip__")
-	if err != nil {
-		return "", err
+func UnZip(zip, intoDir string) error {
+	workDir := filepath.Dir(intoDir)
+
+	cmd := command.New("/usr/bin/unzip", zip, "-d", intoDir)
+	cmd.SetDir(workDir)
+	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
+		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
 	}
 
-	tmpSourcePth := filepath.Join(tmpDir, filepath.Base(sourceZipPth))
-	if err := command.CopyFile(sourceZipPth, tmpSourcePth); err != nil {
-		return "", err
-	}
-	// ---
-
-	// unzip
-	cmd := command.New("/usr/bin/unzip", sourceZipPth)
-	cmd.SetDir(tmpDir)
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("Failed to unzip: %s, output: %s, error: %s", tmpSourcePth, out, err)
-	}
-	// ---
-
-	// serch for the unzipped path
-	if err := os.RemoveAll(tmpSourcePth); err != nil {
-		return "", err
-	}
-
-	pattern := filepath.Join(tmpDir, "*")
-	pths, err := filepath.Glob(pattern)
-	if err != nil {
-		return "", err
-	}
-	if len(pths) == 0 {
-		return "", fmt.Errorf("unzipped file not found")
-	} else if len(pths) > 1 {
-		return "", fmt.Errorf("multiple file generated")
-	}
-	// ---
-
-	return pths[0], nil
+	return nil
 }

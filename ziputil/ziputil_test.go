@@ -20,7 +20,7 @@ func TestZip(t *testing.T) {
 		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
-		require.NoError(t, Zip(sourceFile, destinationZip, false))
+		require.NoError(t, ZipFile(sourceFile, destinationZip))
 
 		exist, err := pathutil.IsPathExists(destinationZip)
 		require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestZip(t *testing.T) {
 		require.NoError(t, os.MkdirAll(sourceDir, 0777))
 
 		destinationZip := filepath.Join(tmpDir, "destinationDir.zip")
-		require.NoError(t, Zip(sourceDir, destinationZip, false))
+		require.NoError(t, ZipDir(sourceDir, destinationZip, false))
 
 		exist, err := pathutil.IsPathExists(destinationZip)
 		require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestZip(t *testing.T) {
 		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
-		require.NoError(t, Zip(contentOfDirToZip, destinationZip, true))
+		require.NoError(t, ZipDir(contentOfDirToZip, destinationZip, true))
 	}
 }
 
@@ -77,7 +77,7 @@ func TestUnZip(t *testing.T) {
 
 		// create zip at tmp/destinationFile.zip
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
-		require.NoError(t, Zip(sourceFile, destinationZip, false))
+		require.NoError(t, ZipFile(sourceFile, destinationZip))
 
 		// unzip into tmp/
 		require.NoError(t, UnZip(destinationZip, tmpDir))
@@ -102,7 +102,7 @@ func TestUnZip(t *testing.T) {
 
 		// create zip at tmp/destinationDir.zip
 		destinationZip := filepath.Join(contentOfDirToZip, "destinationDir.zip")
-		require.NoError(t, Zip(sourceDir, destinationZip, false))
+		require.NoError(t, ZipDir(sourceDir, destinationZip, false))
 
 		// unzip into tmp/
 		require.NoError(t, UnZip(destinationZip, tmpDir))
@@ -131,7 +131,7 @@ func TestUnZip(t *testing.T) {
 
 		// create zip at tmp/destinationDir.zip
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
-		require.NoError(t, Zip(contentOfDirToZip, destinationZip, true))
+		require.NoError(t, ZipDir(contentOfDirToZip, destinationZip, true))
 
 		// remove tmp/source, since this path would be the unzip destination
 		require.NoError(t, os.RemoveAll(contentOfDirToZip))

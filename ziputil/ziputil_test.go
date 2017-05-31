@@ -168,6 +168,9 @@ func TestUnZip(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, UnZip(destinationZip, destTmpDir))
+		exist, err := pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
 		// ---
 	}
 
@@ -191,6 +194,9 @@ func TestUnZip(t *testing.T) {
 
 		// unzip into the same tmp dir (tmp1)
 		require.NoError(t, UnZip("./destinationFile.zip", "./unzipped"))
+		exist, err := pathutil.IsPathExists("./unzipped/sourceFile")
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
 		// ---
 
 		// unzip into another tmp dir (tmp2)
@@ -198,6 +204,9 @@ func TestUnZip(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, UnZip("./destinationFile.zip", destTmpDir))
+		exist, err = pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
 
 		require.NoError(t, revokeFn())
 		// ---

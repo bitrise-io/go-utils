@@ -149,4 +149,66 @@ func TestUnZip(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "", content)
 	}
+
+	t.Log("unzip into different dir")
+	{
+		// create zip at tmp dir (tmp1)
+		sourceTmpDir, err := pathutil.NormalizedOSTempDirPath("__1__")
+		require.NoError(t, err)
+
+		sourceFile := filepath.Join(sourceTmpDir, "sourceFile")
+		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+
+		destinationZip := filepath.Join(sourceTmpDir, "destinationFile.zip")
+		require.NoError(t, ZipFile(sourceFile, destinationZip))
+		// ---
+
+		// unzip into another tmp dir (tmp2)
+		destTmpDir, err := pathutil.NormalizedOSTempDirPath("__2__")
+		require.NoError(t, err)
+
+		require.NoError(t, UnZip(destinationZip, destTmpDir))
+		exist, err := pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+		// ---
+	}
+
+	t.Log("relative path")
+	{
+		// create zip at tmp dir (tmp1) - using relative path
+		sourceTmpDir, err := pathutil.NormalizedOSTempDirPath("__1__")
+		require.NoError(t, err)
+
+		revokeFn, err := pathutil.RevokableChangeDir(sourceTmpDir)
+		require.NoError(t, err)
+		defer func() {
+			require.NoError(t, revokeFn())
+		}()
+
+		sourceFile := filepath.Join(sourceTmpDir, "sourceFile")
+		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+
+		require.NoError(t, ZipFile("./sourceFile", "./destinationFile.zip"))
+		// ---
+
+		// unzip into the same tmp dir (tmp1)
+		require.NoError(t, UnZip("./destinationFile.zip", "./unzipped"))
+		exist, err := pathutil.IsPathExists("./unzipped/sourceFile")
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+		// ---
+
+		// unzip into another tmp dir (tmp2)
+		destTmpDir, err := pathutil.NormalizedOSTempDirPath("__2__")
+		require.NoError(t, err)
+
+		require.NoError(t, UnZip("./destinationFile.zip", destTmpDir))
+		exist, err = pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+
+		require.NoError(t, revokeFn())
+		// ---
+	}
 }

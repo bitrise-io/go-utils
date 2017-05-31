@@ -62,10 +62,7 @@ func ZipFile(sourceFilePth, destinationZipPth string) error {
 
 // UnZip ...
 func UnZip(zip, intoDir string) error {
-	workDir := filepath.Dir(intoDir)
-
 	cmd := command.New("/usr/bin/unzip", zip, "-d", intoDir)
-	cmd.SetDir(workDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
 	}

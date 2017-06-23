@@ -16,7 +16,7 @@ type Inventory struct {
 	Count    uint
 }
 
-func TestIndexOfStringInSlice(t *testing.T) {
+func TestEvaluateTemplateStringToString(t *testing.T) {
 	t.Log("Empty")
 	result, err := EvaluateTemplateStringToString("", EmptyInventory{}, template.FuncMap{})
 	require.NoError(t, err)
@@ -54,4 +54,24 @@ func TestIndexOfStringInSlice(t *testing.T) {
 		inv, templateFuncMap)
 	require.NoError(t, err)
 	require.Equal(t, "18 items are made of glass", result)
+}
+
+func TestEvaluateTemplateStringToStringWithDelimiter(t *testing.T) {
+	// custom delimiter
+	{
+		inv := Inventory{"wool", 17}
+		result, err := EvaluateTemplateStringToStringWithDelimiter("<<.Count>> items are made of <<.Material>>",
+			inv, template.FuncMap{}, "<<", ">>")
+		require.NoError(t, err)
+		require.Equal(t, "17 items are made of wool", result)
+	}
+
+	// custom delimiter - but defalt used in template
+	{
+		inv := Inventory{"wool", 17}
+		result, err := EvaluateTemplateStringToStringWithDelimiter("{{.Count}} items are made of {{.Material}}",
+			inv, template.FuncMap{}, "<<", ">>")
+		require.NoError(t, err)
+		require.Equal(t, "{{.Count}} items are made of {{.Material}}", result)
+	}
 }

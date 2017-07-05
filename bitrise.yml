@@ -23,6 +23,7 @@ workflows:
             go get -u github.com/golang/lint/golint
 
             go get -u github.com/stretchr/testify/require
+            go get -u golang.org/x/crypto/ssh/terminal
 
   test:
     steps:

@@ -15,8 +15,8 @@ func NewWrapper(spinner Spinner) Wrapper {
 }
 
 // NewDefaultWrapper ...
-func NewDefaultWrapper() Wrapper {
-	return NewWrapper(NewDefaultSpinner())
+func NewDefaultWrapper(message string) Wrapper {
+	return NewWrapper(NewDefaultSpinner(message))
 }
 
 // WrapAction ...

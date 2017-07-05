@@ -10,8 +10,8 @@ import (
 
 // Spinner ...
 type Spinner struct {
-	chars   []string
 	message string
+	chars   []string
 	delay   time.Duration
 	writer  io.Writer
 
@@ -21,10 +21,10 @@ type Spinner struct {
 }
 
 // NewSpinner ...
-func NewSpinner(chars []string, message string, delay time.Duration, writer io.Writer) Spinner {
+func NewSpinner(message string, chars []string, delay time.Duration, writer io.Writer) Spinner {
 	return Spinner{
-		chars:   chars,
 		message: message,
+		chars:   chars,
 		delay:   delay,
 		writer:  writer,
 
@@ -38,7 +38,7 @@ func NewDefaultSpinner(message string) Spinner {
 	chars := []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 	delay := 100 * time.Millisecond
 	writer := os.Stdout
-	return NewSpinner(chars, message, delay, writer)
+	return NewSpinner(message, chars, delay, writer)
 }
 
 func (s *Spinner) erase() {

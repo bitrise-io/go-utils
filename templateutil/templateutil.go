@@ -5,6 +5,9 @@ import (
 	"text/template"
 )
 
+// evaluateTemplate ...
+//
+// templateOptions: https://golang.org/pkg/text/template/#Template.Option
 func evaluateTemplate(
 	templateContent string,
 	inventory interface{},
@@ -30,6 +33,8 @@ func evaluateTemplate(
 }
 
 // EvaluateTemplateStringToStringWithDelimiterAndOpts ...
+//
+// templateOptions: https://golang.org/pkg/text/template/#Template.Option
 func EvaluateTemplateStringToStringWithDelimiterAndOpts(
 	templateContent string,
 	inventory interface{},

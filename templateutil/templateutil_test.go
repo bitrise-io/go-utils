@@ -99,7 +99,7 @@ func Test_evaluateTemplate(t *testing.T) {
 }
 
 func TestEvaluateTemplateStringToStringWithDelimiterAndOpts(t *testing.T) {
-	// No options
+	t.Log("No options")
 	{
 		inv := Inventory{"wool", 17}
 		result, err := EvaluateTemplateStringToStringWithDelimiterAndOpts("<<.Count>> items are made of <<.Material>>",
@@ -109,11 +109,21 @@ func TestEvaluateTemplateStringToStringWithDelimiterAndOpts(t *testing.T) {
 		require.Equal(t, "17 items are made of wool", result)
 	}
 
-	// Template options - error on missing
+	t.Log("Template options - error on missing")
 	{
 		inv := Inventory{"wool", 17}
 		result, err := EvaluateTemplateStringToStringWithDelimiterAndOpts("<<.Undefined>> items are made of <<.Material>>",
 			inv, template.FuncMap{}, "<<", ">>",
+			[]string{"missingkey=error"})
+		require.EqualError(t, err, `template: :1:2: executing "" at <.Undefined>: can't evaluate field Undefined in type templateutil.Inventory`)
+		require.Equal(t, "", result)
+	}
+
+	t.Log("Template options - error on missing; default delimiters")
+	{
+		inv := Inventory{"wool", 17}
+		result, err := EvaluateTemplateStringToStringWithDelimiterAndOpts("{{.UndefinedDefDelim}} items are made of {{.Material}}",
+			inv, template.FuncMap{}, "", "",
 			[]string{"missingkey=error"})
 		require.EqualError(t, err, `template: :1:2: executing "" at <.Undefined>: can't evaluate field Undefined in type templateutil.Inventory`)
 		require.Equal(t, "", result)

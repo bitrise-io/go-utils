@@ -15,7 +15,7 @@ source "https://rubygems.org"
 gem "json"
 `
 
-const gemfileLockContet = `GEM
+const gemfileLockContent = `GEM
   remote: https://rubygems.org/
   specs:
     json (2.1.0)
@@ -72,7 +72,7 @@ func TestBundleInstallCommand(t *testing.T) {
 		runner := New(rubyScriptWithGemContent)
 		require.NotNil(t, runner)
 
-		bundleInstallCmd, err := runner.BundleInstallCommand(gemfileContent, gemfileLockContet)
+		bundleInstallCmd, err := runner.BundleInstallCommand(gemfileContent, gemfileLockContent)
 		require.NoError(t, err)
 
 		cmd := bundleInstallCmd.GetCmd()
@@ -118,7 +118,7 @@ func TestRunScriptCommand(t *testing.T) {
 		runner := New(rubyScriptWithGemContent)
 		require.NotNil(t, runner)
 
-		bundleInstallCmd, err := runner.BundleInstallCommand(gemfileContent, gemfileLockContet)
+		bundleInstallCmd, err := runner.BundleInstallCommand(gemfileContent, gemfileLockContent)
 		require.NoError(t, err)
 		t.Logf("$ %s", bundleInstallCmd.PrintableCommandArgs())
 		require.NoError(t, bundleInstallCmd.Run())

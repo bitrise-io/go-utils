@@ -134,6 +134,104 @@ func TestNewInt64Ptr(t *testing.T) {
 	}
 }
 
+/*
+func TestNewStringPtr(t *testing.T) {
+	t.Log("Create a string")
+	if *NewStringPtr("mystr") != "mystr" {
+		t.Fatal("Invalid pointer")
+	}
+
+	t.Log("Try to change the original value - should not be affected!")
+	myStr := "my-orig-str"
+	myStrPtr := NewStringPtr(myStr)
+	if *myStrPtr != "my-orig-str" {
+		t.Fatal("Invalid pointer - original value")
+	}
+	*myStrPtr = "new-str-value"
+	if *myStrPtr != "new-str-value" {
+		t.Fatal("Invalid pointer - changed value")
+	}
+	// the original var should remain intact!
+	if myStr != "my-orig-str" {
+		t.Fatal("The original var was affected!!")
+	}
+}
+*/
+
+func TestNewMapStringInterfacePtr(t *testing.T) {
+	t.Log("Create a map")
+	{
+		ptr := NewMapStringInterfacePtr(map[string]interface{}{"key": "value"})
+		require.Equal(t, 1, len(*ptr))
+		require.Equal(t, "value", (*ptr)["key"])
+	}
+
+	t.Log("Try to change the original value - should not be affected!")
+	{
+		myMap := map[string]interface{}{"key": "orig-value"}
+		myMapPtr := NewMapStringInterfacePtr(myMap)
+		require.Equal(t, 1, len(*myMapPtr))
+		require.Equal(t, "orig-value", (*myMapPtr)["key"])
+
+		(*myMapPtr)["key"] = "new-value"
+		require.Equal(t, 1, len(*myMapPtr))
+		require.Equal(t, "new-value", (*myMapPtr)["key"])
+
+		// the original var should remain intact!
+		require.Equal(t, 1, len(myMap))
+		require.Equal(t, "orig-value", (myMap)["key"])
+	}
+
+	t.Log("Try to change the original value - should not be affected!")
+	{
+		type TestObject struct {
+			Title   string
+			Message string
+		}
+
+		// create ptr with an orig value
+		testObj := TestObject{
+			Title:   "title",
+			Message: "message",
+		}
+		myMap := map[string]interface{}{"key": testObj}
+		myMapPtr := NewMapStringInterfacePtr(myMap)
+
+		require.Equal(t, 1, len(*myMapPtr))
+		obj, ok := (*myMapPtr)["key"]
+		require.Equal(t, true, ok)
+
+		casted, ok := obj.(TestObject)
+		require.Equal(t, true, ok)
+		require.Equal(t, "title", casted.Title)
+		require.Equal(t, "message", casted.Message)
+
+		// modify the value of the ptr
+		casted.Title = "new-title"
+		casted.Message = "new-message"
+
+		(*myMapPtr)["key"] = casted
+		require.Equal(t, 1, len(*myMapPtr))
+		newObj, ok := (*myMapPtr)["key"]
+		require.Equal(t, true, ok)
+
+		newCasted, ok := newObj.(TestObject)
+		require.Equal(t, true, ok)
+		require.Equal(t, "new-title", newCasted.Title)
+		require.Equal(t, "new-message", newCasted.Message)
+
+		// the original var should remain intact!
+		require.Equal(t, 1, len(myMap))
+		origObj, ok := myMap["key"]
+		require.Equal(t, true, ok)
+
+		origCasted, ok := origObj.(TestObject)
+		require.Equal(t, true, ok)
+		require.Equal(t, "title", origCasted.Title)
+		require.Equal(t, "message", origCasted.Message)
+	}
+}
+
 func TestBool(t *testing.T) {
 	require.Equal(t, false, Bool(nil))
 

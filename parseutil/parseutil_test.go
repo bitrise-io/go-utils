@@ -3,6 +3,8 @@ package parseutil
 import (
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,4 +94,56 @@ func TestCastToBoolPtr(t *testing.T) {
 	casted, ok = CastToBoolPtr("test")
 	require.Equal(t, false, ok)
 	require.Equal(t, (*bool)(nil), casted)
+}
+
+func TestCastToMapStringInterfacePtr(t *testing.T) {
+	t.Log("cast map[string]string")
+	{
+		serializedObj := `key: "value"`
+		var obj interface{}
+		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
+		castedObj, ok := CastToMapStringInterfacePtr(obj.(interface{}))
+		require.Equal(t, true, ok)
+		require.Equal(t, 1, len(*castedObj))
+		require.Equal(t, "value", (*castedObj)["key"])
+	}
+
+	t.Log("cast map[string]bool")
+	{
+		serializedObj := `key: true`
+		var obj interface{}
+		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
+		castedObj, ok := CastToMapStringInterfacePtr(obj)
+		require.Equal(t, true, ok)
+		require.Equal(t, 1, len(*castedObj))
+		require.Equal(t, true, (*castedObj)["key"])
+	}
+
+	t.Log("cast map[int]bool")
+	{
+		serializedObj := `1: true`
+		var obj interface{}
+		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
+		castedObj, ok := CastToMapStringInterfacePtr(obj)
+		require.Equal(t, true, ok)
+		require.Equal(t, 1, len(*castedObj))
+		require.Equal(t, true, (*castedObj)["1"])
+	}
+
+	t.Log("cast string -- FAIL")
+	{
+		serializedObj := `"message"`
+		var obj interface{}
+		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
+		castedObj, ok := CastToMapStringInterfacePtr(obj)
+		require.Equal(t, false, ok)
+		require.Nil(t, castedObj)
+	}
+
+	t.Log("cast map[string]string - FAIL")
+	{
+		castedObj, ok := CastToMapStringInterfacePtr(map[string]string{"key": "value"})
+		require.Equal(t, false, ok)
+		require.Nil(t, castedObj)
+	}
 }

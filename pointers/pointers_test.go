@@ -134,30 +134,6 @@ func TestNewInt64Ptr(t *testing.T) {
 	}
 }
 
-/*
-func TestNewStringPtr(t *testing.T) {
-	t.Log("Create a string")
-	if *NewStringPtr("mystr") != "mystr" {
-		t.Fatal("Invalid pointer")
-	}
-
-	t.Log("Try to change the original value - should not be affected!")
-	myStr := "my-orig-str"
-	myStrPtr := NewStringPtr(myStr)
-	if *myStrPtr != "my-orig-str" {
-		t.Fatal("Invalid pointer - original value")
-	}
-	*myStrPtr = "new-str-value"
-	if *myStrPtr != "new-str-value" {
-		t.Fatal("Invalid pointer - changed value")
-	}
-	// the original var should remain intact!
-	if myStr != "my-orig-str" {
-		t.Fatal("The original var was affected!!")
-	}
-}
-*/
-
 func TestNewMapStringInterfacePtr(t *testing.T) {
 	t.Log("Create a map")
 	{

@@ -119,18 +119,17 @@ func TestCastToMapStringInterfacePtr(t *testing.T) {
 		require.Equal(t, true, (*castedObj)["key"])
 	}
 
-	t.Log("cast map[int]bool")
+	t.Log("cast map[int]bool - FAIL")
 	{
 		serializedObj := `1: true`
 		var obj interface{}
 		require.NoError(t, yaml.Unmarshal([]byte(serializedObj), &obj))
 		castedObj, ok := CastToMapStringInterfacePtr(obj)
-		require.Equal(t, true, ok)
-		require.Equal(t, 1, len(*castedObj))
-		require.Equal(t, true, (*castedObj)["1"])
+		require.Equal(t, false, ok)
+		require.Nil(t, castedObj)
 	}
 
-	t.Log("cast string -- FAIL")
+	t.Log("cast string - FAIL")
 	{
 		serializedObj := `"message"`
 		var obj interface{}

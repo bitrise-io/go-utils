@@ -267,23 +267,16 @@ func Decode(pfxData []byte, password string) (privateKey interface{}, certificat
 	return
 }
 
-// DecodeAllCerts extracts a certificate and private key from pfxData. This function
-// assumes that there is only one certificate and only one private key in the
-// pfxData.
-func DecodeAllCerts(pfxData []byte, password string) (privateKey interface{}, certificates []*x509.Certificate, err error) {
+// DecodeAllCerts extracts a certificates from pfxData.
+func DecodeAllCerts(pfxData []byte, password string) (certificates []*x509.Certificate, err error) {
 	encodedPassword, err := bmpString(password)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	bags, encodedPassword, err := getSafeContents(pfxData, encodedPassword)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(bags) != 2 {
-		err = errors.New("pkcs12: expected exactly two safe bags in the PFX PDU")
-		return
+		return nil, err
 	}
 
 	certificates = []*x509.Certificate{}
@@ -292,33 +285,22 @@ func DecodeAllCerts(pfxData []byte, password string) (privateKey interface{}, ce
 		case bag.Id.Equal(oidCertBag):
 			certsData, err := decodeCertBag(bag.Value.Bytes)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 			certs, err := x509.ParseCertificates(certsData)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 			if len(certs) != 1 {
 				err = errors.New("pkcs12: expected exactly one certificate in the certBag")
-				return nil, nil, err
+				return nil, err
 			}
 			certificates = append(certificates, certs[0])
-		case bag.Id.Equal(oidPKCS8ShroundedKeyBag):
-			if privateKey != nil {
-				err = errors.New("pkcs12: expected exactly one key bag")
-			}
-
-			if privateKey, err = decodePkcs8ShroudedKeyBag(bag.Value.Bytes, encodedPassword); err != nil {
-				return nil, nil, err
-			}
 		}
 	}
 
 	if certificates == nil || len(certificates) == 0 {
-		return nil, nil, errors.New("pkcs12: certificate missing")
-	}
-	if privateKey == nil {
-		return nil, nil, errors.New("pkcs12: private key missing")
+		return nil, errors.New("pkcs12: certificate missing")
 	}
 
 	return

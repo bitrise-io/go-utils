@@ -38,6 +38,35 @@ func TestPrintf(t *testing.T) {
 	}
 }
 
+func TestPrintln(t *testing.T) {
+	t.Log("nil")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Println()
+		require.Equal(t, "\n", b.String())
+	}
+
+	t.Log("string")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Println("test")
+		require.Equal(t, "test\n", b.String())
+	}
+
+	t.Log("interface []byte")
+	{
+		var b bytes.Buffer
+		SetOutWriter(&b)
+
+		Println([]byte("test"))
+		require.Equal(t, "[116 101 115 116]\n", b.String())
+	}
+}
+
 func TestPrintft(t *testing.T) {
 	t.Log("string")
 	{

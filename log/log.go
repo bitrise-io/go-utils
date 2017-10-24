@@ -35,6 +35,11 @@ func printfWithColor(color colorstring.ColorfFunc, format string, v ...interface
 	fmt.Fprintln(outWriter, strWithColor)
 }
 
+// Println ...
+func Println(v ...interface{}) {
+	fmt.Fprintln(outWriter, v...)
+}
+
 // Printf ...
 func Printf(format string, v ...interface{}) {
 	printfWithColor(colorstring.NoColorf, format, v...)

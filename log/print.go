@@ -19,6 +19,11 @@ func Successf(format string, v ...interface{}) {
 	printf(successSeverity, false, format, v...)
 }
 
+// Donef ...
+func Donef(format string, v ...interface{}) {
+	Successf(format, v...)
+}
+
 // Infof ...
 func Infof(format string, v ...interface{}) {
 	printf(infoSeverity, false, format, v...)

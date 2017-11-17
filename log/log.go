@@ -14,7 +14,7 @@ func SetOutWriter(writer io.Writer) {
 	outWriter = writer
 }
 
-var enableDebugLog = true
+var enableDebugLog = false
 
 // SetEnableDebugLog ...
 func SetEnableDebugLog(enable bool) {

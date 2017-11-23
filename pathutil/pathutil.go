@@ -131,7 +131,7 @@ func ExpandTilde(pth string) (string, error) {
 		pth = strings.TrimPrefix(pth, "~")
 
 		if len(pth) == 0 || strings.HasPrefix(pth, "/") {
-			return filepath.Abs(os.ExpandEnv("$HOME" + pth))
+			return os.ExpandEnv("$HOME" + pth), nil
 		}
 
 		splitPth := strings.Split(pth, "/")

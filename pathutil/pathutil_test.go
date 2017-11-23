@@ -139,6 +139,10 @@ func TestAbsPath(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, currDirPath, expandedPath)
 
+	expandedPath, err = AbsPath(homePathEnv + "/../test-user")
+	require.NoError(t, err)
+	require.Equal(t, homePathEnv, expandedPath)
+
 	expandedPath, err = AbsPath(fmt.Sprintf("$HOME/%s", testFileRelPathFromHome))
 	require.NoError(t, err)
 	require.Equal(t, absPathToTestFile, expandedPath)
@@ -172,6 +176,49 @@ func TestAbsPath(t *testing.T) {
 	require.Equal(t, filepath.Join(currentUser.HomeDir, "folder"), expandedPath)
 
 	expandedPath, err = AbsPath("~testaccnotexist/folder")
+	require.Error(t, err)
+}
+
+func TestExpandTilde(t *testing.T) {
+	currentUser, err := user.Current()
+	require.NoError(t, err)
+
+	homePathEnv := "/path/home/test-user"
+	require.Equal(t, nil, os.Setenv("HOME", homePathEnv))
+
+	expandedPath, err := ExpandTilde("~/../test-user")
+	require.NoError(t, err)
+	require.Equal(t, homePathEnv+"/../test-user", expandedPath)
+
+	expandedPath, err = ExpandTilde("~/")
+	require.NoError(t, err)
+	require.Equal(t, homePathEnv+"/", expandedPath)
+
+	expandedPath, err = ExpandTilde("~")
+	require.NoError(t, err)
+	require.Equal(t, homePathEnv, expandedPath)
+
+	expandedPath, err = ExpandTilde("~" + currentUser.Name)
+	require.NoError(t, err)
+	require.Equal(t, currentUser.HomeDir, expandedPath)
+
+	expandedPath, err = ExpandTilde("~" + currentUser.Name + "/")
+	require.NoError(t, err)
+	require.Equal(t, currentUser.HomeDir, expandedPath)
+
+	expandedPath, err = ExpandTilde("~/folder")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(homePathEnv, "folder"), expandedPath)
+
+	expandedPath, err = ExpandTilde("~" + currentUser.Name + "/folder")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(currentUser.HomeDir, "folder"), expandedPath)
+
+	expandedPath, err = ExpandTilde("./test/~/in/name")
+	require.NoError(t, err)
+	require.Equal(t, "./test/~/in/name", expandedPath)
+
+	expandedPath, err = ExpandTilde("~testaccnotexist/folder")
 	require.Error(t, err)
 }
 

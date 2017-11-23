@@ -2,7 +2,6 @@ package pathutil
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -114,6 +113,20 @@ func AbsPath(pth string) (string, error) {
 		return "", errors.New("No Path provided")
 	}
 
+	pth, err := ExpandTilde(pth)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Abs(os.ExpandEnv(pth))
+}
+
+// ExpandTilde ...
+func ExpandTilde(pth string) (string, error) {
+	if pth == "" {
+		return "", errors.New("No Path provided")
+	}
+
 	if strings.HasPrefix(pth, "~") {
 		pth = strings.TrimPrefix(pth, "~")
 
@@ -126,15 +139,15 @@ func AbsPath(pth string) (string, error) {
 
 		usr, err := user.Lookup(username)
 		if err != nil {
-			return "", fmt.Errorf("failed to find home path of user: %s, error: %s", username, err)
+			return "", err
 		}
 
 		pathInUsrHome := strings.Join(splitPth[1:], "/")
 
-		return filepath.Abs(os.ExpandEnv(filepath.Join(usr.HomeDir, pathInUsrHome)))
+		return filepath.Join(usr.HomeDir, pathInUsrHome), nil
 	}
 
-	return filepath.Abs(os.ExpandEnv(pth))
+	return pth, nil
 }
 
 // CurrentWorkingDirectoryAbsolutePath ...

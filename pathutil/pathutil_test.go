@@ -3,6 +3,7 @@ package pathutil
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -121,6 +122,9 @@ func TestAbsPath(t *testing.T) {
 	require.NotEqual(t, "", currDirPath)
 	require.NotEqual(t, ".", currDirPath)
 
+	currentUser, err := user.Current()
+	require.NoError(t, err)
+
 	homePathEnv := "/path/home/test-user"
 	require.Equal(t, nil, os.Setenv("HOME", homePathEnv))
 
@@ -150,6 +154,27 @@ func TestAbsPath(t *testing.T) {
 	expandedPath, err = AbsPath("~")
 	require.Equal(t, nil, err)
 	require.Equal(t, homePathEnv, expandedPath)
+
+	expandedPath, err = AbsPath("~" + currentUser.Name)
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~" + currentUser.Name + "/")
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~/")
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~")
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~/folder")
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~" + currentUser.Name + "/folder")
+	require.NoError(t, err)
+
+	expandedPath, err = AbsPath("~testaccnotexist/folder")
+	require.Error(t, err)
 }
 
 func TestUserHomeDir(t *testing.T) {

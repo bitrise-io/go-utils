@@ -111,7 +111,7 @@ func AbsPath(pth string) (string, error) {
 	if pth == "" {
 		return "", errors.New("No Path provided")
 	}
-	if len(pth) >= 1 && pth[:1] == "~" {
+	if strings.HasPrefix(pth, "~") {
 		pth = "$HOME" + pth[1:]
 	}
 	return filepath.Abs(os.ExpandEnv(pth))

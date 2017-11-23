@@ -142,6 +142,14 @@ func TestAbsPath(t *testing.T) {
 	expandedPath, err = AbsPath(fmt.Sprintf("~/%s", testFileRelPathFromHome))
 	require.Equal(t, nil, err)
 	require.Equal(t, absPathToTestFile, expandedPath)
+
+	expandedPath, err = AbsPath("~/")
+	require.Equal(t, nil, err)
+	require.Equal(t, homePathEnv, expandedPath)
+
+	expandedPath, err = AbsPath("~")
+	require.Equal(t, nil, err)
+	require.Equal(t, homePathEnv, expandedPath)
 }
 
 func TestUserHomeDir(t *testing.T) {

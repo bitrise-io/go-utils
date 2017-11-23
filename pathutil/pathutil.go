@@ -2,8 +2,10 @@ package pathutil
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -111,9 +113,27 @@ func AbsPath(pth string) (string, error) {
 	if pth == "" {
 		return "", errors.New("No Path provided")
 	}
-	if len(pth) >= 2 && pth[:2] == "~/" {
-		pth = strings.Replace(pth, "~/", "$HOME/", 1)
+
+	if strings.HasPrefix(pth, "~") {
+		pth = strings.TrimPrefix(pth, "~")
+
+		if len(pth) == 0 || strings.HasPrefix(pth, "/") {
+			return filepath.Abs(os.ExpandEnv("$HOME" + pth))
+		}
+
+		splitPth := strings.Split(pth, "/")
+		username := splitPth[0]
+
+		usr, err := user.Lookup(username)
+		if err != nil {
+			return "", fmt.Errorf("failed to find home path of user: %s, error: %s", username, err)
+		}
+
+		pathInUsrHome := strings.Join(splitPth[1:], "/")
+
+		return filepath.Abs(os.ExpandEnv(filepath.Join(usr.HomeDir, pathInUsrHome)))
 	}
+
 	return filepath.Abs(os.ExpandEnv(pth))
 }
 

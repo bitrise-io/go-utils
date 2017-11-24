@@ -2,6 +2,8 @@ package git
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"os"
 
@@ -206,4 +208,44 @@ func GetCommitHashOfHead(pth string) (string, error) {
 	cmd := GetCommitHashOfHeadCommand()
 	cmd.SetDir(pth)
 	return cmd.RunAndReturnTrimmedCombinedOutput()
+}
+
+// RemoteTagListCommand ...
+func RemoteTagListCommand(gitURL string) *command.Model {
+	return command.New("git", "ls-remote", "--tags", gitURL)
+}
+
+// RemoteTagList ...
+func RemoteTagList(gitURL string) ([]string, error) {
+	cmd := RemoteTagListCommand(gitURL)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		return []string{}, err
+	}
+	if out == "" {
+		return []string{}, nil
+	}
+
+	var exp = regexp.MustCompile(`(^[a-z0-9]+)+.*refs/tags/([0-9.]+)`)
+	versionMap := map[string]bool{}
+	outSplit := strings.Split(out, "\n")
+
+	for _, line := range outSplit {
+		result := exp.FindAllStringSubmatch(line, -1)
+		if len(result) > 0 {
+			matches := result[0]
+
+			if len(matches) == 3 {
+				version := matches[2]
+				versionMap[version] = true
+			}
+		}
+	}
+
+	versions := []string{}
+	for key := range versionMap {
+		versions = append(versions, key)
+	}
+
+	return versions, nil
 }

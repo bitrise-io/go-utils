@@ -16,8 +16,7 @@ func New(path string) *Git {
 	return &Git{path: path}
 }
 
-// Command returns with a Git command.
-func (g *Git) Command(args ...string) *command.Model {
+func (g *Git) command(args ...string) *command.Model {
 	cmd := command.New("git", args...)
 	cmd.SetDir(g.path)
 	cmd.SetEnvs(append(os.Environ(), "GIT_ASKPASS=echo")...)

@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	systemRubyPth = "/usr/bin/ruby"
-	brewRubyPth   = "/usr/local/bin/ruby"
+	systemRubyPth  = "/usr/bin/ruby"
+	brewRubyPth    = "/usr/local/bin/ruby"
+	brewRubyPthAlt = "/usr/local/opt/ruby/bin/ruby"
 )
 
 // InstallType ...
@@ -56,6 +57,8 @@ func installType() InstallType {
 	if whichRuby == systemRubyPth {
 		installType = SystemRuby
 	} else if whichRuby == brewRubyPth {
+		installType = BrewRuby
+	} else if whichRuby == brewRubyPthAlt {
 		installType = BrewRuby
 	} else if cmdExist("rvm", "-v") {
 		installType = RVMRuby

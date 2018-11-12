@@ -90,7 +90,7 @@ func sudoNeeded(installType InstallType, slice ...string) bool {
 func NewWithParams(params ...string) (*command.Model, error) {
 	rubyInstallType := installType()
 	if rubyInstallType == Unkown {
-		return nil, errors.New("unkown ruby installation type")
+		return nil, errors.New("unknown ruby installation type")
 	}
 
 	if sudoNeeded(rubyInstallType, params...) {

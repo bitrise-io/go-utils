@@ -267,6 +267,37 @@ func Decode(pfxData []byte, password string) (privateKey interface{}, certificat
 	return
 }
 
+// DecodePrivateKey extracts private key from pfxData.
+func DecodePrivateKey(pfxData []byte, password string) (privateKey interface{}, err error) {
+	encodedPassword, err := bmpString(password)
+	if err != nil {
+		return nil, err
+	}
+
+	bags, encodedPassword, err := getSafeContents(pfxData, encodedPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, bag := range bags {
+		if bag.Id.Equal(oidPKCS8ShroundedKeyBag) {
+			if privateKey != nil {
+				err = errors.New("pkcs12: expected exactly one key bag")
+			}
+
+			if privateKey, err = decodePkcs8ShroudedKeyBag(bag.Value.Bytes, encodedPassword); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if privateKey == nil {
+		return nil, errors.New("pkcs12: private key missing")
+	}
+
+	return
+}
+
 // DecodeAllCerts extracts a certificates from pfxData.
 func DecodeAllCerts(pfxData []byte, password string) (certificates []*x509.Certificate, err error) {
 	encodedPassword, err := bmpString(password)

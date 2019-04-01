@@ -47,7 +47,7 @@ func (dl DefaultLogger) Debugf(format string, v ...interface{}) {
 	}
 }
 
-type logfunc func(string, ...interface{})
+type logfunc func(string, ...interface{}) logMessage
 
 func fSelect(t bool, tf logfunc, f logfunc) logfunc {
 	if t {

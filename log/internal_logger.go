@@ -4,13 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"net/http"
 )
+
+var analyticsServerURL = "https://bitrise-step-analytics.herokuapp.com"
 
 type logMessage struct{
 	LogLevel string `json:"log_level"`
 	Message string `json:"message"`
 	Data map[string]interface{} `json:"data"`
+}
+
+func init() {
+	if url := os.Getenv("ANALYTICS_SERVER_URL"); url != "" {
+		analyticsServerURL = url
+	}
 }
 
 func (lm logMessage) SendToInternal(stepID, tag string, data map[string]interface{}) {
@@ -26,7 +35,7 @@ func (lm logMessage) SendToInternal(stepID, tag string, data map[string]interfac
 		fmt.Printf("marshal log message: %s\n", err)
 	}
 
-	resp, err := http.Post("https://bitrise-step-analytics.herokuapp.com/logs", "application/json", bytes.NewReader(b))
+	resp, err := http.Post(analyticsServerURL + "/logs", "application/json", bytes.NewReader(b))
 	if err != nil {
 		fmt.Printf("post log message: %s\n", err)
 	}

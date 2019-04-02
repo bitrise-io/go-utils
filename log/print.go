@@ -19,120 +19,120 @@ func printf(severity Severity, withTime bool, format string, v ...interface{}) s
 }
 
 // Successf ...
-func Successf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func Successf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(successSeverity, false, format, v...),
 	}
 }
 
 // Donef ...
-func Donef(format string, v ...interface{}) logMessage {
+func Donef(format string, v ...interface{}) Message {
 	return Successf(format, v...)
 }
 
 // Infof ...
-func Infof(format string, v ...interface{}) logMessage {
-	return logMessage{
+func Infof(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(infoSeverity, false, format, v...),
 	}
 }
 
 // Printf ...
-func Printf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func Printf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(normalSeverity, false, format, v...),
 	}
 }
 
 // Debugf ...
-func Debugf(format string, v ...interface{}) logMessage {
+func Debugf(format string, v ...interface{}) Message {
 	if enableDebugLog {
-		return logMessage{
+		return Message{
 			LogLevel: "info",
 			Message: printf(debugSeverity, false, format, v...),
 		}
 	}
 
-	return logMessage{
+	return Message{
 		LogLevel: "",
 		Message: "",
 	}
 }
 
 // Warnf ...
-func Warnf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func Warnf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "warn",
 		Message: printf(warnSeverity, false, format, v...),
 	}
 }
 
 // Errorf ...
-func Errorf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func Errorf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "error",
 		Message: printf(errorSeverity, false, format, v...),
 	}
 }
 
 // TSuccessf ...
-func TSuccessf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func TSuccessf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(successSeverity, true, format, v...),
 	}
 }
 
 // TDonef ...
-func TDonef(format string, v ...interface{}) logMessage {
+func TDonef(format string, v ...interface{}) Message {
 	return TSuccessf(format, v...)
 }
 
 // TInfof ...
-func TInfof(format string, v ...interface{}) logMessage {
-	return logMessage{
+func TInfof(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(infoSeverity, true, format, v...),
 	}
 }
 
 // TPrintf ...
-func TPrintf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func TPrintf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "info",
 		Message: printf(normalSeverity, true, format, v...),
 	}
 }
 
 // TDebugf ...
-func TDebugf(format string, v ...interface{}) logMessage {
+func TDebugf(format string, v ...interface{}) Message {
 	if enableDebugLog {
-		return logMessage{
+		return Message{
 			LogLevel: "info",
 			Message: printf(debugSeverity, true, format, v...),
 		}
 	}
 
-	return logMessage{
+	return Message{
 		LogLevel: "",
 		Message: "",
 	}
 }
 
 // TWarnf ...
-func TWarnf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func TWarnf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "warn",
 		Message: printf(warnSeverity, true, format, v...),
 	}
 }
 
 // TErrorf ...
-func TErrorf(format string, v ...interface{}) logMessage {
-	return logMessage{
+func TErrorf(format string, v ...interface{}) Message {
+	return Message{
 		LogLevel: "error",
 		Message: printf(errorSeverity, true, format, v...),
 	}

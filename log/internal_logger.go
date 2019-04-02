@@ -10,7 +10,8 @@ import (
 
 var analyticsServerURL = "https://bitrise-step-analytics.herokuapp.com"
 
-type logMessage struct{
+// Message represents a line in a log
+type Message struct{
 	LogLevel string `json:"log_level"`
 	Message string `json:"message"`
 	Data map[string]interface{} `json:"data"`
@@ -22,7 +23,8 @@ func init() {
 	}
 }
 
-func (lm logMessage) SendToInternal(stepID, tag string, data map[string]interface{}) {
+// SendToInternal sends the log message to the configured analytics server
+func (lm Message) SendToInternal(stepID, tag string, data map[string]interface{}) {
 	for k, v := range data {
 		lm.Data[k] = v
 	}

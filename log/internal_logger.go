@@ -25,10 +25,6 @@ func init() {
 
 // SendToInternal sends the log message to the configured analytics server
 func (lm Message) SendToInternal(stepID, tag string, data map[string]interface{}) {
-	if lm.LogLevel == "" {
-		return
-	}
-
 	lm.Data = make(map[string]interface{})
 	for k, v := range data {
 		lm.Data[k] = v

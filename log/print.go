@@ -4,15 +4,18 @@ import (
 	"fmt"
 )
 
-func printf(severity Severity, withTime bool, format string, v ...interface{}) string {
+func printf(severity Severity, withTime bool, format string, v ...interface{}) {
+	message := createLogMsg(severity, withTime, format, v...)
+	if _, err := fmt.Fprintln(outWriter, message); err != nil {
+		fmt.Printf("failed to print message: %s, error: %s\n", message, err)
+	}
+}
+
+func createLogMsg(severity Severity, withTime bool, format string, v ...interface{}) string {
 	colorFunc := severityColorFuncMap[severity]
 	message := colorFunc(format, v...)
 	if withTime {
 		message = fmt.Sprintf("%s %s", timestampField(), message)
-	}
-
-	if _, err := fmt.Fprintln(outWriter, message); err != nil {
-		fmt.Printf("failed to print message: %s, error: %s\n", message, err)
 	}
 
 	return message
@@ -20,9 +23,10 @@ func printf(severity Severity, withTime bool, format string, v ...interface{}) s
 
 // Successf ...
 func Successf(format string, v ...interface{}) Message {
+	printf(successSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(successSeverity, false, format, v...),
+		Message: createLogMsg(successSeverity, false, format, v...),
 	}
 }
 
@@ -33,107 +37,110 @@ func Donef(format string, v ...interface{}) Message {
 
 // Infof ...
 func Infof(format string, v ...interface{}) Message {
+	printf(infoSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(infoSeverity, false, format, v...),
+		Message: createLogMsg(infoSeverity, false, format, v...),
 	}
 }
 
 // Printf ...
 func Printf(format string, v ...interface{}) Message {
+	printf(normalSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(normalSeverity, false, format, v...),
+		Message: createLogMsg(normalSeverity, false, format, v...),
 	}
 }
 
 // Debugf ...
 func Debugf(format string, v ...interface{}) Message {
 	if enableDebugLog {
-		return Message{
-			LogLevel: "info",
-			Message: printf(debugSeverity, false, format, v...),
-		}
+		printf(debugSeverity, false, format, v...)
 	}
 
 	return Message{
-		LogLevel: "",
-		Message: "",
+		LogLevel: "info",
+		Message: createLogMsg(debugSeverity, false, format, v...),
 	}
 }
 
 // Warnf ...
 func Warnf(format string, v ...interface{}) Message {
+	printf(warnSeverity, false, format, v...)
 	return Message{
 		LogLevel: "warn",
-		Message: printf(warnSeverity, false, format, v...),
+		Message: createLogMsg(warnSeverity, false, format, v...),
 	}
 }
 
 // Errorf ...
 func Errorf(format string, v ...interface{}) Message {
+	printf(errorSeverity, false, format, v...)
 	return Message{
 		LogLevel: "error",
-		Message: printf(errorSeverity, false, format, v...),
+		Message: createLogMsg(errorSeverity, false, format, v...),
 	}
 }
 
 // TSuccessf ...
 func TSuccessf(format string, v ...interface{}) Message {
+	printf(successSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(successSeverity, true, format, v...),
+		Message: createLogMsg(successSeverity, true, format, v...),
 	}
 }
 
 // TDonef ...
 func TDonef(format string, v ...interface{}) Message {
-	return TSuccessf(format, v...)
+	return TSuccessf(successSeverity, true, format, v...)
 }
 
 // TInfof ...
 func TInfof(format string, v ...interface{}) Message {
+	printf(infoSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(infoSeverity, true, format, v...),
+		Message: createLogMsg(infoSeverity, true, format, v...),
 	}
 }
 
 // TPrintf ...
 func TPrintf(format string, v ...interface{}) Message {
+	printf(normalSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: printf(normalSeverity, true, format, v...),
+		Message: createLogMsg(normalSeverity, true, format, v...),
 	}
 }
 
 // TDebugf ...
 func TDebugf(format string, v ...interface{}) Message {
 	if enableDebugLog {
-		return Message{
-			LogLevel: "info",
-			Message: printf(debugSeverity, true, format, v...),
-		}
+		printf(debugSeverity, true, format, v...)
 	}
 
 	return Message{
-		LogLevel: "",
-		Message: "",
+		LogLevel: "info",
+		Message: createLogMsg(debugSeverity, true, format, v...),
 	}
 }
 
 // TWarnf ...
 func TWarnf(format string, v ...interface{}) Message {
+	printf(warnSeverity, true, format, v...)
 	return Message{
 		LogLevel: "warn",
-		Message: printf(warnSeverity, true, format, v...),
+		Message: createLogMsg(warnSeverity, true, format, v...),
 	}
 }
 
 // TErrorf ...
 func TErrorf(format string, v ...interface{}) Message {
+	printf(errorSeverity, true, format, v...)
 	return Message{
 		LogLevel: "error",
-		Message: printf(errorSeverity, true, format, v...),
+		Message: createLogMsg(errorSeverity, true, format, v...),
 	}
 }

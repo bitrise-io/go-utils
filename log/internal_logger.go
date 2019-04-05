@@ -27,6 +27,13 @@ func (lm Message) SendToInternal(stepID, tag string, data map[string]interface{}
 		lm.Data[k] = v
 	}
 
+	if v, ok := lm.Data["step_id"]; ok {
+		fmt.Printf("internal logger: data.step_id (%s) will be overriden with (%s) ", v, stepID)
+	}
+	if v, ok := lm.Data["tag"]; ok {
+		fmt.Printf("internal logger: data.tag (%s) will be overriden with (%s) ", v, tag)
+	}
+
 	lm.Data["step_id"] = stepID
 	lm.Data["tag"] = tag
 

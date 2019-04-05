@@ -27,7 +27,7 @@ func SetAnalyticsServerURL(url string) {
 }
 
 // SendToInternal sends the log message to the configured analytics server
-func (lm Message) SendToInternal(stepID, tag string, data map[string]interface{}) {
+func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
 	lm.Data = make(map[string]interface{})
 	for k, v := range data {
 		lm.Data[k] = v

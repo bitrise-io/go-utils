@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"net/http"
 )
 
@@ -17,10 +16,8 @@ type Message struct{
 	Data map[string]interface{} `json:"data"`
 }
 
-func init() {
-	if url := os.Getenv("ANALYTICS_SERVER_URL"); url != "" {
-		analyticsServerURL = url
-	}
+func SetAnalyticsServerURL(url string) {
+	analyticsServerURL = url
 }
 
 // SendToInternal sends the log message to the configured analytics server

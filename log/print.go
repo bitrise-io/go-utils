@@ -94,7 +94,7 @@ func TSuccessf(format string, v ...interface{}) Message {
 
 // TDonef ...
 func TDonef(format string, v ...interface{}) Message {
-	return TSuccessf(successSeverity, true, format, v...)
+	return TSuccessf(format, v...)
 }
 
 // TInfof ...

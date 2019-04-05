@@ -5,9 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
-var analyticsServerURL = "https://bitrise-step-analytics.herokuapp.com"
+var (
+	analyticsServerURL = "https://bitrise-step-analytics.herokuapp.com"
+	netClient = http.Client{
+		Timeout: time.Second * 5,
+	}
+)
 
 // Message represents a line in a log
 type Message struct{
@@ -42,7 +48,7 @@ func (lm Message) SendToInternal(stepID, tag string, data map[string]interface{}
 		fmt.Printf("marshal log message: %s\n", err)
 	}
 
-	resp, err := http.Post(analyticsServerURL + "/logs", "application/json", bytes.NewReader(b))
+	resp, err := netClient.Post(analyticsServerURL + "/logs", "application/json", bytes.NewReader(b))
 	if err != nil {
 		fmt.Printf("post log message: %s\n", err)
 	}

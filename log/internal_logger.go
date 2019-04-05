@@ -43,12 +43,12 @@ func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
 	lm.Data["step_id"] = stepID
 	lm.Data["tag"] = tag
 
-	b, err := json.Marshal(lm)
-	if err != nil {
-		fmt.Printf("marshal log message: %s\n", err)
+	var b bytes.Buffer
+	if err := json.NewEncoder(&b).Encode(lm); err != nil {
+		fmt.Printf("json encode log message: %s\n", err)
 	}
 
-	resp, err := netClient.Post(analyticsServerURL + "/logs", "application/json", bytes.NewReader(b))
+	resp, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b)
 	if err != nil {
 		fmt.Printf("post log message: %s\n", err)
 	}

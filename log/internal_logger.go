@@ -23,7 +23,7 @@ type Message struct{
 }
 
 // SetAnalyticsServerURL updates the the analytics server collecting the
-// logs. Default value is 'https://bitrise-step-analytics.herokuapp.com'
+// logs.
 func SetAnalyticsServerURL(url string) {
 	analyticsServerURL = url
 }

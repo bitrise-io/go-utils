@@ -47,17 +47,10 @@ func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
 
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(lm); err != nil {
-		fmt.Printf("json encode log message: %s\n", err)
 		return
 	}
 
-	resp, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b)
-	if err != nil {
-		fmt.Printf("post log message: %s\n", err)
-	}
-
-	if resp.StatusCode != 200 {
-		fmt.Printf("post log message response: %s %s\n", resp.Status, resp.Body)
-	}
+	_, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b)
+	if err != nil {}
 }
 

@@ -22,11 +22,13 @@ type Message struct{
 	Data map[string]interface{} `json:"data"`
 }
 
+// SetAnalyticsServerURL updates the the analytics server collecting the
+// logs. Default value is 'https://bitrise-step-analytics.herokuapp.com'
 func SetAnalyticsServerURL(url string) {
 	analyticsServerURL = url
 }
 
-// SendToInternal sends the log message to the configured analytics server
+// Internal sends the log message to the configured analytics server
 func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
 	lm.Data = make(map[string]interface{})
 	for k, v := range data {

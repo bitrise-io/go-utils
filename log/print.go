@@ -15,10 +15,14 @@ func createLogMsg(severity Severity, withTime bool, format string, v ...interfac
 	colorFunc := severityColorFuncMap[severity]
 	message := colorFunc(format, v...)
 	if withTime {
-		message = fmt.Sprintf("%s %s", timestampField(), message)
+		message = prefixCurrentTime(message)
 	}
 
 	return message
+}
+
+func prefixCurrentTime(message string) string {
+	return fmt.Sprintf("%s %s", timestampField(), message)
 }
 
 // Successf ...
@@ -26,7 +30,7 @@ func Successf(format string, v ...interface{}) Message {
 	printf(successSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(successSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -40,7 +44,7 @@ func Infof(format string, v ...interface{}) Message {
 	printf(infoSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(infoSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -49,7 +53,7 @@ func Printf(format string, v ...interface{}) Message {
 	printf(normalSeverity, false, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(normalSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -61,7 +65,7 @@ func Debugf(format string, v ...interface{}) Message {
 
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(debugSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -70,7 +74,7 @@ func Warnf(format string, v ...interface{}) Message {
 	printf(warnSeverity, false, format, v...)
 	return Message{
 		LogLevel: "warn",
-		Message: createLogMsg(warnSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -79,7 +83,7 @@ func Errorf(format string, v ...interface{}) Message {
 	printf(errorSeverity, false, format, v...)
 	return Message{
 		LogLevel: "error",
-		Message: createLogMsg(errorSeverity, false, format, v...),
+		Message: fmt.Sprintf(format, v...),
 	}
 }
 
@@ -88,7 +92,7 @@ func TSuccessf(format string, v ...interface{}) Message {
 	printf(successSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(successSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
@@ -102,7 +106,7 @@ func TInfof(format string, v ...interface{}) Message {
 	printf(infoSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(infoSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
@@ -111,7 +115,7 @@ func TPrintf(format string, v ...interface{}) Message {
 	printf(normalSeverity, true, format, v...)
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(normalSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
@@ -123,7 +127,7 @@ func TDebugf(format string, v ...interface{}) Message {
 
 	return Message{
 		LogLevel: "info",
-		Message: createLogMsg(debugSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
@@ -132,7 +136,7 @@ func TWarnf(format string, v ...interface{}) Message {
 	printf(warnSeverity, true, format, v...)
 	return Message{
 		LogLevel: "warn",
-		Message: createLogMsg(warnSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
@@ -141,6 +145,6 @@ func TErrorf(format string, v ...interface{}) Message {
 	printf(errorSeverity, true, format, v...)
 	return Message{
 		LogLevel: "error",
-		Message: createLogMsg(errorSeverity, true, format, v...),
+		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }

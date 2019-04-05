@@ -23,7 +23,8 @@ type Message struct{
 }
 
 // SetAnalyticsServerURL updates the the analytics server collecting the
-// logs.
+// logs. It is intended for use during tests. Warning: current implementation
+// is not thread safe, do not call the function during runtime.
 func SetAnalyticsServerURL(url string) {
 	analyticsServerURL = url
 }
@@ -50,7 +51,9 @@ func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
 		return
 	}
 
-	_, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b)
-	if err != nil {}
+	go func() {
+		if _, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b); err != nil {}
+	}()
+
 }
 

@@ -15,8 +15,8 @@ var (
 	}
 )
 
-// Message represents a line in a log
-type Message struct{
+// Entry represents a line in a log
+type Entry struct{
 	LogLevel string `json:"log_level"`
 	Message string `json:"message"`
 	Data map[string]interface{} `json:"data"`
@@ -30,7 +30,7 @@ func SetAnalyticsServerURL(url string) {
 }
 
 // Internal sends the log message to the configured analytics server
-func (lm Message) Internal(stepID, tag string, data map[string]interface{}) {
+func (lm Entry) Internal(stepID, tag string, data map[string]interface{}) {
 	lm.Data = make(map[string]interface{})
 	for k, v := range data {
 		lm.Data[k] = v

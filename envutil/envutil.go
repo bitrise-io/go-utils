@@ -49,25 +49,22 @@ func GetenvWithDefault(envKey, defValue string) string {
 // Use this function to reduce error prone code duplication.
 // E.g. instead of doing this in your code:
 //
-// ```
-// myVar1 := os.Getenv("MY_ENV1")
-// if len(myVar1) < 1 {
-// 	return nil, errors.New("MY_ENV1 required")
-// }
-// ```
+// 	myVar1 := os.Getenv("MY_ENV1")
+// 	if len(myVar1) < 1 {
+// 		return nil, errors.New("MY_ENV1 required")
+// 	}
 //
 // You can use this function like:
 //
-// ```
-// myVar1, err := requiredEnv("MY_ENV1")
-// if err != nil {
-// 	return nil, errors.WithStack(err)
-// }
-// ```
+// 	myVar1, err := requiredEnv("MY_ENV1")
+// 	if err != nil {
+// 		return nil, errors.WithStack(err)
+// 	}
 //
 // In the first example you have to specify myVar1 and MY_ENV1 two times, which can lead to
-// issues if you copy paste that code but e.g. forget to change the var name in the `if len(myVar1) < 1` line,
-// or you might simply forget to change the var key in the error.
+// issues if you copy-paste that code but e.g. forget to change the var name in the
+// 	if len(myVar1) < 1
+// line, or if you forget to change the var key in the error message/string.
 func RequiredEnv(envKey string) (string, error) {
 	if val := os.Getenv(envKey); len(val) > 0 {
 		return val, nil

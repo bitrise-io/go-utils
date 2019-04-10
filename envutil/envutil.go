@@ -69,5 +69,5 @@ func RequiredEnv(envKey string) (string, error) {
 	if val := os.Getenv(envKey); len(val) > 0 {
 		return val, nil
 	}
-	return "", fmt.Errorf("Required environment variable (%s) not provided", envKey)
+	return "", fmt.Errorf("required environment variable (%s) not provided", envKey)
 }

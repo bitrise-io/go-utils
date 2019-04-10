@@ -69,9 +69,8 @@ func GetenvWithDefault(envKey, defValue string) string {
 // issues if you copy paste that code but e.g. forget to change the var name in the `if len(myVar1) < 1` line,
 // or you might simply forget to change the var key in the error.
 func RequiredEnv(envKey string) (string, error) {
-	val := os.Getenv(envKey)
-	if len(val) < 1 {
-		return "", fmt.Errorf("Required environment variable (%s) not provided", envKey)
+	if val := os.Getenv(envKey); len(val) > 0 {
+		return val, nil
 	}
-	return val, nil
+	return "", fmt.Errorf("Required environment variable (%s) not provided", envKey)
 }

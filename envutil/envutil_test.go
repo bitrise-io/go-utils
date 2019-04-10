@@ -93,7 +93,7 @@ func TestRequiredEnv(t *testing.T) {
 	t.Log("When the env isn't set")
 	{
 		envVal, err := RequiredEnv(testEnvKey)
-		require.EqualError(t, err, "Required environment variable (KEY_TestRequiredEnv) not provided")
+		require.EqualError(t, err, "required environment variable (KEY_TestRequiredEnv) not provided")
 		require.Equal(t, "", envVal)
 	}
 

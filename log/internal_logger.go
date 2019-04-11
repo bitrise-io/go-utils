@@ -11,7 +11,7 @@ import (
 
 var (
 	analyticsServerURL = "https://bitrise-step-analytics.herokuapp.com"
-	netClient = http.Client{
+	httpClient = http.Client{
 		Timeout: time.Second * 5,
 	}
 )
@@ -66,7 +66,7 @@ func (e Entry) Internal(stepID, tag string, data map[string]interface{}) {
 	req.Header.Add("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 	
-	if _, err := netClient.Do(req); err != nil {
+	if _, err := httpClient.Do(req); err != nil {
 		// deliberately not writing into users log
 		return
 	}

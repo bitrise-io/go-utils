@@ -31,24 +31,24 @@ func SetAnalyticsServerURL(url string) {
 }
 
 // Internal sends the log message to the configured analytics server
-func (lm Entry) Internal(stepID, tag string, data map[string]interface{}) {
-	lm.Data = make(map[string]interface{})
+func (e Entry) Internal(stepID, tag string, data map[string]interface{}) {
+	e.Data = make(map[string]interface{})
 	for k, v := range data {
-		lm.Data[k] = v
+		e.Data[k] = v
 	}
 
-	if v, ok := lm.Data["step_id"]; ok {
+	if v, ok := e.Data["step_id"]; ok {
 		fmt.Printf("internal logger: data.step_id (%s) will be overriden with (%s) ", v, stepID)
 	}
-	if v, ok := lm.Data["tag"]; ok {
+	if v, ok := e.Data["tag"]; ok {
 		fmt.Printf("internal logger: data.tag (%s) will be overriden with (%s) ", v, tag)
 	}
 
-	lm.Data["step_id"] = stepID
-	lm.Data["tag"] = tag
+	e.Data["step_id"] = stepID
+	e.Data["tag"] = tag
 
 	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(lm); err != nil {
+	if err := json.NewEncoder(&b).Encode(e); err != nil {
 		return
 	}
 

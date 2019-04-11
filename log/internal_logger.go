@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,9 +52,24 @@ func (lm Entry) Internal(stepID, tag string, data map[string]interface{}) {
 		return
 	}
 
-	go func() {
-		if _, err := netClient.Post(analyticsServerURL + "/logs", "application/json", &b); err != nil {}
-	}()
+	ctx, cancel := context.WithCancel(context.TODO())
+	_ = time.AfterFunc(3 * time.Second, func() {
+		cancel()
+	})
+
+	req, err := http.NewRequest(http.MethodPost, analyticsServerURL  + "/logs", &b)
+	if err != nil {
+		// deliberately not writing into users log
+		return
+	}
+	
+	req.Header.Add("Content-Type", "application/json")
+	req = req.WithContext(ctx)
+	
+	if _, err := netClient.Do(req); err != nil {
+		// deliberately not writing into users log
+		return
+	}
 
 }
 

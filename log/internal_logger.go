@@ -52,19 +52,16 @@ func (e Entry) Internal(stepID, tag string, data map[string]interface{}) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.TODO())
-	_ = time.AfterFunc(3 * time.Second, func() {
-		cancel()
-	})
-
+	ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+	defer cancel()
+	
 	req, err := http.NewRequest(http.MethodPost, analyticsServerURL  + "/logs", &b)
 	if err != nil {
 		// deliberately not writing into users log
 		return
 	}
-	
-	req.Header.Add("Content-Type", "application/json")
 	req = req.WithContext(ctx)
+	req.Header.Add("Content-Type", "application/json")
 	
 	if _, err := httpClient.Do(req); err != nil {
 		// deliberately not writing into users log

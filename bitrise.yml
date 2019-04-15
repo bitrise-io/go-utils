@@ -1,4 +1,4 @@
-format_version: "5"
+format_version: "7"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: ""
 workflows:
@@ -18,16 +18,6 @@ workflows:
         - exclude: |-
             */vendor/*
             */pkcs12*
-    - script@1.1.5:
-        title: Debug print $BITRISE_GO_PACKAGES
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -e
-
-            echo "=== BITRISE_GO_PACKAGES ==="
-            echo "$BITRISE_GO_PACKAGES"
-            echo "==========================="
     - golint: {}
     - errcheck: {}
     - go-test: {}

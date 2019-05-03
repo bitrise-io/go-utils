@@ -26,125 +26,75 @@ func prefixCurrentTime(message string) string {
 }
 
 // Successf ...
-func Successf(format string, v ...interface{}) Entry {
+func Successf(format string, v ...interface{}) {
 	printf(successSeverity, false, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: fmt.Sprintf(format, v...),
-	}
 }
 
 // Donef ...
-func Donef(format string, v ...interface{}) Entry {
-	return Successf(format, v...)
+func Donef(format string, v ...interface{}) {
+	Successf(format, v...)
 }
 
 // Infof ...
-func Infof(format string, v ...interface{}) Entry {
+func Infof(format string, v ...interface{}) {
 	printf(infoSeverity, false, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: fmt.Sprintf(format, v...),
-	}
 }
 
 // Printf ...
-func Printf(format string, v ...interface{}) Entry {
+func Printf(format string, v ...interface{}) {
 	printf(normalSeverity, false, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: fmt.Sprintf(format, v...),
-	}
 }
 
 // Debugf ...
-func Debugf(format string, v ...interface{}) Entry {
+func Debugf(format string, v ...interface{}) {
 	if enableDebugLog {
 		printf(debugSeverity, false, format, v...)
-	}
-
-	return Entry{
-		LogLevel: "info",
-		Message: fmt.Sprintf(format, v...),
 	}
 }
 
 // Warnf ...
-func Warnf(format string, v ...interface{}) Entry {
+func Warnf(format string, v ...interface{}) {
 	printf(warnSeverity, false, format, v...)
-	return Entry{
-		LogLevel: "warn",
-		Message: fmt.Sprintf(format, v...),
-	}
 }
 
 // Errorf ...
-func Errorf(format string, v ...interface{}) Entry {
+func Errorf(format string, v ...interface{}) {
 	printf(errorSeverity, false, format, v...)
-	return Entry{
-		LogLevel: "error",
-		Message: fmt.Sprintf(format, v...),
-	}
 }
 
 // TSuccessf ...
-func TSuccessf(format string, v ...interface{}) Entry {
+func TSuccessf(format string, v ...interface{}) {
 	printf(successSeverity, true, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
-	}
 }
 
 // TDonef ...
-func TDonef(format string, v ...interface{}) Entry {
-	return TSuccessf(format, v...)
+func TDonef(format string, v ...interface{}) {
+	TSuccessf(format, v...)
 }
 
 // TInfof ...
-func TInfof(format string, v ...interface{}) Entry {
+func TInfof(format string, v ...interface{}) {
 	printf(infoSeverity, true, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
-	}
 }
 
 // TPrintf ...
-func TPrintf(format string, v ...interface{}) Entry {
+func TPrintf(format string, v ...interface{}) {
 	printf(normalSeverity, true, format, v...)
-	return Entry{
-		LogLevel: "info",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
-	}
 }
 
 // TDebugf ...
-func TDebugf(format string, v ...interface{}) Entry {
+func TDebugf(format string, v ...interface{}) {
 	if enableDebugLog {
 		printf(debugSeverity, true, format, v...)
-	}
-
-	return Entry{
-		LogLevel: "info",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
 	}
 }
 
 // TWarnf ...
-func TWarnf(format string, v ...interface{}) Entry {
+func TWarnf(format string, v ...interface{}) {
 	printf(warnSeverity, true, format, v...)
-	return Entry{
-		LogLevel: "warn",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
-	}
 }
 
 // TErrorf ...
-func TErrorf(format string, v ...interface{}) Entry {
+func TErrorf(format string, v ...interface{}) {
 	printf(errorSeverity, true, format, v...)
-	return Entry{
-		LogLevel: "error",
-		Message: prefixCurrentTime(fmt.Sprintf(format, v...)),
-	}
 }

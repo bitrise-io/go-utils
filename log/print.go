@@ -103,7 +103,7 @@ func TErrorf(format string, v ...interface{}) {
 func RInfof(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
 	rprintf("info", stepID, tag, data, format, v...)
 }
-// TWarnf ...
+// RWarnf ...
 func RWarnf(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
 	rprintf("warn", stepID, tag, data, format, v...)
 }

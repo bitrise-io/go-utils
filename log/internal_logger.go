@@ -31,7 +31,12 @@ func SetAnalyticsServerURL(url string) {
 }
 
 // Internal sends the log message to the configured analytics server
-func (e Entry) Internal(stepID, tag string, data map[string]interface{}) {
+func rprintf(logLevel string, stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	e := Entry{
+		Message: fmt.Sprintf(format, v...),
+		LogLevel: logLevel,
+	}
+	
 	e.Data = make(map[string]interface{})
 	for k, v := range data {
 		e.Data[k] = v

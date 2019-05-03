@@ -98,3 +98,17 @@ func TWarnf(format string, v ...interface{}) {
 func TErrorf(format string, v ...interface{}) {
 	printf(errorSeverity, true, format, v...)
 }
+
+// RInfof ...
+func RInfof(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("info", stepID, tag, data, format, v...)
+}
+// TWarnf ...
+func RWarnf(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("warn", stepID, tag, data, format, v...)
+}
+
+// RErrorf ...
+func RErrorf(stepID string, tag string, data map[string]interface{}, format string, v ...interface{}) {
+	rprintf("error", stepID, tag, data, format, v...)
+}

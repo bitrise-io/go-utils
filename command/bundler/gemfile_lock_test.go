@@ -7,8 +7,8 @@ import (
 
 func Test_parseGemVersion(t *testing.T) {
 	want := GemVersion{
-		version: "2.13.0",
-		found:   true,
+		Version: "2.13.0",
+		Found:   true,
 	}
 	if got, _ := ParseFastlaneVersion(gemfileLockContent); !reflect.DeepEqual(got, want) {
 		t.Errorf("gemVersionFromGemfileLockContent() = %+v, want: %+v", got, want)
@@ -25,8 +25,8 @@ func Test_ParseBundlerVersion(t *testing.T) {
 			name:               "should match",
 			gemfileLockContent: gemfileLockContent,
 			want: GemVersion{
-				version: "1.13.6",
-				found:   true,
+				Version: "1.13.6",
+				Found:   true,
 			},
 		},
 		{
@@ -36,8 +36,8 @@ func Test_ParseBundlerVersion(t *testing.T) {
       
       `,
 			want: GemVersion{
-				version: "1.13.6",
-				found:   true,
+				Version: "1.13.6",
+				Found:   true,
 			},
 		},
 		{
@@ -46,8 +46,8 @@ func Test_ParseBundlerVersion(t *testing.T) {
       
       1.13.6`,
 			want: GemVersion{
-				version: "1.13.6",
-				found:   true,
+				Version: "1.13.6",
+				Found:   true,
 			},
 		},
 	}

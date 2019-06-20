@@ -8,8 +8,8 @@ import (
 
 // GemVersion contains bundler or fastlane version
 type GemVersion struct {
-	version string
-	found   bool
+	Version string
+	Found   bool
 }
 
 // ParseFastlaneVersion  returns the fastlane version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
@@ -58,8 +58,8 @@ func ParseFastlaneVersion(gemfileLockContent string) (gemVersion GemVersion, err
 			return GemVersion{}, fmt.Errorf("unexpected regexp match: %v", match)
 		}
 		return GemVersion{
-			version: match[1],
-			found:   true,
+			Version: match[1],
+			Found:   true,
 		}, nil
 	}
 
@@ -82,7 +82,7 @@ func ParseBundlerVersion(gemfileLockContent string) (gemVersion GemVersion, err 
 	}
 
 	return GemVersion{
-		version: match[1],
-		found:   true,
+		Version: match[1],
+		Found:   true,
 	}, nil
 }

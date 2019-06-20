@@ -8,8 +8,8 @@ import (
 // InstallBundlerCommand returns a command to install a specific bundler version
 func InstallBundlerCommand(gemfileLockVersion GemVersion) (*command.Model, error) {
 	installBundlerCmdParams := []string{"gem", "install", "bundler", "--force", "--no-document"}
-	if gemfileLockVersion.found {
-		installBundlerCmdParams = append(installBundlerCmdParams, []string{"-v", gemfileLockVersion.version}...)
+	if gemfileLockVersion.Found {
+		installBundlerCmdParams = append(installBundlerCmdParams, []string{"-v", gemfileLockVersion.Version}...)
 	}
 
 	return command.NewFromSlice(installBundlerCmdParams)
@@ -18,8 +18,8 @@ func InstallBundlerCommand(gemfileLockVersion GemVersion) (*command.Model, error
 // BundleInstallCommand returns a command to install a bundle using bundler
 func BundleInstallCommand(gemfileLockVersion GemVersion) (*command.Model, error) {
 	bundleInstallCmdParams := []string{"bundle"}
-	if gemfileLockVersion.found {
-		bundleInstallCmdParams = append(bundleInstallCmdParams, "_"+gemfileLockVersion.version+"_")
+	if gemfileLockVersion.Found {
+		bundleInstallCmdParams = append(bundleInstallCmdParams, "_"+gemfileLockVersion.Version+"_")
 	}
 	bundleInstallCmdParams = append(bundleInstallCmdParams, []string{"install", "--jobs", "20", "--retry", "5"}...)
 

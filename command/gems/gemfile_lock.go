@@ -1,4 +1,4 @@
-package bundler
+package gems
 
 import (
 	"fmt"

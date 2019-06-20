@@ -1,4 +1,4 @@
-package bundler
+package gems
 
 import (
 	"github.com/bitrise-io/go-utils/command"

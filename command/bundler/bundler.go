@@ -1,4 +1,4 @@
-package main
+package bundler
 
 import (
 	"github.com/bitrise-io/go-utils/command"

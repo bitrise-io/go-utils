@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// Version contains bundler or fastlane version
+// Version contains a gem version
 type Version struct {
 	Version string
 	Found   bool
 }
 
-// ParseVersionFromBundle  returns the specified grm version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
+// ParseVersionFromBundle returns the specified gem version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
 //
 // for "fastlane" and the following Gemfile.lock example, it returns: ">= 2.0)"
 //   specs:
@@ -28,13 +28,12 @@ type Version struct {
 //       mini_magick (>= 4.5)
 //     claide (1.0.2)
 func ParseVersionFromBundle(gemName string, gemfileLockContent string) (gemVersion Version, err error) {
-	relevantLines := []string{}
+	var relevantLines []string
 	lines := strings.Split(gemfileLockContent, "\n")
 
 	specsStart := false
 	for _, line := range lines {
-		trimmed := strings.Trim(line, " ")
-		if trimmed == "" {
+		if strings.Trim(line, " ") == "" {
 			specsStart = false
 		}
 

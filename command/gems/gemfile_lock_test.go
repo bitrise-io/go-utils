@@ -16,6 +16,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 		wantErr            bool
 	}{
 		{
+			name:               "Parse fastlane version",
 			gemfileLockContent: gemfileLockContent,
 			gemName:            "fastlane",
 			wantGemVersion: Version{
@@ -24,6 +25,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 			},
 		},
 		{
+			name:               "Bad case which can happen if other gem depends on fastlane, not an issue as the version should only be used for logging.",
 			gemfileLockContent: badFastlaneVersion,
 			gemName:            "fastlane",
 			wantGemVersion: Version{
@@ -32,6 +34,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 			},
 		},
 		{
+			name:               "Cocoapods is not a dependency",
 			gemfileLockContent: noCocoapods,
 			gemName:            "cocoapods",
 			wantGemVersion: Version{
@@ -39,6 +42,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 			},
 		},
 		{
+			name:               "Cocoapods is a dependency",
 			gemfileLockContent: hasCocoapods,
 			gemName:            "cocoapods",
 			wantGemVersion: Version{

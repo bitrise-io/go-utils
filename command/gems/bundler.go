@@ -1,45 +1,48 @@
 package gems
 
 import (
+	"fmt"
+	"os/exec"
+
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/rubycommand"
 )
 
 // InstallBundlerCommand returns a command to install a specific bundler version
-func InstallBundlerCommand(gemfileLockVersion Version) (*command.Model, error) {
-	installBundlerCmdParams := []string{"gem", "install", "bundler", "--force", "--no-document"}
+func InstallBundlerCommand(gemfileLockVersion Version) *command.Model {
+	args := []string{"install", "bundler", "--force", "--no-document"}
 	if gemfileLockVersion.Found {
-		installBundlerCmdParams = append(installBundlerCmdParams, []string{"-v", gemfileLockVersion.Version}...)
+		args = append(args, []string{"--version", gemfileLockVersion.Version}...)
 	}
 
-	return command.NewFromSlice(installBundlerCmdParams)
+	return command.New("gem", args...)
 }
 
 // BundleInstallCommand returns a command to install a bundle using bundler
 func BundleInstallCommand(gemfileLockVersion Version) (*command.Model, error) {
-	bundleInstallCmdParams := []string{"bundle"}
+	args := []string{"bundle"}
 	if gemfileLockVersion.Found {
-		bundleInstallCmdParams = append(bundleInstallCmdParams, "_"+gemfileLockVersion.Version+"_")
+		args = append(args, "_"+gemfileLockVersion.Version+"_")
 	}
-	bundleInstallCmdParams = append(bundleInstallCmdParams, []string{"install", "--jobs", "20", "--retry", "5"}...)
+	args = append(args, []string{"install", "--jobs", "20", "--retry", "5"}...)
 
-	return rubycommand.NewFromSlice(bundleInstallCmdParams)
+	return rubycommand.New("bundle", args...)
 }
 
 // BundleExecPrefix returns a slice containing: "bundle [_verson_] exec"
 func BundleExecPrefix(bundlerVersion Version) []string {
 	bundleExec := []string{"bundle"}
 	if bundlerVersion.Found {
-		bundleExec = append(bundleExec, "_"+bundlerVersion.Version+"_")
+		bundleExec = append(bundleExec, fmt.Sprintf("_%s_", bundlerVersion.Version))
 	}
 	return append(bundleExec, "exec")
 }
 
 // RbenvVersionsCommand retruns a command to print used and available ruby versions if rbenv is installed
-func RbenvVersionsCommand() (*command.Model, error) {
-	if _, err := command.New("which", "rbenv").RunAndReturnTrimmedCombinedOutput(); err != nil {
-		return nil, err
+func RbenvVersionsCommand() *command.Model {
+	if _, err := exec.LookPath("rbenv"); err != nil {
+		return nil
 	}
 
-	return command.New("rbenv", "versions"), nil
+	return command.New("rbenv", "versions")
 }

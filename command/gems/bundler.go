@@ -20,7 +20,7 @@ func InstallBundlerCommand(gemfileLockVersion Version) *command.Model {
 
 // BundleInstallCommand returns a command to install a bundle using bundler
 func BundleInstallCommand(gemfileLockVersion Version) (*command.Model, error) {
-	args := []string{"bundle"}
+	var args []string
 	if gemfileLockVersion.Found {
 		args = append(args, "_"+gemfileLockVersion.Version+"_")
 	}

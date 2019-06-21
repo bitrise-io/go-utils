@@ -5,17 +5,19 @@ import (
 	"testing"
 )
 
-func Test_ParseFastlaneVersion(t *testing.T) {
+func Test_ParseGemVersionFromBundle(t *testing.T) {
 	type args struct {
 	}
 	tests := []struct {
 		name               string
+		gemName            string
 		gemfileLockContent string
 		wantGemVersion     GemVersion
 		wantErr            bool
 	}{
 		{
 			gemfileLockContent: gemfileLockContent,
+			gemName:            "fastlane",
 			wantGemVersion: GemVersion{
 				Version: "2.13.0",
 				Found:   true,
@@ -24,13 +26,13 @@ func Test_ParseFastlaneVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotGemVersion, err := ParseFastlaneVersion(tt.gemfileLockContent)
+			gotGemVersion, err := ParseGemVersionFromBundle(tt.gemName, tt.gemfileLockContent)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseFastlaneVersion() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ParseGemVersionFromBundle() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotGemVersion, tt.wantGemVersion) {
-				t.Errorf("ParseFastlaneVersion() = %v, want %v", gotGemVersion, tt.wantGemVersion)
+				t.Errorf("ParseGemVersionFromBundle() = %v, want %v", gotGemVersion, tt.wantGemVersion)
 			}
 		})
 	}

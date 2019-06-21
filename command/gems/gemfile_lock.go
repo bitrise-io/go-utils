@@ -12,9 +12,9 @@ type GemVersion struct {
 	Found   bool
 }
 
-// ParseFastlaneVersion  returns the fastlane version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
+// ParseGemVersionFromBundle  returns the specified grm version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
 //
-// for the following Gemfile.lock example, it returns: ">= 2.0)"
+// for "fastlane" and the following Gemfile.lock example, it returns: ">= 2.0)"
 //   specs:
 //     CFPropertyList (3.0.0)
 //     addressable (2.6.0)
@@ -27,7 +27,7 @@ type GemVersion struct {
 //       fastlane (>= 2.0)
 //       mini_magick (>= 4.5)
 //     claide (1.0.2)
-func ParseFastlaneVersion(gemfileLockContent string) (gemVersion GemVersion, err error) {
+func ParseGemVersionFromBundle(gemName string, gemfileLockContent string) (gemVersion GemVersion, err error) {
 	relevantLines := []string{}
 	lines := strings.Split(gemfileLockContent, "\n")
 
@@ -48,7 +48,7 @@ func ParseFastlaneVersion(gemfileLockContent string) (gemVersion GemVersion, err
 	}
 
 	//     fastlane (1.109.0)
-	exp := regexp.MustCompile(fmt.Sprintf(`^%s \((.+)\)`, regexp.QuoteMeta("fastlane")))
+	exp := regexp.MustCompile(fmt.Sprintf(`^%s \((.+)\)`, regexp.QuoteMeta(gemName)))
 	for _, line := range relevantLines {
 		match := exp.FindStringSubmatch(strings.TrimSpace(line))
 		if match == nil {

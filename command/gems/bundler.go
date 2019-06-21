@@ -26,6 +26,15 @@ func BundleInstallCommand(gemfileLockVersion GemVersion) (*command.Model, error)
 	return rubycommand.NewFromSlice(bundleInstallCmdParams)
 }
 
+// BundleExecPrefix returns a slice containing: "bundle [_verson_] exec"
+func BundleExecPrefix(bundlerVersion GemVersion) []string {
+	bundleExec := []string{"bundle"}
+	if bundlerVersion.Found {
+		bundleExec = append(bundleExec, "_"+bundlerVersion.Version+"_")
+	}
+	return append(bundleExec, "exec")
+}
+
 // RbenvVersionsCommand retruns a command to print used and available ruby versions if rbenv is installed
 func RbenvVersionsCommand() (*command.Model, error) {
 	if _, err := command.New("which", "rbenv").RunAndReturnTrimmedCombinedOutput(); err != nil {

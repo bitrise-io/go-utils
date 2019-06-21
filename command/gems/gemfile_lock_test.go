@@ -12,13 +12,13 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 		name               string
 		gemName            string
 		gemfileLockContent string
-		wantGemVersion     GemVersion
+		wantGemVersion     Version
 		wantErr            bool
 	}{
 		{
 			gemfileLockContent: gemfileLockContent,
 			gemName:            "fastlane",
-			wantGemVersion: GemVersion{
+			wantGemVersion: Version{
 				Version: "2.13.0",
 				Found:   true,
 			},
@@ -26,7 +26,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 		{
 			gemfileLockContent: badFastlaneVersion,
 			gemName:            "fastlane",
-			wantGemVersion: GemVersion{
+			wantGemVersion: Version{
 				Version: ">= 2.0",
 				Found:   true,
 			},
@@ -34,14 +34,14 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 		{
 			gemfileLockContent: noCocoapods,
 			gemName:            "cocoapods",
-			wantGemVersion: GemVersion{
+			wantGemVersion: Version{
 				Found: false,
 			},
 		},
 		{
 			gemfileLockContent: hasCocoapods,
 			gemName:            "cocoapods",
-			wantGemVersion: GemVersion{
+			wantGemVersion: Version{
 				Version: "1.0.0",
 				Found:   true,
 			},
@@ -49,7 +49,7 @@ func Test_ParseGemVersionFromBundle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotGemVersion, err := ParseGemVersionFromBundle(tt.gemName, tt.gemfileLockContent)
+			gotGemVersion, err := ParseVersionFromBundle(tt.gemName, tt.gemfileLockContent)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseGemVersionFromBundle() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -65,13 +65,13 @@ func Test_ParseBundlerVersion(t *testing.T) {
 	tests := []struct {
 		name               string
 		gemfileLockContent string
-		want               GemVersion
+		want               Version
 		wantErr            bool
 	}{
 		{
 			name:               "should match",
 			gemfileLockContent: gemfileLockContent,
-			want: GemVersion{
+			want: Version{
 				Version: "1.13.6",
 				Found:   true,
 			},
@@ -82,7 +82,7 @@ func Test_ParseBundlerVersion(t *testing.T) {
       1.13.6
       
       `,
-			want: GemVersion{
+			want: Version{
 				Version: "1.13.6",
 				Found:   true,
 			},
@@ -92,7 +92,7 @@ func Test_ParseBundlerVersion(t *testing.T) {
 			gemfileLockContent: `BUNDLED WITH
       
       1.13.6`,
-			want: GemVersion{
+			want: Version{
 				Version: "1.13.6",
 				Found:   true,
 			},

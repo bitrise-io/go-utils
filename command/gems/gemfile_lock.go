@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// GemVersion contains bundler or fastlane version
-type GemVersion struct {
+// Version contains bundler or fastlane version
+type Version struct {
 	Version string
 	Found   bool
 }
 
-// ParseGemVersionFromBundle  returns the specified grm version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
+// ParseVersionFromBundle  returns the specified grm version parsed from a Gemfile.lock on a best effort basis, for logging purposes only.
 //
 // for "fastlane" and the following Gemfile.lock example, it returns: ">= 2.0)"
 //   specs:
@@ -27,7 +27,7 @@ type GemVersion struct {
 //       fastlane (>= 2.0)
 //       mini_magick (>= 4.5)
 //     claide (1.0.2)
-func ParseGemVersionFromBundle(gemName string, gemfileLockContent string) (gemVersion GemVersion, err error) {
+func ParseVersionFromBundle(gemName string, gemfileLockContent string) (gemVersion Version, err error) {
 	relevantLines := []string{}
 	lines := strings.Split(gemfileLockContent, "\n")
 
@@ -55,19 +55,19 @@ func ParseGemVersionFromBundle(gemName string, gemfileLockContent string) (gemVe
 			continue
 		}
 		if len(match) != 2 {
-			return GemVersion{}, fmt.Errorf("unexpected regexp match: %v", match)
+			return Version{}, fmt.Errorf("unexpected regexp match: %v", match)
 		}
-		return GemVersion{
+		return Version{
 			Version: match[1],
 			Found:   true,
 		}, nil
 	}
 
-	return GemVersion{}, nil
+	return Version{}, nil
 }
 
 // ParseBundlerVersion returns the bundler version used to create the bundle
-func ParseBundlerVersion(gemfileLockContent string) (gemVersion GemVersion, err error) {
+func ParseBundlerVersion(gemfileLockContent string) (gemVersion Version, err error) {
 	/*
 		BUNDLED WITH
 			1.17.1
@@ -75,13 +75,13 @@ func ParseBundlerVersion(gemfileLockContent string) (gemVersion GemVersion, err 
 	bundlerRegexp := regexp.MustCompile(`(?m)^BUNDLED WITH\n\s+(\S+)`)
 	match := bundlerRegexp.FindStringSubmatch(gemfileLockContent)
 	if match == nil {
-		return GemVersion{}, nil
+		return Version{}, nil
 	}
 	if len(match) != 2 {
-		return GemVersion{}, fmt.Errorf("unexpected regexp match: %v", match)
+		return Version{}, fmt.Errorf("unexpected regexp match: %v", match)
 	}
 
-	return GemVersion{
+	return Version{
 		Version: match[1],
 		Found:   true,
 	}, nil

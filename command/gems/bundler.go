@@ -6,7 +6,7 @@ import (
 )
 
 // InstallBundlerCommand returns a command to install a specific bundler version
-func InstallBundlerCommand(gemfileLockVersion GemVersion) (*command.Model, error) {
+func InstallBundlerCommand(gemfileLockVersion Version) (*command.Model, error) {
 	installBundlerCmdParams := []string{"gem", "install", "bundler", "--force", "--no-document"}
 	if gemfileLockVersion.Found {
 		installBundlerCmdParams = append(installBundlerCmdParams, []string{"-v", gemfileLockVersion.Version}...)
@@ -16,7 +16,7 @@ func InstallBundlerCommand(gemfileLockVersion GemVersion) (*command.Model, error
 }
 
 // BundleInstallCommand returns a command to install a bundle using bundler
-func BundleInstallCommand(gemfileLockVersion GemVersion) (*command.Model, error) {
+func BundleInstallCommand(gemfileLockVersion Version) (*command.Model, error) {
 	bundleInstallCmdParams := []string{"bundle"}
 	if gemfileLockVersion.Found {
 		bundleInstallCmdParams = append(bundleInstallCmdParams, "_"+gemfileLockVersion.Version+"_")
@@ -27,7 +27,7 @@ func BundleInstallCommand(gemfileLockVersion GemVersion) (*command.Model, error)
 }
 
 // BundleExecPrefix returns a slice containing: "bundle [_verson_] exec"
-func BundleExecPrefix(bundlerVersion GemVersion) []string {
+func BundleExecPrefix(bundlerVersion Version) []string {
 	bundleExec := []string{"bundle"}
 	if bundlerVersion.Found {
 		bundleExec = append(bundleExec, "_"+bundlerVersion.Version+"_")

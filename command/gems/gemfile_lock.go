@@ -33,13 +33,14 @@ func ParseVersionFromBundle(gemName string, gemfileLockContent string) (gemVersi
 
 	specsStart := false
 	for _, line := range lines {
-		if strings.Contains(line, "specs:") {
-			specsStart = true
-		}
-
 		trimmed := strings.Trim(line, " ")
 		if trimmed == "" {
 			specsStart = false
+		}
+
+		if strings.Contains(line, "specs:") {
+			specsStart = true
+			continue
 		}
 
 		if specsStart {

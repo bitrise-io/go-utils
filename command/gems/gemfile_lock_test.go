@@ -112,8 +112,7 @@ func Test_ParseBundlerVersion(t *testing.T) {
 	}
 }
 
-const badFastlaneVersion = `
-GEM
+const badFastlaneVersion = `GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (3.0.0)
@@ -290,7 +289,8 @@ BUNDLED WITH
   1.16.1
 `
 
-const gemfileLockContent = `GIT
+const gemfileLockContent = `
+GIT
   remote: git://xyz.git
   revision: xyz
   branch: patch-1

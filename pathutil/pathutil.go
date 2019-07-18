@@ -182,7 +182,5 @@ func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error)
 
 // GetFileName returns the name of the file from a given path or the name of the directory if it is a directory
 func GetFileName(path string) string {
-	file := filepath.Base(path)
-	extension := filepath.Ext(file)
-	return file[0 : len(file)-len(extension)]
+	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }

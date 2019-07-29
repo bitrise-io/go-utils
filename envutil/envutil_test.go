@@ -1,9 +1,12 @@
 package envutil
 
-import "testing"
-import "os"
-import "github.com/stretchr/testify/require"
-import "github.com/bitrise-io/go-utils/pointers"
+import (
+	"os"
+	"testing"
+
+	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/stretchr/testify/require"
+)
 
 func TestSetenvForFunction(t *testing.T) {
 	// set an original value
@@ -82,4 +85,29 @@ func TestGetenvWithDefault(t *testing.T) {
 
 	// env set - value should be the env's value
 	require.Equal(t, "env value", GetenvWithDefault(testEnvKey, "default value"))
+}
+
+func TestRequiredEnv(t *testing.T) {
+	testEnvKey := "KEY_TestRequiredEnv"
+
+	t.Log("When the env isn't set")
+	{
+		envVal, err := RequiredEnv(testEnvKey)
+		require.EqualError(t, err, "required environment variable (KEY_TestRequiredEnv) not provided")
+		require.Equal(t, "", envVal)
+	}
+
+	// set the env
+	revokeFn, err := RevokableSetenv(testEnvKey, "Test KEY_TestRequiredEnv value")
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, revokeFn())
+	}()
+
+	t.Log("When the env is set")
+	{
+		envVal, err := RequiredEnv(testEnvKey)
+		require.NoError(t, err)
+		require.Equal(t, "Test KEY_TestRequiredEnv value", envVal)
+	}
 }

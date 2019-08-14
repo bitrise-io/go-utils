@@ -19,10 +19,6 @@ func RevokableSetenv(envKey, envValue string) (func() error, error) {
 func RevokableSetenvs(envs map[string]string) (func() error, error) {
 	origValues := map[string]string{}
 
-	for k := range envs {
-		origValues[k] = os.Getenv(k)
-	}
-
 	revokeFn := func() error {
 		for k, v := range origValues {
 			if err := os.Setenv(k, v); err != nil {
@@ -33,6 +29,8 @@ func RevokableSetenvs(envs map[string]string) (func() error, error) {
 	}
 
 	for k, v := range envs {
+		origValues[k] = os.Getenv(k)
+
 		if err := os.Setenv(k, v); err != nil {
 			return revokeFn, err
 		}

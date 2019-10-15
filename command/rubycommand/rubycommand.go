@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 const (
@@ -212,4 +214,58 @@ func IsGemInstalled(gem, version string) (bool, error) {
 	}
 
 	return findGemInList(out, gem, version)
+}
+
+// IsSelectedRbenvRubyInstalled checks if the selected ruby version is installed via rbenv.
+// Ruby version is set by
+// 1. The RBENV_VERSION environment variable
+// 2. The first .ruby-version file found by searching the directory of the script you are executing and each of its
+// parent directories until reaching the root of your filesystem.
+// 3.The first .ruby-version file found by searching the current working directory and each of its parent directories
+// until reaching the root of your filesystem.
+// 4. The global ~/.rbenv/version file. You can modify this file using the rbenv global command.
+func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
+	absWorkdir, err := pathutil.AbsPath(workdir)
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to expand (%s), error: %s", workdir, err)
+	}
+
+	cmd := command.New("rbenv", "version").SetDir(absWorkdir)
+	log.Debugf("$ %s", cmd.PrintableCommandArgs())
+
+	log.Debugf("Ruby version:")
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to check installed ruby version")
+	}
+	log.Debugf(out)
+
+	//
+	// Not installed
+	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed")
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to parse error message, error: %s", err)
+	}
+
+	var version string
+	if reg.MatchString(out) {
+		message := reg.FindString(out)
+		version = strings.Split(strings.Split(message, "`")[1], "'")[0]
+
+		return false, version, nil
+	}
+
+	//
+	// Installed
+	reg, err = regexp.Compile(".* \\(set by")
+	if err != nil {
+		return false, "", fmt.Errorf("Failed to parse error message, error: %s", err)
+	}
+
+	if reg.MatchString(out) {
+		message := reg.FindString(out)
+		version = strings.Split(message, " (set by")[0]
+		return true, version, nil
+	}
+	return false, version, nil
 }

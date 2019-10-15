@@ -227,7 +227,7 @@ func IsGemInstalled(gem, version string) (bool, error) {
 func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	absWorkdir, err := pathutil.AbsPath(workdir)
 	if err != nil {
-		return false, "", fmt.Errorf("Failed to expand (%s), error: %s", workdir, err)
+		return false, "", fmt.Errorf("failed to get absolute path for ( %s ), error: %s", workdir, err)
 	}
 
 	cmd := command.New("rbenv", "version").SetDir(absWorkdir)
@@ -236,7 +236,7 @@ func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	log.Debugf("Ruby version:")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return false, "", fmt.Errorf("Failed to check installed ruby version")
+		return false, "", fmt.Errorf("failed to check installed ruby version, error: %s", err)
 	}
 	log.Debugf(out)
 
@@ -244,14 +244,13 @@ func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	// Not installed
 	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed")
 	if err != nil {
-		return false, "", fmt.Errorf("Failed to parse error message, error: %s", err)
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err)
 	}
 
 	var version string
 	if reg.MatchString(out) {
 		message := reg.FindString(out)
 		version = strings.Split(strings.Split(message, "`")[1], "'")[0]
-
 		return false, version, nil
 	}
 
@@ -259,7 +258,7 @@ func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	// Installed
 	reg, err = regexp.Compile(".* \\(set by")
 	if err != nil {
-		return false, "", fmt.Errorf("Failed to parse error message, error: %s", err)
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
 	}
 
 	if reg.MatchString(out) {

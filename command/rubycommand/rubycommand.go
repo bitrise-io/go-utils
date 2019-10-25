@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
@@ -216,6 +215,36 @@ func IsGemInstalled(gem, version string) (bool, error) {
 	return findGemInList(out, gem, version)
 }
 
+func isSelectedRbenvRubyInstalled(message string) (bool, string, error) {
+	//
+	// Not installed
+	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed")
+	if err != nil {
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err)
+	}
+
+	var version string
+	if reg.MatchString(message) {
+		message := reg.FindString(message)
+		version = strings.Split(strings.Split(message, "`")[1], "'")[0]
+		return false, version, nil
+	}
+
+	//
+	// Installed
+	reg, err = regexp.Compile(".* \\(set by")
+	if err != nil {
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
+	}
+
+	if reg.MatchString(message) {
+		s := reg.FindString(message)
+		version = strings.Split(s, " (set by")[0]
+		return true, version, nil
+	}
+	return false, version, nil
+}
+
 // IsSelectedRbenvRubyInstalled checks if the selected ruby version is installed via rbenv.
 // Ruby version is set by
 // 1. The RBENV_VERSION environment variable
@@ -231,40 +260,9 @@ func IsSelectedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	}
 
 	cmd := command.New("rbenv", "version").SetDir(absWorkdir)
-	log.Debugf("$ %s", cmd.PrintableCommandArgs())
-
-	log.Debugf("Ruby version:")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return false, "", fmt.Errorf("failed to check installed ruby version, error: %s", err)
+		return false, "", fmt.Errorf("failed to check installed ruby version, %s error: %s", out, err)
 	}
-	log.Debugf(out)
-
-	//
-	// Not installed
-	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed")
-	if err != nil {
-		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err)
-	}
-
-	var version string
-	if reg.MatchString(out) {
-		message := reg.FindString(out)
-		version = strings.Split(strings.Split(message, "`")[1], "'")[0]
-		return false, version, nil
-	}
-
-	//
-	// Installed
-	reg, err = regexp.Compile(".* \\(set by")
-	if err != nil {
-		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
-	}
-
-	if reg.MatchString(out) {
-		message := reg.FindString(out)
-		version = strings.Split(message, " (set by")[0]
-		return true, version, nil
-	}
-	return false, version, nil
+	return isSelectedRbenvRubyInstalled(out)
 }

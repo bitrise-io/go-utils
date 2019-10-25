@@ -218,9 +218,9 @@ func IsGemInstalled(gem, version string) (bool, error) {
 func isSelectedRbenvRubyInstalled(message string) (bool, string, error) {
 	//
 	// Not installed
-	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed")
+	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed") // \x60 == ` (The go linter suggested to use the hex code instead)
 	if err != nil {
-		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err)
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err) // \x60 == ` (The go linter suggested to use the hex code instead)
 	}
 
 	var version string

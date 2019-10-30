@@ -215,29 +215,34 @@ func IsGemInstalled(gem, version string) (bool, error) {
 	return findGemInList(out, gem, version)
 }
 
-func isSpecifiedRbenvRubyInstalled(message string) (bool, error) {
+func isSpecifiedRbenvRubyInstalled(message string) (bool, string, error) {
 	//
 	// Not installed
 	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed") // \x60 == ` (The go linter suggested to use the hex code instead)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err) // \x60 == ` (The go linter suggested to use the hex code instead)
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err) // \x60 == ` (The go linter suggested to use the hex code instead)
 	}
 
+	var version string
 	if reg.MatchString(message) {
-		return false, nil
+		message := reg.FindString(message)
+		version = strings.Split(strings.Split(message, "`")[1], "'")[0]
+		return false, version, nil
 	}
 
 	//
 	// Installed
 	reg, err = regexp.Compile(".* \\(set by")
 	if err != nil {
-		return false, fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
+		return false, "", fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
 	}
 
 	if reg.MatchString(message) {
-		return true, nil
+		s := reg.FindString(message)
+		version = strings.Split(s, " (set by")[0]
+		return true, version, nil
 	}
-	return false, nil
+	return false, version, nil
 }
 
 // IsSpecifiedRbenvRubyInstalled checks if the selected ruby version is installed via rbenv.
@@ -249,16 +254,16 @@ func isSpecifiedRbenvRubyInstalled(message string) (bool, error) {
 // until reaching the root of your filesystem.
 // 4. The global ~/.rbenv/version file. You can modify this file using the rbenv global command.
 // src: https://github.com/rbenv/rbenv#choosing-the-ruby-version
-func IsSpecifiedRbenvRubyInstalled(workdir string) (bool, error) {
+func IsSpecifiedRbenvRubyInstalled(workdir string) (bool, string, error) {
 	absWorkdir, err := pathutil.AbsPath(workdir)
 	if err != nil {
-		return false, fmt.Errorf("failed to get absolute path for ( %s ), error: %s", workdir, err)
+		return false, "", fmt.Errorf("failed to get absolute path for ( %s ), error: %s", workdir, err)
 	}
 
 	cmd := command.New("rbenv", "version").SetDir(absWorkdir)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return false, fmt.Errorf("failed to check installed ruby version, %s error: %s", out, err)
+		return false, "", fmt.Errorf("failed to check installed ruby version, %s error: %s", out, err)
 	}
 	return isSpecifiedRbenvRubyInstalled(out)
 }

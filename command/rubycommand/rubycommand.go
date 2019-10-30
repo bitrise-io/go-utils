@@ -209,7 +209,7 @@ func IsGemInstalled(gem, version string) (bool, error) {
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("%s: error: %s", out, err)
 	}
 
 	return findGemInList(out, gem, version)

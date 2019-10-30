@@ -39,7 +39,7 @@ func Test_printf_severity(t *testing.T) {
 		var b bytes.Buffer
 		SetOutWriter(&b)
 		printf(debugSeverity, false, "test %s", "log")
-		require.Equal(t, "test log\n", b.String())
+		require.Equal(t, "\x1b[35;1mtest log\x1b[0m\n", b.String())
 	}
 
 	t.Log("normal")

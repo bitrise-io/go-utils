@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 const (
@@ -212,4 +213,51 @@ func IsGemInstalled(gem, version string) (bool, error) {
 	}
 
 	return findGemInList(out, gem, version)
+}
+
+func isSelectedRbenvRubyInstalled(message string) (bool, error) {
+	//
+	// Not installed
+	reg, err := regexp.Compile("rbenv: version \x60.*' is not installed") // \x60 == ` (The go linter suggested to use the hex code instead)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", "rbenv: version \x60.*' is not installed", err) // \x60 == ` (The go linter suggested to use the hex code instead)
+	}
+
+	if reg.MatchString(message) {
+		return false, nil
+	}
+
+	//
+	// Installed
+	reg, err = regexp.Compile(".* \\(set by")
+	if err != nil {
+		return false, fmt.Errorf("failed to parse regex ( %s ) on the error message, error: %s", ".* \\(set by", err)
+	}
+
+	if reg.MatchString(message) {
+		return true, nil
+	}
+	return false, nil
+}
+
+// IsSelectedRbenvRubyInstalled checks if the selected ruby version is installed via rbenv.
+// Ruby version is set by
+// 1. The RBENV_VERSION environment variable
+// 2. The first .ruby-version file found by searching the directory of the script you are executing and each of its
+// parent directories until reaching the root of your filesystem.
+// 3.The first .ruby-version file found by searching the current working directory and each of its parent directories
+// until reaching the root of your filesystem.
+// 4. The global ~/.rbenv/version file. You can modify this file using the rbenv global command.
+func IsSelectedRbenvRubyInstalled(workdir string) (bool, error) {
+	absWorkdir, err := pathutil.AbsPath(workdir)
+	if err != nil {
+		return false, fmt.Errorf("failed to get absolute path for ( %s ), error: %s", workdir, err)
+	}
+
+	cmd := command.New("rbenv", "version").SetDir(absWorkdir)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("failed to check installed ruby version, %s error: %s", out, err)
+	}
+	return isSelectedRbenvRubyInstalled(out)
 }

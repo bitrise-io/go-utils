@@ -132,3 +132,58 @@ angularjs-rails (1.5.8)`
 		require.Equal(t, false, found)
 	}
 }
+
+func Test_isSelectedRbenvRubyInstalled(t *testing.T) {
+
+	t.Log("RBENV_VERSION installed -  2.3.5 (set by RBENV_VERSION environment variable)")
+	{
+		message := "2.3.5 (set by RBENV_VERSION environment variable)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, true, installed)
+	}
+
+	t.Log("RBENV_VERSION not installed - rbenv: version `2.34.0' is not installed (set by RBENV_VERSION environment variable)")
+	{
+		message := "rbenv: version `2.34.0' is not installed (set by RBENV_VERSION environment variable)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, false, installed)
+	}
+
+	t.Log("Global ruby installed - 2.3.5 (set by /Users/Vagrant/.rbenv/version)")
+	{
+
+		message := "2.3.5 (set by /Users/Vagrant/.rbenv/version)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, true, installed)
+	}
+
+	t.Log("Global ruby not installed - rbenv: version `2.4.2' is not installed (set by /Users/Vagrant/.rbenv/version)")
+	{
+
+		message := "rbenv: version `2.4.2' is not installed (set by /Users/Vagrant/.rbenv/version)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, false, installed)
+	}
+
+	t.Log(".ruby-version not installed - rbenv: version `2.89.2' is not installed (set by /Users/Vagrant/.ruby-version)")
+	{
+
+		message := "rbenv: version `2.89.2' is not installed (set by /Users/Vagrant/.ruby-version)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, false, installed)
+	}
+
+	t.Log(".ruby-version installed 2.3.5 (set by /Users/Vagrant/.ruby-version)")
+	{
+
+		message := "2.3.5 (set by /Users/Vagrant/.ruby-version)"
+		installed, err := isSelectedRbenvRubyInstalled(message)
+		require.NoError(t, err)
+		require.Equal(t, true, installed)
+	}
+}

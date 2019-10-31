@@ -18,6 +18,11 @@ const (
 	brewRubyPthAlt = "/usr/local/opt/ruby/bin/ruby"
 )
 
+// RubyInstallType returns which version manager was used for the ruby install
+func RubyInstallType() InstallType {
+	return installType()
+}
+
 // InstallType ...
 type InstallType int8
 

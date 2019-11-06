@@ -1,6 +1,7 @@
 package gems
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"os"
@@ -90,23 +91,26 @@ func ParseBundlerVersion(gemfileLockContent string) (gemVersion Version, err err
 	}, nil
 }
 
-var gemFileLockNames = []string{
-	"Gemfile.lock", "gems.locked",
-}
+var (
+	// gemFileLockNames the list of possible lock file names.
+	gemFileLockNames = []string{"Gemfile.lock", "gems.locked"}
+	// ErrGemLockNotFound is thrown when the gem file is not found.
+	ErrGemLockNotFound = errors.New("gem lock file not found")
+)
 
 // GemFileLockPth gets the path for the gem lock file from the given directory.
 func GemFileLockPth(searchDir string) (string, error) {
-	var pth string
-	for i, gemFileName := range gemFileLockNames {
-		pth = filepath.Join(searchDir, gemFileName)
-
-		if _, err := os.Stat(pth); err != nil && i == len(gemFileLockNames)-1 {
+	for _, gemFileName := range gemFileLockNames {
+		pth := filepath.Join(searchDir, gemFileName)
+		if _, err := os.Stat(pth); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
 			return "", err
-		} else if err == nil {
-			return pth, nil
 		}
+		return pth, nil
 	}
-	return pth, nil
+	return "", ErrGemLockNotFound
 }
 
 // GemFileLockContent gets the content of the gem lock file from the given directory.

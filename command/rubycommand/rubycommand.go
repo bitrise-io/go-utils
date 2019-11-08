@@ -47,7 +47,8 @@ func cmdExist(slice ...string) bool {
 	return (cmd.Run() == nil)
 }
 
-func installType() InstallType {
+// RubyInstallType returns which version manager was used for the ruby install
+func RubyInstallType() InstallType {
 	whichRuby, err := command.New("which", "ruby").RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
 		return Unkown
@@ -104,7 +105,7 @@ func sudoNeeded(installType InstallType, slice ...string) bool {
 
 // NewWithParams ...
 func NewWithParams(params ...string) (*command.Model, error) {
-	rubyInstallType := installType()
+	rubyInstallType := RubyInstallType()
 	if rubyInstallType == Unkown {
 		return nil, errors.New("unknown ruby installation type")
 	}
@@ -138,7 +139,7 @@ func GemUpdate(gem string) ([]*command.Model, error) {
 
 	cmds = append(cmds, cmd)
 
-	rubyInstallType := installType()
+	rubyInstallType := RubyInstallType()
 	if rubyInstallType == RbenvRuby {
 		cmd, err := New("rbenv", "rehash")
 		if err != nil {
@@ -167,7 +168,7 @@ func GemInstall(gem, version string) ([]*command.Model, error) {
 
 	cmds = append(cmds, cmd)
 
-	rubyInstallType := installType()
+	rubyInstallType := RubyInstallType()
 	if rubyInstallType == RbenvRuby {
 		cmd, err := New("rbenv", "rehash")
 		if err != nil {

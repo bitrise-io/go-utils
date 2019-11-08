@@ -1,7 +1,11 @@
 package gems
 
 import (
+	"errors"
 	"fmt"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -85,4 +89,45 @@ func ParseBundlerVersion(gemfileLockContent string) (gemVersion Version, err err
 		Version: match[1],
 		Found:   true,
 	}, nil
+}
+
+var (
+	// gemFileLockNames the list of possible lock file names.
+	gemFileLockNames = []string{"Gemfile.lock", "gems.locked"}
+	// ErrGemLockNotFound is thrown when the gem file is not found.
+	ErrGemLockNotFound = errors.New("gem lock file not found")
+)
+
+// GemFileLockPth gets the path for the gem lock file from the given directory.
+func GemFileLockPth(searchDir string) (string, error) {
+	for _, gemFileName := range gemFileLockNames {
+		pth := filepath.Join(searchDir, gemFileName)
+		if _, err := os.Stat(pth); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return "", err
+		}
+		return pth, nil
+	}
+	return "", ErrGemLockNotFound
+}
+
+// GemFileLockContent gets the content of the gem lock file from the given directory.
+func GemFileLockContent(searchDir string) (string, error) {
+	gemFileLockPth, err := GemFileLockPth(searchDir)
+	if err != nil {
+		return "", err
+	}
+	return fileutil.ReadStringFromFile(gemFileLockPth)
+}
+
+// ParseVersionFromBundlePth overload for ParseVersionFromBundle.
+func ParseVersionFromBundlePth(gemName string, gemFileLockPth string) (Version, error) {
+	content, err := fileutil.ReadStringFromFile(gemFileLockPth)
+	if err != nil {
+		return Version{}, err
+	}
+
+	return ParseVersionFromBundle(gemName, content)
 }

@@ -64,7 +64,7 @@ func WriteJSONToFile(pth string, fileCont interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to JSON marshal the provided object: %+v", err)
 	}
-	return WriteBytesToFileWithPermission(pth, bytes, 0)
+	return WriteBytesToFile(pth, bytes)
 }
 
 // AppendStringToFile ...

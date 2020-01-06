@@ -14,7 +14,7 @@ func (g *Git) Clone(repo string) *command.Model {
 	return g.command("clone", repo, ".")
 }
 
-// Shallow clone a repository into a new directory.
+// CloneShallowDepth clones a repository shallowly into a new directory.
 func (g *Git) CloneShallowDepth(repo string) *command.Model {
 	return g.command("clone", "--depth=1", repo, ".")
 }

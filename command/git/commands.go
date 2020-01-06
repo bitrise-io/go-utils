@@ -14,6 +14,11 @@ func (g *Git) Clone(repo string) *command.Model {
 	return g.command("clone", repo, ".")
 }
 
+// Clone a repository into a new directory with depth 1.
+func (g *Git) CloneDepth1(repo string) *command.Model {
+	return g.command("clone", "--depth=1", repo, ".")
+}
+
 // CloneTagOrBranch is recursively clones a tag or branch.
 func (g *Git) CloneTagOrBranch(repo, tagOrBranch string) *command.Model {
 	return g.command("clone", "--recursive", "--branch", tagOrBranch, repo, ".")

@@ -58,28 +58,24 @@ func TestIsStringInSlice(t *testing.T) {
 func TestCleanWhitespace(t *testing.T) {
 	// Arrange
 	tests := []struct {
-		name      string
-		arg       []string
-		omitEmpty bool
-		want      []string
+		name string
+		arg  []string
+		want []string
 	}{
 		{
-			name:      "empty list",
-			arg:       []string(nil),
-			omitEmpty: true,
-			want:      []string(nil),
+			name: "empty list",
+			arg:  []string(nil),
+			want: []string(nil),
 		},
 		{
-			name:      "multiple elements",
-			arg:       []string{"url1", "url2", "url3"},
-			omitEmpty: true,
-			want:      []string{"url1", "url2", "url3"},
+			name: "multiple elements",
+			arg:  []string{"url1", "url2", "url3"},
+			want: []string{"url1", "url2", "url3"},
 		},
 		{
-			name:      "multiple elements, skipping empty ones",
-			arg:       []string{"url1", "url2", " \n ", "url3"},
-			omitEmpty: true,
-			want:      []string{"url1", "url2", "url3"},
+			name: "multiple elements, skipping empty ones",
+			arg:  []string{"url1", "url2", " \n ", "url3"},
+			want: []string{"url1", "url2", "url3"},
 		},
 		{
 			name: "multiple elements with spaces and newlines",
@@ -87,15 +83,14 @@ func TestCleanWhitespace(t *testing.T) {
 url2   `, `
 
 url3`},
-			omitEmpty: true,
-			want:      []string{"url1", "url2", "url3"},
+			want: []string{"url1", "url2", "url3"},
 		},
 	}
 
 	// Act + Assert
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotItems := CleanWhitespace(tt.arg, true); !reflect.DeepEqual(gotItems, tt.want) {
+			if gotItems := CleanWhitespace(tt.arg); !reflect.DeepEqual(gotItems, tt.want) {
 				t.Errorf("splitByPipe() = %v, want %v", gotItems, tt.want)
 			}
 		})

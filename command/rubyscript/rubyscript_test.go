@@ -18,7 +18,7 @@ gem "json"
 const gemfileLockContent = `GEM
   remote: https://rubygems.org/
   specs:
-    json (2.1.0)
+    json (2.3.0)
 
 PLATFORMS
   ruby
@@ -113,7 +113,7 @@ func TestRunScriptCommand(t *testing.T) {
 		require.Equal(t, `{"data":"Hi Bitrise"}`, out)
 	}
 
-	t.Log("runy 'bundle exec ruby script.rb', if Gemfile installed with bundler")
+	t.Log("run 'bundle exec ruby script.rb', if Gemfile installed with bundler")
 	{
 		runner := New(rubyScriptWithGemContent)
 		require.NotNil(t, runner)

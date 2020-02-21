@@ -1,5 +1,7 @@
 package sliceutil
 
+import "strings"
+
 // UniqueStringSlice - returns a cleaned up list,
 // where every item is unique.
 // Does NOT guarantee any ordering, the result can
@@ -29,4 +31,17 @@ func IndexOfStringInSlice(searchFor string, searchIn []string) int {
 // IsStringInSlice ...
 func IsStringInSlice(searchFor string, searchIn []string) bool {
 	return IndexOfStringInSlice(searchFor, searchIn) >= 0
+}
+
+// CleanWhitespace ...
+func CleanWhitespace(list []string, omitEmpty bool) (items []string) {
+	for _, e := range list {
+		if omitEmpty {
+			e = strings.TrimSpace(e)
+		}
+		if !omitEmpty || len(e) > 0 {
+			items = append(items, e)
+		}
+	}
+	return
 }

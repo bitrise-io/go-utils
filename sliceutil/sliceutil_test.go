@@ -1,6 +1,7 @@
 package sliceutil
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/testutil"
@@ -52,4 +53,51 @@ func TestIsStringInSlice(t *testing.T) {
 
 	t.Log("Item is not in the slice")
 	require.Equal(t, false, IsStringInSlice("cba", testSlice))
+}
+
+func TestCleanWhitespace(t *testing.T) {
+	// Arrange
+	tests := []struct {
+		name      string
+		arg       []string
+		omitEmpty bool
+		want      []string
+	}{
+		{
+			name:      "empty list",
+			arg:       []string(nil),
+			omitEmpty: true,
+			want:      []string(nil),
+		},
+		{
+			name:      "multiple elements",
+			arg:       []string{"url1", "url2", "url3"},
+			omitEmpty: true,
+			want:      []string{"url1", "url2", "url3"},
+		},
+		{
+			name:      "multiple elements, skipping empty ones",
+			arg:       []string{"url1", "url2", " \n ", "url3"},
+			omitEmpty: true,
+			want:      []string{"url1", "url2", "url3"},
+		},
+		{
+			name: "multiple elements with spaces and newlines",
+			arg: []string{"url1", `
+url2   `, `
+
+url3`},
+			omitEmpty: true,
+			want:      []string{"url1", "url2", "url3"},
+		},
+	}
+
+	// Act + Assert
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotItems := CleanWhitespace(tt.arg, true); !reflect.DeepEqual(gotItems, tt.want) {
+				t.Errorf("splitByPipe() = %v, want %v", gotItems, tt.want)
+			}
+		})
+	}
 }

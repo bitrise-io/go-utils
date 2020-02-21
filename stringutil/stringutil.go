@@ -102,15 +102,3 @@ func LastNLines(s string, n int) string {
 
 	return strings.Join(splitted, "\n")
 }
-
-func Split(list string, sep string, omitEmpty bool) (items []string) {
-	for _, e := range strings.Split(list, sep) {
-		if omitEmpty {
-			e = strings.TrimSpace(e)
-		}
-		if !omitEmpty || len(e) > 0 {
-			items = append(items, e)
-		}
-	}
-	return
-}

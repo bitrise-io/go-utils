@@ -1,6 +1,7 @@
 package stringutil
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -166,4 +167,87 @@ func TestMaxFirstCharsWithDots(t *testing.T) {
 	require.Equal(t, "123456", MaxFirstCharsWithDots("123456", 10))
 
 	require.Equal(t, "hello w...", MaxFirstCharsWithDots("hello world!", 10))
+}
+
+func TestSplit(t *testing.T) {
+	// Arrange
+	tests := []struct {
+		name string
+		arg  string
+		sep  string
+		want []string
+	}{
+		{
+			name: "empty string",
+			arg:  "",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "pipe char",
+			arg:  "|",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "space + pipe char",
+			arg:  " |",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "pipe char + space",
+			arg:  "| ",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "space + pipe char + spaces",
+			arg:  " |  ",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "newlines + pipe char + newline",
+			arg:  "\n\n|\n",
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "newline + pipe char",
+			arg:  `|`,
+			sep:  "|",
+			want: []string(nil),
+		},
+		{
+			name: "single element",
+			arg:  `url`,
+			sep:  "|",
+			want: []string{"url"},
+		},
+		{
+			name: "multiple elements",
+			arg:  `url1|url2|url3`,
+			sep:  "|",
+			want: []string{"url1", "url2", "url3"},
+		},
+		{
+			name: "multiple elements with spaces and newlines",
+			arg: `url1
+|url2   |
+
+url3`,
+			sep:  "|",
+			want: []string{"url1", "url2", "url3"},
+		},
+	}
+
+	// Act + Assert
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotItems := Split(tt.arg, tt.sep, true); !reflect.DeepEqual(gotItems, tt.want) {
+				t.Errorf("splitByPipe() = %v, want %v", gotItems, tt.want)
+			}
+		})
+	}
 }

@@ -34,11 +34,11 @@ func IsStringInSlice(searchFor string, searchIn []string) bool {
 }
 
 // CleanWhitespace removes leading and trailing white space from each element of the input slice.
-// Elements that end up as empty strings are excluded from the result.
-func CleanWhitespace(list []string) (items []string) {
+// Elements that end up as empty strings are excluded from the result depending on the value of the omitEmpty flag.
+func CleanWhitespace(list []string, omitEmpty bool) (items []string) {
 	for _, e := range list {
 		e = strings.TrimSpace(e)
-		if len(e) > 0 {
+		if !omitEmpty || len(e) > 0 {
 			items = append(items, e)
 		}
 	}

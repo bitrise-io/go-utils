@@ -212,9 +212,16 @@ func Test_gemInstallCommand(t *testing.T) {
 		{
 			name:             "latest including prerelease",
 			gem:              "fastlane",
-			version:          "2.149.1",
+			version:          "",
 			enablePrerelease: true,
-			want:             []string{"gem", "install", "fastlane", "--no-document", "--pre"},
+			want:             []string{"gem", "install", "fastlane", "--no-document", "--prerelease"},
+		},
+		{
+			name:             "version range including prerelease",
+			gem:              "fastlane",
+			version:          ">=2.149.1",
+			enablePrerelease: true,
+			want:             []string{"gem", "install", "fastlane", "--no-document", "--prerelease", "-v", ">=2.149.1"},
 		},
 		{
 			name:             "fixed version",

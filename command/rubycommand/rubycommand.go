@@ -155,9 +155,9 @@ func GemUpdate(gem string) ([]*command.Model, error) {
 func gemInstallCommand(gem, version string, enablePrerelease bool) []string {
 	slice := []string{"gem", "install", gem, "--no-document"}
 	if enablePrerelease {
-		slice = append(slice, "--pre")
+		slice = append(slice, "--prerelease")
 	}
-	if !enablePrerelease && version != "" {
+	if version != "" {
 		slice = append(slice, "-v", version)
 	}
 
@@ -165,30 +165,8 @@ func gemInstallCommand(gem, version string, enablePrerelease bool) []string {
 }
 
 // GemInstall ...
-func GemInstall(gem, version string) ([]*command.Model, error) {
-	cmd, err := NewFromSlice(gemInstallCommand(gem, version, false))
-	if err != nil {
-		return []*command.Model{}, err
-	}
-
-	cmds := []*command.Model{cmd}
-
-	rubyInstallType := RubyInstallType()
-	if rubyInstallType == RbenvRuby {
-		cmd, err := New("rbenv", "rehash")
-		if err != nil {
-			return []*command.Model{}, err
-		}
-
-		cmds = append(cmds, cmd)
-	}
-
-	return cmds, nil
-}
-
-// GemInstallPrerelease returns commands to install the latest version of a gem, including prerelease versions
-func GemInstallPrerelease(gem string) ([]*command.Model, error) {
-	cmd, err := NewFromSlice(gemInstallCommand(gem, "", true))
+func GemInstall(gem, version string, enablePrerelease bool) ([]*command.Model, error) {
+	cmd, err := NewFromSlice(gemInstallCommand(gem, version, enablePrerelease))
 	if err != nil {
 		return []*command.Model{}, err
 	}

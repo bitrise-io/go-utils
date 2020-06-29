@@ -186,7 +186,7 @@ func GemInstall(gem, version string) ([]*command.Model, error) {
 	return cmds, nil
 }
 
-// GemInstallPrerelease installs the latest versin of a gem, including prerelease versions
+// GemInstallPrerelease returns commands to install the latest version of a gem, including prerelease versions
 func GemInstallPrerelease(gem string) ([]*command.Model, error) {
 	cmd, err := NewFromSlice(gemInstallCommand(gem, "", true))
 	if err != nil {

@@ -193,3 +193,48 @@ func Test_isSpecifiedRbenvRubyInstalled(t *testing.T) {
 		require.Equal(t, "2.3.5", version)
 	}
 }
+
+func Test_gemInstallCommand(t *testing.T) {
+	tests := []struct {
+		name             string
+		gem              string
+		version          string
+		enablePrerelease bool
+		want             []string
+	}{
+		{
+			name:             "latest",
+			gem:              "fastlane",
+			version:          "",
+			enablePrerelease: false,
+			want:             []string{"gem", "install", "fastlane", "--no-document"},
+		},
+		{
+			name:             "latest including prerelease",
+			gem:              "fastlane",
+			version:          "",
+			enablePrerelease: true,
+			want:             []string{"gem", "install", "fastlane", "--no-document", "--prerelease"},
+		},
+		{
+			name:             "version range including prerelease",
+			gem:              "fastlane",
+			version:          ">=2.149.1",
+			enablePrerelease: true,
+			want:             []string{"gem", "install", "fastlane", "--no-document", "--prerelease", "-v", ">=2.149.1"},
+		},
+		{
+			name:             "fixed version",
+			gem:              "fastlane",
+			version:          "2.149.1",
+			enablePrerelease: false,
+			want:             []string{"gem", "install", "fastlane", "--no-document", "-v", "2.149.1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := gemInstallCommand(tt.gem, tt.version, tt.enablePrerelease)
+			require.Equal(t, tt.want, got, "gemInstallCommand() return value")
+		})
+	}
+}

@@ -61,6 +61,14 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		wantErr      bool
 	}{
 		{
+			name: "invalid command",
+			args: args{
+				cmd: exec.Command(""),
+			},
+			wantExitCode: -1,
+			wantErr:      true,
+		},
+		{
 			name: "env command",
 			args: args{
 				cmd: exec.Command("env"),

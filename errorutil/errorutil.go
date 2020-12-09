@@ -33,8 +33,6 @@ func CmdExitCodeFromError(err error) (int, error) {
 	cmdExitCode := 0
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
-			exitError.ProcessState.Exited()
-
 			waitStatus, ok := exitError.Sys().(syscall.WaitStatus)
 			if !ok {
 				return 1, errors.New("Failed to cast exit status")

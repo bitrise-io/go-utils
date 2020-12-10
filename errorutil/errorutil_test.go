@@ -49,7 +49,12 @@ func TestCmdExitCodeFromError(t *testing.T) {
 		{
 			name: "env command",
 			cmd:  exec.Command("env"),
-			want: 0,
+			want: -1,
+		},
+		{
+			name: "invalid command",
+			cmd:  exec.Command(""),
+			want: -1,
 		},
 		{
 			name: "not existing executable",
@@ -65,18 +70,12 @@ func TestCmdExitCodeFromError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.cmd.Run()
-			want := tt.cmd.ProcessState.ExitCode()
-			if tt.want != want {
-				t.Errorf("Invalid test expectation: tt.cmd.ProcessState.ExitCode() = %v, want %v", want, tt.want)
-			}
 
 			// Act
 			got, err := CmdExitCodeFromError(err)
 
 			// Assert
-			if got != want {
-				t.Errorf("CmdExitCodeFromError() = %v, want %v", got, want)
-			}
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -84,26 +83,29 @@ func TestCmdExitCodeFromError(t *testing.T) {
 func TestIsExitStatusError(t *testing.T) {
 	tests := []struct {
 		name string
-		cmd  *exec.Cmd
+		err  error
 		want bool
 	}{
 		{
 			name: "exit 42",
-			cmd:  exec.Command("bash", "testdata/exit_42.sh"),
+			err:  exec.Command("bash", "testdata/exit_42.sh").Run(),
 			want: true,
+		},
+		{
+			name: "invalid command",
+			err:  exec.Command("").Run(),
+			want: false,
+		},
+		{
+			name: "nil test",
+			err:  nil,
+			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.cmd.Run()
-			want := tt.cmd.ProcessState.Exited()
-			if tt.want != want {
-				t.Errorf("Invalid test expectation: tt.cmd.ProcessState.Exited() = %v, want %v", want, tt.want)
-			}
-
-			if got := IsExitStatusError(err); got != tt.want {
-				t.Errorf("IsExitStatusError() = %v, want %v", got, tt.want)
-			}
+			got := IsExitStatusError(tt.err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -62,8 +62,12 @@ func (g *Git) Clean(options ...string) *command.Model {
 }
 
 // SubmoduleUpdate updates the registered submodules.
-func (g *Git) SubmoduleUpdate() *command.Model {
-	return g.command("submodule", "update", "--init", "--recursive")
+func (g *Git) SubmoduleUpdate(shallowCheckout bool) *command.Model {
+	args := []string{"submodule", "update", "--init", "--recursive"}
+	if shallowCheckout {
+		args = append(args, "--depth=1")
+	}
+	return g.command(args...)
 }
 
 // SubmoduleForeach evaluates an arbitrary git command in each checked out

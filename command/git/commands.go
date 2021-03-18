@@ -63,7 +63,7 @@ func (g *Git) Clean(options ...string) *command.Model {
 
 // SubmoduleUpdate updates the registered submodules.
 func (g *Git) SubmoduleUpdate(shallowCheckout bool) *command.Model {
-	args := []string{"submodule", "update", "--init", "--recursive", "--jobs"}
+	args := []string{"submodule", "update", "--init", "--recursive", "--jobs=10"}
 	if shallowCheckout {
 		args = append(args, "--depth=1")
 	}

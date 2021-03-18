@@ -31,7 +31,7 @@ func (g *Git) RemoteAdd(name, url string) *command.Model {
 
 // Fetch downloads objects and refs from another repository.
 func (g *Git) Fetch(opts ...string) *command.Model {
-	args := []string{"fetch", "--jobs=10"}
+	args := []string{"fetch"}
 	args = append(args, opts...)
 	return g.command(args...)
 }

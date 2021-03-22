@@ -144,3 +144,13 @@ func (g *Git) Status(opts ...string) *command.Model {
 func (g *Git) Config(key string, value string) *command.Model {
 	return g.command("config", key, value)
 }
+
+func (g *Git) SparseCheckoutInit() *command.Model {
+	return g.command("sparse-checkout", "init", "--cone")
+}
+
+func (g *Git) SparseCheckoutSet(folders ...string) *command.Model {
+	args := []string{"sparse-checkout", "set"}
+	args = append(args, folders...)
+	return g.command(args...)
+}

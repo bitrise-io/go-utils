@@ -145,12 +145,18 @@ func (g *Git) Config(key string, value string) *command.Model {
 	return g.command("config", key, value)
 }
 
-func (g *Git) SparseCheckoutInit() *command.Model {
-	return g.command("sparse-checkout", "init", "--cone")
+// SparseCheckoutInit initializes the sparse-checkout config file.
+func (g *Git) SparseCheckoutInit(cone bool) *command.Model {
+	args := []string{"sparse-checkout", "init"}
+	if cone {
+		args = append(args, "--cone")
+	}
+	return g.command(args...)
 }
 
-func (g *Git) SparseCheckoutSet(folders ...string) *command.Model {
+// SparseCheckoutSet writes the provided patterns to the sparse-checkout config file.
+func (g *Git) SparseCheckoutSet(opts ...string) *command.Model {
 	args := []string{"sparse-checkout", "set"}
-	args = append(args, folders...)
+	args = append(args, opts...)
 	return g.command(args...)
 }

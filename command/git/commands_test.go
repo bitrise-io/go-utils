@@ -16,7 +16,11 @@ func TestGitCommands(t *testing.T) {
 	testCases := []testCase{
 		// SparseCheckout
 		{
-			command: (&Git{}).SparseCheckoutInit(),
+			command: (&Git{}).SparseCheckoutInit(false),
+			want:    `git "sparse-checkout" "init"`,
+		},
+		{
+			command: (&Git{}).SparseCheckoutInit(true),
 			want:    `git "sparse-checkout" "init" "--cone"`,
 		},
 		{

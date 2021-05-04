@@ -1,4 +1,4 @@
-package pathfilter
+package fsfilter
 
 import (
 	"github.com/bitrise-io/go-utils/fileutil"

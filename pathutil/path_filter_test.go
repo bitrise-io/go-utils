@@ -1,15 +1,16 @@
-package fsfilter
+package pathutil_test
 
 import (
-	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFilterPaths(t *testing.T) {
@@ -19,7 +20,7 @@ func TestFilterPaths(t *testing.T) {
 			"/Users/bitrise/test",
 			"/Users/vagrant/test",
 		}
-		filtered, err := FilterPaths(paths)
+		filtered, err := pathutil.FilterPaths(paths)
 		require.NoError(t, err)
 		require.Equal(t, paths, filtered)
 	}
@@ -33,7 +34,7 @@ func TestFilterPaths(t *testing.T) {
 		filter := func(pth string) (bool, error) {
 			return strings.Contains(pth, "vagrant"), nil
 		}
-		filtered, err := FilterPaths(paths, filter)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/vagrant/test"}, filtered)
 	}
@@ -46,8 +47,8 @@ func TestBaseFilter(t *testing.T) {
 			"path/to/my/gradlew",
 			"path/to/my/gradlew/file",
 		}
-		filter := BaseFilter("gradlew", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.BaseFilter("gradlew", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/gradlew"}, filtered)
 	}
@@ -58,8 +59,8 @@ func TestBaseFilter(t *testing.T) {
 			"path/to/my/gradlew",
 			"path/to/my/gradlew/file",
 		}
-		filter := BaseFilter("gradlew", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.BaseFilter("gradlew", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/gradlew/file"}, filtered)
 	}
@@ -72,8 +73,8 @@ func TestExtensionFilter(t *testing.T) {
 			"path/to/my/project.xcodeproj",
 			"path/to/my/project.xcworkspace",
 		}
-		filter := ExtensionFilter(".xcodeproj", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ExtensionFilter(".xcodeproj", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/project.xcodeproj"}, filtered)
 	}
@@ -84,8 +85,8 @@ func TestExtensionFilter(t *testing.T) {
 			"path/to/my/project.xcodeproj",
 			"path/to/my/project.xcworkspace",
 		}
-		filter := ExtensionFilter(".xcodeproj", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ExtensionFilter(".xcodeproj", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/project.xcworkspace"}, filtered)
 	}
@@ -98,8 +99,8 @@ func TestRegexpFilter(t *testing.T) {
 			"path/to/my/project.xcodeproj",
 			"path/to/my/project.xcworkspace",
 		}
-		filter := RegexpFilter(".*.xcodeproj", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.RegexpFilter(".*.xcodeproj", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/project.xcodeproj"}, filtered)
 	}
@@ -110,8 +111,8 @@ func TestRegexpFilter(t *testing.T) {
 			"path/to/my/project.xcodeproj",
 			"path/to/my/project.xcworkspace",
 		}
-		filter := RegexpFilter(".*.xcodeproj", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.RegexpFilter(".*.xcodeproj", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"path/to/my/project.xcworkspace"}, filtered)
 	}
@@ -124,8 +125,8 @@ func TestComponentFilter(t *testing.T) {
 			"/Users/bitrise/test",
 			"/Users/vagrant/test",
 		}
-		filter := ComponentFilter("bitrise", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ComponentFilter("bitrise", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/bitrise/test"}, filtered)
 	}
@@ -136,8 +137,8 @@ func TestComponentFilter(t *testing.T) {
 			"/Users/bitrise/test",
 			"/Users/vagrant/test",
 		}
-		filter := ComponentFilter("bitrise", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ComponentFilter("bitrise", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/vagrant/test"}, filtered)
 	}
@@ -150,8 +151,8 @@ func TestComponentWithExtensionFilter(t *testing.T) {
 			"/Users/bitrise.framework/test",
 			"/Users/vagrant/test",
 		}
-		filter := ComponentWithExtensionFilter(".framework", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ComponentWithExtensionFilter(".framework", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/bitrise.framework/test"}, filtered)
 	}
@@ -162,8 +163,8 @@ func TestComponentWithExtensionFilter(t *testing.T) {
 			"/Users/bitrise.framework/test",
 			"/Users/vagrant/test",
 		}
-		filter := ComponentWithExtensionFilter(".framework", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.ComponentWithExtensionFilter(".framework", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/vagrant/test"}, filtered)
 	}
@@ -185,8 +186,8 @@ func TestIsDirectoryFilter(t *testing.T) {
 			tmpDir,
 			tmpFile,
 		}
-		filter := IsDirectoryFilter(true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.IsDirectoryFilter(true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{tmpDir}, filtered)
 	}
@@ -197,8 +198,8 @@ func TestIsDirectoryFilter(t *testing.T) {
 			tmpDir,
 			tmpFile,
 		}
-		filter := IsDirectoryFilter(false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.IsDirectoryFilter(false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{tmpFile}, filtered)
 	}
@@ -211,8 +212,8 @@ func TestInDirectoryFilter(t *testing.T) {
 			"/Users/bitrise/test",
 			"/Users/vagrant/test",
 		}
-		filter := InDirectoryFilter("/Users/bitrise", true)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.InDirectoryFilter("/Users/bitrise", true)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/bitrise/test"}, filtered)
 	}
@@ -223,8 +224,8 @@ func TestInDirectoryFilter(t *testing.T) {
 			"/Users/bitrise/test",
 			"/Users/vagrant/test",
 		}
-		filter := InDirectoryFilter("/Users/bitrise", false)
-		filtered, err := FilterPaths(paths, filter)
+		filter := pathutil.InDirectoryFilter("/Users/bitrise", false)
+		filtered, err := pathutil.FilterPaths(paths, filter)
 		require.NoError(t, err)
 		require.Equal(t, []string{"/Users/vagrant/test"}, filtered)
 	}
@@ -276,7 +277,7 @@ func TestDirectoryContainsFileFilter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := DirectoryContainsFile(tt.filterFileName)(tt.path)
+				got, err := pathutil.DirectoryContainsFileFilter(tt.filterFileName)(tt.path)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("DirectoryContainsFile() returned error: %v, wantErr: %v", err, tt.wantErr)
 				}

@@ -1,7 +1,8 @@
-package fsfilter
+package pathutil
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -109,8 +110,8 @@ func InDirectoryFilter(dir string, allowed bool) FilterFunc {
 	}
 }
 
-// DirectoryContainsFile returns a FilterFunc that checks if a directory contains a file
-func DirectoryContainsFile(fileName string) FilterFunc {
+// DirectoryContainsFileFilter returns a FilterFunc that checks if a directory contains a file
+func DirectoryContainsFileFilter(fileName string) FilterFunc {
 	return func(pth string) (bool, error) {
 		isDir, err := IsDirectoryFilter(true)(pth)
 		if err != nil {
@@ -129,4 +130,14 @@ func DirectoryContainsFile(fileName string) FilterFunc {
 		}
 		return true, nil
 	}
+}
+
+// FileContainsFilter ...
+func FileContainsFilter(pth, str string) (bool, error) {
+	bytes, err := ioutil.ReadFile(pth)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(bytes), str), nil
 }

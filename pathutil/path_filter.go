@@ -98,7 +98,7 @@ func IsDirectoryFilter(allowed bool) FilterFunc {
 		if fileInf == nil {
 			return false, errors.New("no file info available")
 		}
-		return (allowed == fileInf.IsDir()), nil
+		return allowed == fileInf.IsDir(), nil
 	}
 }
 

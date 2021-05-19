@@ -3,18 +3,21 @@ package versions
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCompareVersions(t *testing.T) {
 	res, err := CompareVersions("1.0.0", "1.0.1")
-	testutil.EqualAndNoError(t, 1, res, err, "Trivial compare")
+	require.NoError(t, err)
+	require.Equal(t, 1, res, "Trivial compare")
 
 	res, err = CompareVersions("1.0.2", "1.0.1")
-	testutil.EqualAndNoError(t, -1, res, err, "Reverse compare")
+	require.NoError(t, err)
+	require.Equal(t, -1, res, "Reverse compare")
 
 	res, err = CompareVersions("1.0.2", "1.0.2")
-	testutil.EqualAndNoError(t, 0, res, err, "Equal compare")
+	require.NoError(t, err)
+	require.Equal(t, 0, res, "Equal compare")
 
 	t.Log("1.0.0 <-> 0.9.8")
 	if res, err := CompareVersions("1.0.0", "0.9.8"); res != -1 || err != nil {

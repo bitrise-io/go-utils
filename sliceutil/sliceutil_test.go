@@ -4,17 +4,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUniqueStringSlice(t *testing.T) {
 	require.Equal(t, []string{}, UniqueStringSlice([]string{}))
 	require.Equal(t, []string{"one"}, UniqueStringSlice([]string{"one"}))
-	testutil.EqualSlicesWithoutOrder(t,
+	require.ElementsMatch(t,
 		[]string{"one", "two"},
 		UniqueStringSlice([]string{"one", "two"}))
-	testutil.EqualSlicesWithoutOrder(t,
+	require.ElementsMatch(t,
 		[]string{"one", "two", "three"},
 		UniqueStringSlice([]string{"one", "two", "three", "two", "one"}))
 }

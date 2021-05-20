@@ -216,7 +216,7 @@ func ListPathInDirSortedByComponents(searchDir string, relPath bool) ([]string, 
 	return SortPathsByComponents(fileList)
 }
 
-// ListEntries ...
+// ListEntries filters contents of a directory using the provided filters
 func ListEntries(dir string, filters ...FilterFunc) ([]string, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {

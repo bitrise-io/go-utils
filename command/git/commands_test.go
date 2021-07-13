@@ -31,6 +31,11 @@ func TestGitCommands(t *testing.T) {
 			command: (&Git{}).SparseCheckoutSet("client/android", "client/ios"),
 			want:    `git "sparse-checkout" "set" "client/android" "client/ios"`,
 		},
+		// Log
+		{
+			command: (&Git{}).Log("%H", "refs/head/hcnarb"),
+			want:    `git "log" "-1" "--format=%H" "refs/head/hcnarb"`,
+		},
 	}
 
 	for _, testCase := range testCases {

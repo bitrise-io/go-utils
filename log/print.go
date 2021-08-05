@@ -25,14 +25,9 @@ func prefixCurrentTime(message string) string {
 	return fmt.Sprintf("%s %s", timestampField(), message)
 }
 
-// Successf ...
-func Successf(format string, v ...interface{}) {
-	printf(successSeverity, false, format, v...)
-}
-
 // Donef ...
 func Donef(format string, v ...interface{}) {
-	Successf(format, v...)
+	printf(doneSeverity, false, format, v...)
 }
 
 // Infof ...
@@ -62,14 +57,9 @@ func Errorf(format string, v ...interface{}) {
 	printf(errorSeverity, false, format, v...)
 }
 
-// TSuccessf ...
-func TSuccessf(format string, v ...interface{}) {
-	printf(successSeverity, true, format, v...)
-}
-
 // TDonef ...
 func TDonef(format string, v ...interface{}) {
-	TSuccessf(format, v...)
+	printf(doneSeverity, true, format, v...)
 }
 
 // TInfof ...

@@ -62,7 +62,7 @@ func Test_printf_severity(t *testing.T) {
 	{
 		var b bytes.Buffer
 		SetOutWriter(&b)
-		printf(successSeverity, false, "test %s", "log")
+		printf(doneSeverity, false, "test %s", "log")
 		require.Equal(t, "\x1b[32;1mtest log\x1b[0m\n", b.String())
 	}
 }

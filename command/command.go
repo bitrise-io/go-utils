@@ -16,6 +16,7 @@ type Command interface {
 	SetStderr(stdout io.Writer) Command
 	SetEnvs(envs ...string) Command
 	AppendEnvs(envs ...string) Command
+	Args() []string
 	PrintableCommandArgs() string
 	Run() error
 	RunAndReturnTrimmedOutput() (string, error)
@@ -28,14 +29,14 @@ type Factory func(name string, args ...string) Command
 
 // NewCommand ...
 func NewCommand(name string, args ...string) Command {
-	return newCommand(name, args...)
+	return newCmdWrapper(name, args...)
 }
 
 type cmdWrapper struct {
 	cmd *exec.Cmd
 }
 
-func newCommand(name string, args ...string) Command {
+func newCmdWrapper(name string, args ...string) *cmdWrapper {
 	return &cmdWrapper{
 		cmd: exec.Command(name, args...),
 	}
@@ -44,7 +45,7 @@ func newCommand(name string, args ...string) Command {
 // NewWithStandardOuts - same as NewCommand, but sets the command's
 // stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
 func NewWithStandardOuts(name string, args ...string) Command {
-	return newCommand(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
+	return newCmdWrapper(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
 }
 
 // NewWithParams ...
@@ -52,10 +53,10 @@ func NewWithParams(params ...string) (Command, error) {
 	if len(params) == 0 {
 		return nil, errors.New("no command provided")
 	} else if len(params) == 1 {
-		return newCommand(params[0]), nil
+		return newCmdWrapper(params[0]), nil
 	}
 
-	return newCommand(params[0], params[1:]...), nil
+	return newCmdWrapper(params[0], params[1:]...), nil
 }
 
 // NewFromSlice ...
@@ -65,9 +66,7 @@ func NewFromSlice(slice []string) (Command, error) {
 
 // NewWithCmd ...
 func NewWithCmd(cmd *exec.Cmd) Command {
-	return &cmdWrapper{
-		cmd: cmd,
-	}
+	return &cmdWrapper{cmd: cmd}
 }
 
 // GetCmd ...
@@ -119,17 +118,19 @@ func (m *cmdWrapper) Run() error {
 
 // RunAndReturnExitCode ...
 func (m *cmdWrapper) RunAndReturnExitCode() (int, error) {
-	return RunCmdAndReturnExitCode(m.cmd)
+	return runCmdAndReturnExitCode(m.cmd)
 }
 
 // RunAndReturnTrimmedOutput ...
 func (m *cmdWrapper) RunAndReturnTrimmedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedOutput(m.cmd)
+	return runCmdAndReturnTrimmedOutput(m.cmd)
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
 func (m *cmdWrapper) RunAndReturnTrimmedCombinedOutput() (string, error) {
-	return RunCmdAndReturnTrimmedCombinedOutput(m.cmd)
+	outBytes, err := m.cmd.CombinedOutput()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
 }
 
 // PrintableCommandArgs ...
@@ -137,11 +138,14 @@ func (m *cmdWrapper) PrintableCommandArgs() string {
 	return PrintableCommandArgs(false, m.cmd.Args)
 }
 
-// ----------
+// Args ...
+func (m *cmdWrapper) Args() []string {
+	return m.GetCmd().Args
+}
 
 // PrintableCommandArgs ...
 func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
-	cmdArgsDecorated := []string{}
+	var cmdArgsDecorated []string
 	for idx, anArg := range fullCommandArgs {
 		quotedArg := strconv.Quote(anArg)
 		if idx == 0 && !isQuoteFirst {
@@ -153,37 +157,29 @@ func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	return strings.Join(cmdArgsDecorated, " ")
 }
 
-// RunCmdAndReturnExitCode ...
-func RunCmdAndReturnExitCode(cmd *exec.Cmd) (exitCode int, err error) {
+// Deprecated: Use Command instead.
+func runCmdAndReturnExitCode(cmd *exec.Cmd) (exitCode int, err error) {
 	err = cmd.Run()
 	exitCode = cmd.ProcessState.ExitCode()
 	return
 }
 
-// RunCmdAndReturnTrimmedOutput ...
-func RunCmdAndReturnTrimmedOutput(cmd *exec.Cmd) (string, error) {
+// Deprecated: Use Command instead.
+func runCmdAndReturnTrimmedOutput(cmd *exec.Cmd) (string, error) {
 	outBytes, err := cmd.Output()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
-// RunCmdAndReturnTrimmedCombinedOutput ...
-func RunCmdAndReturnTrimmedCombinedOutput(cmd *exec.Cmd) (string, error) {
+// Deprecated: Use Command instead.
+func runCmdAndReturnTrimmedCombinedOutput(cmd *exec.Cmd) (string, error) {
 	outBytes, err := cmd.CombinedOutput()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
-// RunCommandWithReaderAndWriters ...
-func RunCommandWithReaderAndWriters(inReader io.Reader, outWriter, errWriter io.Writer, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = inReader
-	cmd.Stdout = outWriter
-	cmd.Stderr = errWriter
-	return cmd.Run()
-}
-
 // RunCommandWithWriters ...
+// Deprecated: Use Command instead.
 func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = outWriter
@@ -191,80 +187,40 @@ func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...
 	return cmd.Run()
 }
 
-// RunCommandInDirWithEnvsAndReturnExitCode ...
-func RunCommandInDirWithEnvsAndReturnExitCode(envs []string, dir, name string, args ...string) (int, error) {
+// RunCommandWithEnvsAndReturnExitCode ...
+// Deprecated: Use Command instead.
+func RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if dir != "" {
-		cmd.Dir = dir
-	}
 	if len(envs) > 0 {
 		cmd.Env = envs
 	}
 
-	return RunCmdAndReturnExitCode(cmd)
+	return runCmdAndReturnExitCode(cmd)
 }
 
-// RunCommandInDirAndReturnExitCode ...
-func RunCommandInDirAndReturnExitCode(dir, name string, args ...string) (int, error) {
-	return RunCommandInDirWithEnvsAndReturnExitCode([]string{}, dir, name, args...)
-}
-
-// RunCommandWithEnvsAndReturnExitCode ...
-func RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error) {
-	return RunCommandInDirWithEnvsAndReturnExitCode(envs, "", name, args...)
-}
-
-// RunCommandInDir ...
-func RunCommandInDir(dir, name string, args ...string) error {
+// RunCommand ...
+// Deprecated: Use Command instead.
+func RunCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if dir != "" {
-		cmd.Dir = dir
-	}
 	return cmd.Run()
 }
 
-// RunCommand ...
-func RunCommand(name string, args ...string) error {
-	return RunCommandInDir("", name, args...)
-}
-
-// RunCommandAndReturnStdout ..
+// RunCommandAndReturnStdout ...
+// Deprecated: Use Command instead.
 func RunCommandAndReturnStdout(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
-	return RunCmdAndReturnTrimmedOutput(cmd)
+	return runCmdAndReturnTrimmedOutput(cmd)
 }
 
-// RunCommandInDirAndReturnCombinedStdoutAndStderr ...
-func RunCommandInDirAndReturnCombinedStdoutAndStderr(dir, name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	if dir != "" {
-		cmd.Dir = dir
-	}
-	return RunCmdAndReturnTrimmedCombinedOutput(cmd)
-}
-
-// RunCommandAndReturnCombinedStdoutAndStderr ..
+// RunCommandAndReturnCombinedStdoutAndStderr ...
+// Deprecated: Use Command instead.
 func RunCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (string, error) {
-	return RunCommandInDirAndReturnCombinedStdoutAndStderr("", name, args...)
-}
-
-// RunBashCommand ...
-func RunBashCommand(cmdStr string) error {
-	return RunCommand("bash", "-c", cmdStr)
-}
-
-// RunBashCommandLines ...
-func RunBashCommandLines(cmdLines []string) error {
-	for _, aLine := range cmdLines {
-		if err := RunCommand("bash", "-c", aLine); err != nil {
-			return err
-		}
-	}
-	return nil
+	cmd := exec.Command(name, args...)
+	return runCmdAndReturnTrimmedCombinedOutput(cmd)
 }

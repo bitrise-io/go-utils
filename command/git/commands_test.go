@@ -9,7 +9,7 @@ import (
 
 func TestGitCommands(t *testing.T) {
 	type testCase struct {
-		command *command.Model
+		command command.Command
 		want    string
 	}
 
@@ -43,7 +43,7 @@ func TestGitCommands(t *testing.T) {
 	}
 }
 
-func assertPrintableCommandArgs(t *testing.T, expectedArgs string, gitCommand *command.Model) {
+func assertPrintableCommandArgs(t *testing.T, expectedArgs string, gitCommand command.Command) {
 	actualArgs := gitCommand.PrintableCommandArgs()
 	assert.Equal(t, expectedArgs, actualArgs)
 }

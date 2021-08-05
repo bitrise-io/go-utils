@@ -13,7 +13,7 @@ func TestNewCommandSlice(t *testing.T) {
 	{
 		cmd, err := command.NewFromSlice([]string{})
 		require.Error(t, err)
-		require.Equal(t, (*command.Model)(nil), cmd)
+		require.Equal(t, nil, cmd)
 	}
 
 	t.Log("it creates cmd if cmdSlice has 1 element")
@@ -34,7 +34,7 @@ func TestNewWithParams(t *testing.T) {
 	{
 		cmd, err := command.NewWithParams()
 		require.Error(t, err)
-		require.Equal(t, (*command.Model)(nil), cmd)
+		require.Equal(t, nil, cmd)
 	}
 
 	t.Log("it creates cmd if params has 1 element")

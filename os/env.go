@@ -6,7 +6,7 @@ import "os"
 type EnvironmentRepository interface {
 	SetVariable(key string, value string) error
 	UnsetVariable(key string) error
-	ListVariable() []string
+	ListVariables() []string
 }
 
 type defaultEnvironmentRepository struct{}
@@ -17,16 +17,16 @@ func NewEnvironmentRepository() EnvironmentRepository {
 }
 
 // SetVariable ...
-func (m defaultEnvironmentRepository) SetVariable(key string, value string) error {
+func (r defaultEnvironmentRepository) SetVariable(key string, value string) error {
 	return os.Setenv(key, value)
 }
 
 // UnsetVariable ...
-func (m defaultEnvironmentRepository) UnsetVariable(key string) error {
+func (r defaultEnvironmentRepository) UnsetVariable(key string) error {
 	return os.Unsetenv(key)
 }
 
 // ListVariable ...
-func (m defaultEnvironmentRepository) ListVariable() []string {
+func (r defaultEnvironmentRepository) ListVariables() []string {
 	return os.Environ()
 }

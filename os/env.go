@@ -26,7 +26,7 @@ func (r defaultEnvironmentRepository) UnsetVariable(key string) error {
 	return os.Unsetenv(key)
 }
 
-// ListVariable ...
+// ListVariables ...
 func (r defaultEnvironmentRepository) ListVariables() []string {
 	return os.Environ()
 }

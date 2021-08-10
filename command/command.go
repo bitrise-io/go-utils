@@ -27,11 +27,6 @@ type Command interface {
 // Factory ...
 type Factory func(name string, args ...string) Command
 
-// NewCommand ...
-func NewCommand(name string, args ...string) Command {
-	return newCmdWrapper(name, args...)
-}
-
 type cmdWrapper struct {
 	cmd *exec.Cmd
 }
@@ -42,7 +37,12 @@ func newCmdWrapper(name string, args ...string) *cmdWrapper {
 	}
 }
 
-// NewWithStandardOuts - same as NewCommand, but sets the command's
+// New ...
+func New(name string, args ...string) Command {
+	return newCmdWrapper(name, args...)
+}
+
+// NewWithStandardOuts - same as New, but sets the command's
 // stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
 func NewWithStandardOuts(name string, args ...string) Command {
 	return newCmdWrapper(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)

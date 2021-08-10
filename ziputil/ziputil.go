@@ -29,7 +29,7 @@ func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 	// -r - Travel the directory structure recursively
 	// -T - Test the integrity of the new zip file
 	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
-	cmd := command.NewCommand("/usr/bin/zip", "-rTy", destinationZipPth, zipTarget)
+	cmd := command.New("/usr/bin/zip", "-rTy", destinationZipPth, zipTarget)
 	cmd.SetDir(workDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
@@ -51,7 +51,7 @@ func ZipFile(sourceFilePth, destinationZipPth string) error {
 
 	// -T - Test the integrity of the new zip file
 	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
-	cmd := command.NewCommand("/usr/bin/zip", "-Ty", destinationZipPth, zipTarget)
+	cmd := command.New("/usr/bin/zip", "-Ty", destinationZipPth, zipTarget)
 	cmd.SetDir(workDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
@@ -62,7 +62,7 @@ func ZipFile(sourceFilePth, destinationZipPth string) error {
 
 // UnZip ...
 func UnZip(zip, intoDir string) error {
-	cmd := command.NewCommand("/usr/bin/unzip", zip, "-d", intoDir)
+	cmd := command.New("/usr/bin/unzip", zip, "-d", intoDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
 	}

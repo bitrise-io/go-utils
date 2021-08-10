@@ -16,15 +16,15 @@ type FileWriter interface {
 	Write(path string, value string, mode os.FileMode) error
 }
 
-type osFileWriter struct{}
+type defaultFileWriter struct{}
 
-// NewOsFileWriter ...
-func NewOsFileWriter() FileWriter {
-	return osFileWriter{}
+// NewFileWriter ...
+func NewFileWriter() FileWriter {
+	return defaultFileWriter{}
 }
 
 // Write ...
-func (osFileWriter) Write(path string, value string, mode os.FileMode) error {
+func (defaultFileWriter) Write(path string, value string, mode os.FileMode) error {
 	if err := ensureSavePath(path); err != nil {
 		return err
 	}

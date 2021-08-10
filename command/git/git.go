@@ -20,7 +20,7 @@ func New(dir string) (Git, error) {
 }
 
 func (g *Git) command(args ...string) command.Command {
-	cmd := command.NewCommand("git", args...)
+	cmd := command.New("git", args...)
 	cmd.SetDir(g.dir)
 	cmd.SetEnvs(append(os.Environ(), "GIT_ASKPASS=echo")...)
 	return cmd

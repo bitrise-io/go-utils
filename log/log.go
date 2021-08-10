@@ -18,46 +18,46 @@ type Logger interface {
 	Println()
 }
 
-type defaultLogger struct {
+type commandLineLogger struct {
 }
 
-// NewDefaultLogger ...
-func NewDefaultLogger() Logger {
-	return defaultLogger{}
+// NewCommandLineLogger ...
+func NewCommandLineLogger() Logger {
+	return commandLineLogger{}
 }
 
 // Infof ...
-func (l defaultLogger) Infof(format string, v ...interface{}) {
+func (l commandLineLogger) Infof(format string, v ...interface{}) {
 	Infof(format, v...)
 }
 
 // Warnf ...
-func (l defaultLogger) Warnf(format string, v ...interface{}) {
+func (l commandLineLogger) Warnf(format string, v ...interface{}) {
 	Warnf(format, v...)
 }
 
 // Printf ...
-func (l defaultLogger) Printf(format string, v ...interface{}) {
+func (l commandLineLogger) Printf(format string, v ...interface{}) {
 	Printf(format, v...)
 }
 
 // Donef ...
-func (l defaultLogger) Donef(format string, v ...interface{}) {
+func (l commandLineLogger) Donef(format string, v ...interface{}) {
 	Donef(format, v...)
 }
 
 // Debugf ...
-func (l defaultLogger) Debugf(format string, v ...interface{}) {
+func (l commandLineLogger) Debugf(format string, v ...interface{}) {
 	Debugf(format, v...)
 }
 
 // Errorf ...
-func (l defaultLogger) Errorf(format string, v ...interface{}) {
+func (l commandLineLogger) Errorf(format string, v ...interface{}) {
 	Errorf(format, v...)
 }
 
 // Println ...
-func (l defaultLogger) Println() {
+func (l commandLineLogger) Println() {
 	fmt.Println()
 }
 

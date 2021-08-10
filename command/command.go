@@ -14,6 +14,7 @@ type Command interface {
 	SetDir(dir string) Command
 	SetStdout(stdout io.Writer) Command
 	SetStderr(stdout io.Writer) Command
+	SetStdoutAndStderr() Command
 	SetEnvs(envs ...string) Command
 	AppendEnvs(envs ...string) Command
 	Args() []string
@@ -44,11 +45,13 @@ func New(name string, args ...string) Command {
 
 // NewWithStandardOuts - same as New, but sets the command's
 // stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
+// Deprecated: Use New and SetStdoutAndStderr instead.
 func NewWithStandardOuts(name string, args ...string) Command {
 	return newCmdWrapper(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
 }
 
 // NewWithParams ...
+// Deprecated.
 func NewWithParams(params ...string) (Command, error) {
 	if len(params) == 0 {
 		return nil, errors.New("no command provided")
@@ -60,87 +63,95 @@ func NewWithParams(params ...string) (Command, error) {
 }
 
 // NewFromSlice ...
+// Deprecated.
 func NewFromSlice(slice []string) (Command, error) {
 	return NewWithParams(slice...)
 }
 
 // NewWithCmd ...
+// Deprecated.
 func NewWithCmd(cmd *exec.Cmd) Command {
 	return &cmdWrapper{cmd: cmd}
 }
 
 // GetCmd ...
-func (m *cmdWrapper) GetCmd() *exec.Cmd {
-	return m.cmd
+func (cmd *cmdWrapper) GetCmd() *exec.Cmd {
+	return cmd.cmd
 }
 
 // SetDir ...
-func (m *cmdWrapper) SetDir(dir string) Command {
-	m.cmd.Dir = dir
-	return m
+func (cmd *cmdWrapper) SetDir(dir string) Command {
+	cmd.cmd.Dir = dir
+	return cmd
 }
 
 // SetEnvs ...
-func (m *cmdWrapper) SetEnvs(envs ...string) Command {
-	m.cmd.Env = envs
-	return m
+func (cmd *cmdWrapper) SetEnvs(envs ...string) Command {
+	cmd.cmd.Env = envs
+	return cmd
 }
 
 // AppendEnvs - appends the envs to the current os.Environ()
 // Calling this multiple times will NOT append the envs one by one,
 // only the last "envs" set will be appended to os.Environ()!
-func (m *cmdWrapper) AppendEnvs(envs ...string) Command {
-	return m.SetEnvs(append(os.Environ(), envs...)...)
+func (cmd *cmdWrapper) AppendEnvs(envs ...string) Command {
+	return cmd.SetEnvs(append(os.Environ(), envs...)...)
 }
 
 // SetStdin ...
-func (m *cmdWrapper) SetStdin(in io.Reader) Command {
-	m.cmd.Stdin = in
-	return m
+func (cmd *cmdWrapper) SetStdin(in io.Reader) Command {
+	cmd.cmd.Stdin = in
+	return cmd
 }
 
 // SetStdout ...
-func (m *cmdWrapper) SetStdout(out io.Writer) Command {
-	m.cmd.Stdout = out
-	return m
+func (cmd *cmdWrapper) SetStdout(out io.Writer) Command {
+	cmd.cmd.Stdout = out
+	return cmd
 }
 
 // SetStderr ...
-func (m *cmdWrapper) SetStderr(err io.Writer) Command {
-	m.cmd.Stderr = err
-	return m
+func (cmd *cmdWrapper) SetStderr(err io.Writer) Command {
+	cmd.cmd.Stderr = err
+	return cmd
+}
+
+// SetStdoutAndStderr ...
+func (cmd *cmdWrapper) SetStdoutAndStderr() Command {
+	cmd.SetStdout(os.Stdout).SetStderr(os.Stderr)
+	return cmd
 }
 
 // Run ...
-func (m *cmdWrapper) Run() error {
-	return m.cmd.Run()
+func (cmd *cmdWrapper) Run() error {
+	return cmd.cmd.Run()
 }
 
 // RunAndReturnExitCode ...
-func (m *cmdWrapper) RunAndReturnExitCode() (int, error) {
-	return runCmdAndReturnExitCode(m.cmd)
+func (cmd *cmdWrapper) RunAndReturnExitCode() (int, error) {
+	return runCmdAndReturnExitCode(cmd.cmd)
 }
 
 // RunAndReturnTrimmedOutput ...
-func (m *cmdWrapper) RunAndReturnTrimmedOutput() (string, error) {
-	return runCmdAndReturnTrimmedOutput(m.cmd)
+func (cmd *cmdWrapper) RunAndReturnTrimmedOutput() (string, error) {
+	return runCmdAndReturnTrimmedOutput(cmd.cmd)
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
-func (m *cmdWrapper) RunAndReturnTrimmedCombinedOutput() (string, error) {
-	outBytes, err := m.cmd.CombinedOutput()
+func (cmd *cmdWrapper) RunAndReturnTrimmedCombinedOutput() (string, error) {
+	outBytes, err := cmd.cmd.CombinedOutput()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
 // PrintableCommandArgs ...
-func (m *cmdWrapper) PrintableCommandArgs() string {
-	return PrintableCommandArgs(false, m.cmd.Args)
+func (cmd *cmdWrapper) PrintableCommandArgs() string {
+	return PrintableCommandArgs(false, cmd.cmd.Args)
 }
 
 // Args ...
-func (m *cmdWrapper) Args() []string {
-	return m.GetCmd().Args
+func (cmd *cmdWrapper) Args() []string {
+	return cmd.cmd.Args
 }
 
 // PrintableCommandArgs ...

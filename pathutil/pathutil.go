@@ -10,6 +10,23 @@ import (
 	"strings"
 )
 
+// TempDirProvider ...
+type TempDirProvider interface {
+	CreateTempDir(prefix string) (string, error)
+}
+
+type defaultTempDirProvider struct{}
+
+// NewTempDirProvider ...
+func NewTempDirProvider() TempDirProvider {
+	return defaultTempDirProvider{}
+}
+
+// CreateTempDir ...
+func (defaultTempDirProvider) CreateTempDir(prefix string) (string, error) {
+	return NormalizedOSTempDirPath(prefix)
+}
+
 // RevokableChangeDir ...
 func RevokableChangeDir(dir string) (func() error, error) {
 	origDir, err := CurrentWorkingDirectoryAbsolutePath()

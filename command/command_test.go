@@ -1,59 +1,15 @@
-package command_test
+package command
 
 import (
-	"os/exec"
+	"github.com/bitrise-io/go-utils/env"
 	"testing"
-
-	"github.com/bitrise-io/go-utils/command"
-	"github.com/stretchr/testify/require"
 )
-
-func TestNewCommandSlice(t *testing.T) {
-	t.Log("it fails if slice empty")
-	{
-		cmd, err := command.NewFromSlice([]string{})
-		require.Error(t, err)
-		require.Equal(t, (*command.Model)(nil), cmd)
-	}
-
-	t.Log("it creates cmd if cmdSlice has 1 element")
-	{
-		_, err := command.NewFromSlice([]string{"ls"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it creates cmd if cmdSlice has multiple elements")
-	{
-		_, err := command.NewFromSlice([]string{"ls", "-a", "-l", "-h"})
-		require.NoError(t, err)
-	}
-}
-
-func TestNewWithParams(t *testing.T) {
-	t.Log("it fails if params empty")
-	{
-		cmd, err := command.NewWithParams()
-		require.Error(t, err)
-		require.Equal(t, (*command.Model)(nil), cmd)
-	}
-
-	t.Log("it creates cmd if params has 1 element")
-	{
-		_, err := command.NewWithParams("ls")
-		require.NoError(t, err)
-	}
-
-	t.Log("it creates cmd if params has multiple elements")
-	{
-		_, err := command.NewWithParams("ls", "-a", "-l", "-h")
-		require.NoError(t, err)
-	}
-}
 
 func TestRunCmdAndReturnExitCode(t *testing.T) {
 	type args struct {
-		cmd *exec.Cmd
+		cmd Command
 	}
+	factory := NewFactory(env.NewRepository())
 	tests := []struct {
 		name         string
 		args         args
@@ -63,7 +19,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "invalid command",
 			args: args{
-				cmd: exec.Command(""),
+				cmd: factory.Create("", nil, nil),
 			},
 			wantExitCode: -1,
 			wantErr:      true,
@@ -71,7 +27,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "env command",
 			args: args{
-				cmd: exec.Command("env"),
+				cmd: factory.Create("env", nil, nil),
 			},
 			wantExitCode: 0,
 			wantErr:      false,
@@ -79,7 +35,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "not existing executable",
 			args: args{
-				cmd: exec.Command("bash", "testdata/not_existing_executable.sh"),
+				cmd: factory.Create("bash", []string{"testdata/not_existing_executable.sh"}, nil),
 			},
 			wantExitCode: 127,
 			wantErr:      true,
@@ -87,7 +43,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "exit 42",
 			args: args{
-				cmd: exec.Command("bash", "testdata/exit_42.sh"),
+				cmd: factory.Create("bash", []string{"testdata/exit_42.sh"}, nil),
 			},
 			wantExitCode: 42,
 			wantErr:      true,
@@ -95,13 +51,13 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotExitCode, err := command.RunCmdAndReturnExitCode(tt.args.cmd)
+			gotExitCode, err := tt.args.cmd.RunAndReturnExitCode()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("RunCmdAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("command.RunAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotExitCode != tt.wantExitCode {
-				t.Errorf("RunCmdAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)
+				t.Errorf("command.RunAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)
 			}
 		})
 	}

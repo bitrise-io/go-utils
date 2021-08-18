@@ -12,6 +12,7 @@ import (
 type Opts struct {
 	Stdout io.Writer
 	Stderr io.Writer
+	Stdin  io.Reader
 	Env    []string
 	Dir    string
 }
@@ -36,6 +37,7 @@ func (f defaultFactory) Create(name string, args []string, opts *Opts) Command {
 	if opts != nil {
 		cmd.Stdout = opts.Stdout
 		cmd.Stderr = opts.Stderr
+		cmd.Stdin = opts.Stdin
 
 		// If Env is nil, the new process uses the current process's
 		// environment.

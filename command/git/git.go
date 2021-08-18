@@ -1,6 +1,7 @@
 package git
 
 import (
+	"github.com/bitrise-io/go-utils/env"
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
@@ -20,8 +21,10 @@ func New(dir string) (Git, error) {
 }
 
 func (g *Git) command(args ...string) command.Command {
-	cmd := command.New("git", args...)
-	cmd.SetDir(g.dir)
-	cmd.SetEnvs(append(os.Environ(), "GIT_ASKPASS=echo")...)
-	return cmd
+	factory := command.NewFactory(env.NewRepository())
+	opts := &command.Opts{
+		Dir: g.dir,
+		Env: []string{"GIT_ASKPASS=echo"},
+	}
+	return factory.Create("git", args, opts)
 }

@@ -1,52 +1,9 @@
 package command
 
 import (
-	"github.com/stretchr/testify/require"
 	"os/exec"
 	"testing"
 )
-
-func TestNewCommandSlice(t *testing.T) {
-	t.Log("it fails if slice empty")
-	{
-		cmd, err := NewFromSlice([]string{})
-		require.Error(t, err)
-		require.Equal(t, nil, cmd)
-	}
-
-	t.Log("it creates cmd if cmdSlice has 1 element")
-	{
-		_, err := NewFromSlice([]string{"ls"})
-		require.NoError(t, err)
-	}
-
-	t.Log("it creates cmd if cmdSlice has multiple elements")
-	{
-		_, err := NewFromSlice([]string{"ls", "-a", "-l", "-h"})
-		require.NoError(t, err)
-	}
-}
-
-func TestNewWithParams(t *testing.T) {
-	t.Log("it fails if params empty")
-	{
-		cmd, err := NewWithParams()
-		require.Error(t, err)
-		require.Equal(t, nil, cmd)
-	}
-
-	t.Log("it creates cmd if params has 1 element")
-	{
-		_, err := NewWithParams("ls")
-		require.NoError(t, err)
-	}
-
-	t.Log("it creates cmd if params has multiple elements")
-	{
-		_, err := NewWithParams("ls", "-a", "-l", "-h")
-		require.NoError(t, err)
-	}
-}
 
 func TestRunCmdAndReturnExitCode(t *testing.T) {
 	type args struct {
@@ -93,7 +50,8 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotExitCode, err := runCmdAndReturnExitCode(tt.args.cmd)
+			command := NewCommand(tt.args.cmd)
+			gotExitCode, err := command.RunAndReturnExitCode()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runCmdAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return

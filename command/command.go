@@ -1,161 +1,112 @@
 package command
 
 import (
-	"errors"
+	"github.com/bitrise-io/go-utils/env"
 	"io"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 )
 
-// Command ...
-type Command interface {
-	SetDir(dir string) Command
-	SetStdout(stdout io.Writer) Command
-	SetStderr(stdout io.Writer) Command
-	SetStdoutAndStderr() Command
-	SetEnvs(envs ...string) Command
-	AppendEnvs(envs ...string) Command
-	Args() []string
-	PrintableCommandArgs() string
-	Run() error
-	RunAndReturnTrimmedOutput() (string, error)
-	RunAndReturnExitCode() (int, error)
-	RunAndReturnTrimmedCombinedOutput() (string, error)
+// Opts ...
+type Opts struct {
+	Stdout io.Writer
+	Stderr io.Writer
+	Env    []string
+	Dir    string
 }
 
 // Factory ...
-type Factory func(name string, args ...string) Command
+type Factory interface {
+	Create(name string, args []string, opts *Opts) Command
+}
 
-type cmdWrapper struct {
+type defaultFactory struct {
+	envRepository env.Repository
+}
+
+// NewFactory ...
+func NewFactory(envRepository env.Repository) Factory {
+	return defaultFactory{envRepository: envRepository}
+}
+
+// Create ...
+func (d defaultFactory) Create(name string, args []string, opts *Opts) Command {
+	cmd := exec.Command(name, args...)
+	if opts != nil {
+		cmd.Stdout = opts.Stdout
+		cmd.Stderr = opts.Stderr
+
+		// If Env is nil, the new process uses the current process's
+		// environment.
+		// If we pass env vars we want to append them to the
+		// current process's environment.
+		cmd.Env = append(d.envRepository.List(), opts.Env...)
+		cmd.Dir = opts.Dir
+	}
+	return defaultCommand{cmd}
+}
+
+// Command ...
+type Command interface {
+	PrintableCommandArgs() string
+	Run() error
+	RunAndReturnExitCode() (int, error)
+	RunAndReturnTrimmedOutput() (string, error)
+	RunAndReturnTrimmedCombinedOutput() (string, error)
+}
+
+type defaultCommand struct {
 	cmd *exec.Cmd
 }
 
-func newCmdWrapper(name string, args ...string) *cmdWrapper {
-	return &cmdWrapper{
-		cmd: exec.Command(name, args...),
-	}
-}
-
-// New ...
-func New(name string, args ...string) Command {
-	return newCmdWrapper(name, args...)
-}
-
-// NewWithStandardOuts - same as New, but sets the command's
-// stdout and stderr to the standard (OS) out (os.Stdout) and err (os.Stderr)
-// Deprecated: Use New and SetStdoutAndStderr instead.
-func NewWithStandardOuts(name string, args ...string) Command {
-	return newCmdWrapper(name, args...).SetStdout(os.Stdout).SetStderr(os.Stderr)
-}
-
-// NewWithParams ...
-// Deprecated.
-func NewWithParams(params ...string) (Command, error) {
-	if len(params) == 0 {
-		return nil, errors.New("no command provided")
-	} else if len(params) == 1 {
-		return newCmdWrapper(params[0]), nil
-	}
-
-	return newCmdWrapper(params[0], params[1:]...), nil
-}
-
-// NewFromSlice ...
-// Deprecated.
-func NewFromSlice(slice []string) (Command, error) {
-	return NewWithParams(slice...)
-}
-
-// NewWithCmd ...
-// Deprecated.
-func NewWithCmd(cmd *exec.Cmd) Command {
-	return &cmdWrapper{cmd: cmd}
+// NewCommand ...
+func NewCommand(cmd *exec.Cmd) Command {
+	return &defaultCommand{cmd: cmd}
 }
 
 // GetCmd ...
-func (cmd *cmdWrapper) GetCmd() *exec.Cmd {
-	return cmd.cmd
-}
-
-// SetDir ...
-func (cmd *cmdWrapper) SetDir(dir string) Command {
-	cmd.cmd.Dir = dir
-	return cmd
-}
-
-// SetEnvs ...
-func (cmd *cmdWrapper) SetEnvs(envs ...string) Command {
-	cmd.cmd.Env = envs
-	return cmd
-}
-
-// AppendEnvs - appends the envs to the current os.Environ()
-// Calling this multiple times will NOT append the envs one by one,
-// only the last "envs" set will be appended to os.Environ()!
-func (cmd *cmdWrapper) AppendEnvs(envs ...string) Command {
-	return cmd.SetEnvs(append(os.Environ(), envs...)...)
-}
-
-// SetStdin ...
-func (cmd *cmdWrapper) SetStdin(in io.Reader) Command {
-	cmd.cmd.Stdin = in
-	return cmd
-}
-
-// SetStdout ...
-func (cmd *cmdWrapper) SetStdout(out io.Writer) Command {
-	cmd.cmd.Stdout = out
-	return cmd
-}
-
-// SetStderr ...
-func (cmd *cmdWrapper) SetStderr(err io.Writer) Command {
-	cmd.cmd.Stderr = err
-	return cmd
-}
-
-// SetStdoutAndStderr ...
-func (cmd *cmdWrapper) SetStdoutAndStderr() Command {
-	cmd.SetStdout(os.Stdout).SetStderr(os.Stderr)
-	return cmd
+func (c defaultCommand) GetCmd() *exec.Cmd {
+	return c.cmd
 }
 
 // Run ...
-func (cmd *cmdWrapper) Run() error {
-	return cmd.cmd.Run()
+func (c defaultCommand) Run() error {
+	return c.cmd.Run()
 }
 
 // RunAndReturnExitCode ...
-func (cmd *cmdWrapper) RunAndReturnExitCode() (int, error) {
-	return runCmdAndReturnExitCode(cmd.cmd)
+func (c defaultCommand) RunAndReturnExitCode() (int, error) {
+	err := c.cmd.Run()
+	exitCode := c.cmd.ProcessState.ExitCode()
+	return exitCode, err
 }
 
 // RunAndReturnTrimmedOutput ...
-func (cmd *cmdWrapper) RunAndReturnTrimmedOutput() (string, error) {
-	return runCmdAndReturnTrimmedOutput(cmd.cmd)
+func (c defaultCommand) RunAndReturnTrimmedOutput() (string, error) {
+	outBytes, err := c.cmd.Output()
+	outStr := string(outBytes)
+	return strings.TrimSpace(outStr), err
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
-func (cmd *cmdWrapper) RunAndReturnTrimmedCombinedOutput() (string, error) {
-	outBytes, err := cmd.cmd.CombinedOutput()
+func (c defaultCommand) RunAndReturnTrimmedCombinedOutput() (string, error) {
+	outBytes, err := c.cmd.CombinedOutput()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
 // PrintableCommandArgs ...
-func (cmd *cmdWrapper) PrintableCommandArgs() string {
-	return PrintableCommandArgs(false, cmd.cmd.Args)
+func (c defaultCommand) PrintableCommandArgs() string {
+	return printableCommandArgs(false, c.cmd.Args)
 }
 
 // Args ...
-func (cmd *cmdWrapper) Args() []string {
-	return cmd.cmd.Args
+func (c defaultCommand) Args() []string {
+	return c.cmd.Args
 }
 
-// PrintableCommandArgs ...
-func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
+func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	var cmdArgsDecorated []string
 	for idx, anArg := range fullCommandArgs {
 		quotedArg := strconv.Quote(anArg)
@@ -166,72 +117,4 @@ func PrintableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	}
 
 	return strings.Join(cmdArgsDecorated, " ")
-}
-
-// Deprecated: Use Command instead.
-func runCmdAndReturnExitCode(cmd *exec.Cmd) (exitCode int, err error) {
-	err = cmd.Run()
-	exitCode = cmd.ProcessState.ExitCode()
-	return
-}
-
-// Deprecated: Use Command instead.
-func runCmdAndReturnTrimmedOutput(cmd *exec.Cmd) (string, error) {
-	outBytes, err := cmd.Output()
-	outStr := string(outBytes)
-	return strings.TrimSpace(outStr), err
-}
-
-// Deprecated: Use Command instead.
-func runCmdAndReturnTrimmedCombinedOutput(cmd *exec.Cmd) (string, error) {
-	outBytes, err := cmd.CombinedOutput()
-	outStr := string(outBytes)
-	return strings.TrimSpace(outStr), err
-}
-
-// RunCommandWithWriters ...
-// Deprecated: Use Command instead.
-func RunCommandWithWriters(outWriter, errWriter io.Writer, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = outWriter
-	cmd.Stderr = errWriter
-	return cmd.Run()
-}
-
-// RunCommandWithEnvsAndReturnExitCode ...
-// Deprecated: Use Command instead.
-func RunCommandWithEnvsAndReturnExitCode(envs []string, name string, args ...string) (int, error) {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if len(envs) > 0 {
-		cmd.Env = envs
-	}
-
-	return runCmdAndReturnExitCode(cmd)
-}
-
-// RunCommand ...
-// Deprecated: Use Command instead.
-func RunCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-// RunCommandAndReturnStdout ...
-// Deprecated: Use Command instead.
-func RunCommandAndReturnStdout(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	return runCmdAndReturnTrimmedOutput(cmd)
-}
-
-// RunCommandAndReturnCombinedStdoutAndStderr ...
-// Deprecated: Use Command instead.
-func RunCommandAndReturnCombinedStdoutAndStderr(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	return runCmdAndReturnTrimmedCombinedOutput(cmd)
 }

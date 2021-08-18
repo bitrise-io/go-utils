@@ -70,10 +70,10 @@ func (g *Git) SubmoduleUpdate(opts ...string) command.Command {
 
 // SubmoduleForeach evaluates an arbitrary git command in each checked out
 // submodule.
-func (g *Git) SubmoduleForeach(command command.Command) command.Command {
-	args := []string{"submodule", "foreach"}
-	args = append(args, command.Args()...)
-	return g.command(args...)
+func (g *Git) SubmoduleForeach(args ...string) command.Command {
+	a := []string{"submodule", "foreach"}
+	a = append(a, args...)
+	return g.command(a...)
 }
 
 // Pull incorporates changes from a remote repository into the current branch.

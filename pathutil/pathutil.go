@@ -15,15 +15,15 @@ type TempDirProvider interface {
 	CreateTempDir(prefix string) (string, error)
 }
 
-type osTempDirProvider struct{}
+type defaultTempDirProvider struct{}
 
-// NewOsTempDirProvider ...
-func NewOsTempDirProvider() TempDirProvider {
-	return osTempDirProvider{}
+// NewTempDirProvider ...
+func NewTempDirProvider() TempDirProvider {
+	return defaultTempDirProvider{}
 }
 
 // CreateTempDir ...
-func (osTempDirProvider) CreateTempDir(prefix string) (string, error) {
+func (defaultTempDirProvider) CreateTempDir(prefix string) (string, error) {
 	return NormalizedOSTempDirPath(prefix)
 }
 

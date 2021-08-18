@@ -60,11 +60,6 @@ type defaultCommand struct {
 	cmd *exec.Cmd
 }
 
-// NewCommand ...
-func NewCommand(cmd *exec.Cmd) Command {
-	return &defaultCommand{cmd: cmd}
-}
-
 // GetCmd ...
 func (c defaultCommand) GetCmd() *exec.Cmd {
 	return c.cmd

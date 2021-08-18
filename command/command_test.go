@@ -53,11 +53,11 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 			command := NewCommand(tt.args.cmd)
 			gotExitCode, err := command.RunAndReturnExitCode()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("runCmdAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("command.RunAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotExitCode != tt.wantExitCode {
-				t.Errorf("runCmdAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)
+				t.Errorf("command.RunAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)
 			}
 		})
 	}

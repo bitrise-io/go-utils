@@ -1,14 +1,15 @@
 package command
 
 import (
-	"os/exec"
+	"github.com/bitrise-io/go-utils/env"
 	"testing"
 )
 
 func TestRunCmdAndReturnExitCode(t *testing.T) {
 	type args struct {
-		cmd *exec.Cmd
+		cmd Command
 	}
+	factory := NewFactory(env.NewRepository())
 	tests := []struct {
 		name         string
 		args         args
@@ -18,7 +19,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "invalid command",
 			args: args{
-				cmd: exec.Command(""),
+				cmd: factory.Create("", nil, nil),
 			},
 			wantExitCode: -1,
 			wantErr:      true,
@@ -26,7 +27,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "env command",
 			args: args{
-				cmd: exec.Command("env"),
+				cmd: factory.Create("env", nil, nil),
 			},
 			wantExitCode: 0,
 			wantErr:      false,
@@ -34,7 +35,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "not existing executable",
 			args: args{
-				cmd: exec.Command("bash", "testdata/not_existing_executable.sh"),
+				cmd: factory.Create("bash", []string{"testdata/not_existing_executable.sh"}, nil),
 			},
 			wantExitCode: 127,
 			wantErr:      true,
@@ -42,7 +43,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		{
 			name: "exit 42",
 			args: args{
-				cmd: exec.Command("bash", "testdata/exit_42.sh"),
+				cmd: factory.Create("bash", []string{"testdata/exit_42.sh"}, nil),
 			},
 			wantExitCode: 42,
 			wantErr:      true,
@@ -50,8 +51,7 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			command := NewCommand(tt.args.cmd)
-			gotExitCode, err := command.RunAndReturnExitCode()
+			gotExitCode, err := tt.args.cmd.RunAndReturnExitCode()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("command.RunAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return

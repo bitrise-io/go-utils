@@ -31,7 +31,7 @@ func NewFactory(envRepository env.Repository) Factory {
 }
 
 // Create ...
-func (d defaultFactory) Create(name string, args []string, opts *Opts) Command {
+func (f defaultFactory) Create(name string, args []string, opts *Opts) Command {
 	cmd := exec.Command(name, args...)
 	if opts != nil {
 		cmd.Stdout = opts.Stdout
@@ -41,7 +41,7 @@ func (d defaultFactory) Create(name string, args []string, opts *Opts) Command {
 		// environment.
 		// If we pass env vars we want to append them to the
 		// current process's environment.
-		cmd.Env = append(d.envRepository.List(), opts.Env...)
+		cmd.Env = append(f.envRepository.List(), opts.Env...)
 		cmd.Dir = opts.Dir
 	}
 	return defaultCommand{cmd}

@@ -145,7 +145,7 @@ func RErrorf(stepID string, tag string, data map[string]interface{}, format stri
 	rprintf("error", stepID, tag, data, format, v...)
 }
 
-var deprecatedLogger = defaultLogger{stdout: os.Stdout}
+var deprecatedLogger = defaultLogger{stdout: os.Stdout, enableDebugLog: false, timestampLayout: "15:04:05"}
 
 // SetEnableDebugLog ...
 // Deprecated: use Logger instead.

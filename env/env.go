@@ -6,6 +6,7 @@ import "os"
 type Repository interface {
 	List() []string
 	Unset(key string) error
+	Get(key string) string
 	Set(key, value string) error
 }
 
@@ -15,6 +16,11 @@ func NewRepository() Repository {
 }
 
 type defaultRepository struct{}
+
+// Get ...
+func (d defaultRepository) Get(key string) string {
+	return os.Getenv(key)
+}
 
 // Set ...
 func (d defaultRepository) Set(key, value string) error {

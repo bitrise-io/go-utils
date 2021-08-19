@@ -24,6 +24,8 @@ type Logger interface {
 	Println()
 }
 
+const defaultTimeStampLayout = "15:04:05"
+
 type defaultLogger struct {
 	enableDebugLog  bool
 	timestampLayout string
@@ -31,8 +33,8 @@ type defaultLogger struct {
 }
 
 // NewLogger ...
-func NewLogger(enableDebugLog bool, timestampLayout string, stdout io.Writer) Logger {
-	return defaultLogger{enableDebugLog: enableDebugLog, timestampLayout: timestampLayout, stdout: stdout}
+func NewLogger(enableDebugLog bool) Logger {
+	return defaultLogger{enableDebugLog: enableDebugLog, timestampLayout: defaultTimeStampLayout, stdout: os.Stdout}
 }
 
 // Infof ...
@@ -145,7 +147,7 @@ func RErrorf(stepID string, tag string, data map[string]interface{}, format stri
 	rprintf("error", stepID, tag, data, format, v...)
 }
 
-var deprecatedLogger = defaultLogger{stdout: os.Stdout}
+var deprecatedLogger = defaultLogger{stdout: os.Stdout, enableDebugLog: false, timestampLayout: defaultTimeStampLayout}
 
 // SetEnableDebugLog ...
 // Deprecated: use Logger instead.

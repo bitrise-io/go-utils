@@ -161,6 +161,12 @@ func SetTimestampLayout(layout string) {
 	deprecatedLogger.timestampLayout = layout
 }
 
+// SetOutWriter ...
+// Deprecated: use Logger for verification instead.
+func SetOutWriter(writer io.Writer) {
+	deprecatedLogger.stdout = writer
+}
+
 // Donef ...
 // Deprecated: use Logger instead.
 func Donef(format string, v ...interface{}) {

@@ -22,6 +22,7 @@ type Logger interface {
 	TDebugf(format string, v ...interface{})
 	TErrorf(format string, v ...interface{})
 	Println()
+	EnableDebugLog(enable bool)
 }
 
 const defaultTimeStampLayout = "15:04:05"
@@ -33,89 +34,94 @@ type defaultLogger struct {
 }
 
 // NewLogger ...
-func NewLogger(enableDebugLog bool) Logger {
-	return defaultLogger{enableDebugLog: enableDebugLog, timestampLayout: defaultTimeStampLayout, stdout: os.Stdout}
+func NewLogger() Logger {
+	return &defaultLogger{enableDebugLog: false, timestampLayout: defaultTimeStampLayout, stdout: os.Stdout}
+}
+
+// EnableDebugLog ...
+func (l *defaultLogger) EnableDebugLog(enable bool) {
+	l.enableDebugLog = enable
 }
 
 // Infof ...
-func (l defaultLogger) Infof(format string, v ...interface{}) {
+func (l *defaultLogger) Infof(format string, v ...interface{}) {
 	l.printf(infoSeverity, false, format, v...)
 }
 
 // Warnf ...
-func (l defaultLogger) Warnf(format string, v ...interface{}) {
+func (l *defaultLogger) Warnf(format string, v ...interface{}) {
 	l.printf(warnSeverity, false, format, v...)
 }
 
 // Printf ...
-func (l defaultLogger) Printf(format string, v ...interface{}) {
+func (l *defaultLogger) Printf(format string, v ...interface{}) {
 	l.printf(normalSeverity, false, format, v...)
 }
 
 // Donef ...
-func (l defaultLogger) Donef(format string, v ...interface{}) {
+func (l *defaultLogger) Donef(format string, v ...interface{}) {
 	l.printf(doneSeverity, false, format, v...)
 }
 
 // Debugf ...
-func (l defaultLogger) Debugf(format string, v ...interface{}) {
+func (l *defaultLogger) Debugf(format string, v ...interface{}) {
 	if l.enableDebugLog {
 		l.printf(debugSeverity, false, format, v...)
 	}
 }
 
 // Errorf ...
-func (l defaultLogger) Errorf(format string, v ...interface{}) {
+func (l *defaultLogger) Errorf(format string, v ...interface{}) {
 	l.printf(errorSeverity, false, format, v...)
 }
 
 // TInfof ...
-func (l defaultLogger) TInfof(format string, v ...interface{}) {
+func (l *defaultLogger) TInfof(format string, v ...interface{}) {
 	l.printf(infoSeverity, true, format, v...)
 }
 
 // TWarnf ...
-func (l defaultLogger) TWarnf(format string, v ...interface{}) {
+func (l *defaultLogger) TWarnf(format string, v ...interface{}) {
 	l.printf(warnSeverity, true, format, v...)
 }
 
 // TPrintf ...
-func (l defaultLogger) TPrintf(format string, v ...interface{}) {
+func (l *defaultLogger) TPrintf(format string, v ...interface{}) {
 	l.printf(normalSeverity, true, format, v...)
 }
 
 // TDonef ...
-func (l defaultLogger) TDonef(format string, v ...interface{}) {
+func (l *defaultLogger) TDonef(format string, v ...interface{}) {
 	l.printf(doneSeverity, true, format, v...)
 }
 
 // TDebugf ...
-func (l defaultLogger) TDebugf(format string, v ...interface{}) {
+func (l *defaultLogger) TDebugf(format string, v ...interface{}) {
 	if l.enableDebugLog {
 		l.printf(debugSeverity, true, format, v...)
 	}
 }
 
 // TErrorf ...
-func (l defaultLogger) TErrorf(format string, v ...interface{}) {
+func (l *defaultLogger) TErrorf(format string, v ...interface{}) {
 	l.printf(errorSeverity, true, format, v...)
 }
 
 // Println ...
-func (l defaultLogger) Println() {
+func (l *defaultLogger) Println() {
 	fmt.Println()
 }
 
-func (l defaultLogger) timestampField() string {
+func (l *defaultLogger) timestampField() string {
 	currentTime := time.Now()
 	return fmt.Sprintf("[%s]", currentTime.Format(l.timestampLayout))
 }
 
-func (l defaultLogger) prefixCurrentTime(message string) string {
+func (l *defaultLogger) prefixCurrentTime(message string) string {
 	return fmt.Sprintf("%s %s", l.timestampField(), message)
 }
 
-func (l defaultLogger) createLogMsg(severity Severity, withTime bool, format string, v ...interface{}) string {
+func (l *defaultLogger) createLogMsg(severity Severity, withTime bool, format string, v ...interface{}) string {
 	colorFunc := severityColorFuncMap[severity]
 	message := colorFunc(format, v...)
 	if withTime {
@@ -125,7 +131,7 @@ func (l defaultLogger) createLogMsg(severity Severity, withTime bool, format str
 	return message
 }
 
-func (l defaultLogger) printf(severity Severity, withTime bool, format string, v ...interface{}) {
+func (l *defaultLogger) printf(severity Severity, withTime bool, format string, v ...interface{}) {
 	message := l.createLogMsg(severity, withTime, format, v...)
 	if _, err := fmt.Fprintln(l.stdout, message); err != nil {
 		fmt.Printf("failed to print message: %s, error: %s\n", message, err)

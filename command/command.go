@@ -1,11 +1,12 @@
 package command
 
 import (
-	"github.com/bitrise-io/go-utils/env"
 	"io"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/bitrise-io/go-utils/env"
 )
 
 // Opts ...
@@ -56,15 +57,17 @@ type Command interface {
 	RunAndReturnExitCode() (int, error)
 	RunAndReturnTrimmedOutput() (string, error)
 	RunAndReturnTrimmedCombinedOutput() (string, error)
+	Start() error
+	Wait() error
 }
 
 type defaultCommand struct {
 	cmd *exec.Cmd
 }
 
-// GetCmd ...
-func (c defaultCommand) GetCmd() *exec.Cmd {
-	return c.cmd
+// PrintableCommandArgs ...
+func (c defaultCommand) PrintableCommandArgs() string {
+	return printableCommandArgs(false, c.cmd.Args)
 }
 
 // Run ...
@@ -93,14 +96,14 @@ func (c defaultCommand) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	return strings.TrimSpace(outStr), err
 }
 
-// PrintableCommandArgs ...
-func (c defaultCommand) PrintableCommandArgs() string {
-	return printableCommandArgs(false, c.cmd.Args)
+// Start ...
+func (c defaultCommand) Start() error {
+	return c.cmd.Start()
 }
 
-// Args ...
-func (c defaultCommand) Args() []string {
-	return c.cmd.Args
+// Wait ...
+func (c defaultCommand) Wait() error {
+	return c.cmd.Wait()
 }
 
 func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {

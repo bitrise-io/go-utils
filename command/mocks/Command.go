@@ -99,3 +99,31 @@ func (_m *Command) RunAndReturnTrimmedOutput() (string, error) {
 
 	return r0, r1
 }
+
+// Start provides a mock function with given fields:
+func (_m *Command) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Wait provides a mock function with given fields:
+func (_m *Command) Wait() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

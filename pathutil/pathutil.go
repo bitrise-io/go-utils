@@ -10,22 +10,8 @@ import (
 	"strings"
 )
 
-// TempDirProvider ...
-type TempDirProvider interface {
-	CreateTempDir(prefix string) (string, error)
-}
-
-type defaultTempDirProvider struct{}
-
-// NewTempDirProvider ...
-func NewTempDirProvider() TempDirProvider {
-	return defaultTempDirProvider{}
-}
-
-// CreateTempDir ...
-func (defaultTempDirProvider) CreateTempDir(prefix string) (string, error) {
-	return NormalizedOSTempDirPath(prefix)
-}
+//
+// Path provider functions
 
 // NormalizedOSTempDirPath ...
 // Creates a temp dir, and returns its path.
@@ -45,31 +31,29 @@ func CurrentWorkingDirectoryAbsolutePath() (string, error) {
 	return filepath.Abs("./")
 }
 
-// RevokableChangeDir ...
-func RevokableChangeDir(dir string) (func() error, error) {
-	origDir, err := CurrentWorkingDirectoryAbsolutePath()
-	if err != nil {
-		return nil, err
+// UserHomeDir ...
+func UserHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
 	}
-
-	revokeFn := func() error {
-		return os.Chdir(origDir)
-	}
-
-	return revokeFn, os.Chdir(dir)
+	return os.Getenv("HOME")
 }
 
-// ChangeDirForFunction ...
-func ChangeDirForFunction(dir string, fn func()) error {
-	revokeFn, err := RevokableChangeDir(dir)
-	if err != nil {
-		return err
+// EnsureDirExist ...
+func EnsureDirExist(dir string) error {
+	exist, err := IsDirExists(dir)
+	if !exist || err != nil {
+		return os.MkdirAll(dir, 0777)
 	}
-
-	fn()
-
-	return revokeFn()
+	return nil
 }
+
+//
+// Path checker functions
 
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
@@ -115,14 +99,8 @@ func IsPathExists(pth string) (bool, error) {
 	return isExists, err
 }
 
-// EnsureDirExist ...
-func EnsureDirExist(dir string) error {
-	exist, err := IsDirExists(dir)
-	if !exist || err != nil {
-		return os.MkdirAll(dir, 0777)
-	}
-	return nil
-}
+//
+// Path modifier functions
 
 // ExpandTilde ...
 func ExpandTilde(pth string) (string, error) {
@@ -168,20 +146,6 @@ func AbsPath(pth string) (string, error) {
 	return filepath.Abs(os.ExpandEnv(pth))
 }
 
-// UserHomeDir ...
-func UserHomeDir() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
-	}
-	return os.Getenv("HOME")
-}
-
-// No need to mock
-
 // IsRelativePath ...
 func IsRelativePath(pth string) bool {
 	if strings.HasPrefix(pth, "./") {
@@ -214,4 +178,33 @@ func EscapeGlobPath(path string) string {
 		escaped += string(ch)
 	}
 	return escaped
+}
+
+//
+// Change dir functions
+
+// RevokableChangeDir ...
+func RevokableChangeDir(dir string) (func() error, error) {
+	origDir, err := CurrentWorkingDirectoryAbsolutePath()
+	if err != nil {
+		return nil, err
+	}
+
+	revokeFn := func() error {
+		return os.Chdir(origDir)
+	}
+
+	return revokeFn, os.Chdir(dir)
+}
+
+// ChangeDirForFunction ...
+func ChangeDirForFunction(dir string, fn func()) error {
+	revokeFn, err := RevokableChangeDir(dir)
+	if err != nil {
+		return err
+	}
+
+	fn()
+
+	return revokeFn()
 }

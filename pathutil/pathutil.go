@@ -27,6 +27,24 @@ func (defaultTempDirProvider) CreateTempDir(prefix string) (string, error) {
 	return NormalizedOSTempDirPath(prefix)
 }
 
+// NormalizedOSTempDirPath ...
+// Creates a temp dir, and returns its path.
+// If tmpDirNamePrefix is provided it'll be used
+//  as the tmp dir's name prefix.
+// Normalized: it's guaranteed that the path won't end with '/'.
+func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
+	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
+	if strings.HasSuffix(retPth, "/") {
+		retPth = retPth[:len(retPth)-1]
+	}
+	return
+}
+
+// CurrentWorkingDirectoryAbsolutePath ...
+func CurrentWorkingDirectoryAbsolutePath() (string, error) {
+	return filepath.Abs("./")
+}
+
 // RevokableChangeDir ...
 func RevokableChangeDir(dir string) (func() error, error) {
 	origDir, err := CurrentWorkingDirectoryAbsolutePath()
@@ -53,32 +71,6 @@ func ChangeDirForFunction(dir string, fn func()) error {
 	return revokeFn()
 }
 
-// IsRelativePath ...
-func IsRelativePath(pth string) bool {
-	if strings.HasPrefix(pth, "./") {
-		return true
-	}
-
-	if strings.HasPrefix(pth, "/") {
-		return false
-	}
-
-	if strings.HasPrefix(pth, "$") {
-		return false
-	}
-
-	return true
-}
-
-// EnsureDirExist ...
-func EnsureDirExist(dir string) error {
-	exist, err := IsDirExists(dir)
-	if !exist || err != nil {
-		return os.MkdirAll(dir, 0777)
-	}
-	return nil
-}
-
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
 		return nil, false, errors.New("No path provided")
@@ -91,12 +83,6 @@ func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 		return nil, false, nil
 	}
 	return fileInf, false, err
-}
-
-// IsPathExists ...
-func IsPathExists(pth string) (bool, error) {
-	_, isExists, err := genericIsPathExists(pth)
-	return isExists, err
 }
 
 // PathCheckAndInfos ...
@@ -123,19 +109,19 @@ func IsDirExists(pth string) (bool, error) {
 	return fileInf.IsDir(), nil
 }
 
-// AbsPath expands ENV vars and the ~ character
-//	then call Go's Abs
-func AbsPath(pth string) (string, error) {
-	if pth == "" {
-		return "", errors.New("No Path provided")
-	}
+// IsPathExists ...
+func IsPathExists(pth string) (bool, error) {
+	_, isExists, err := genericIsPathExists(pth)
+	return isExists, err
+}
 
-	pth, err := ExpandTilde(pth)
-	if err != nil {
-		return "", err
+// EnsureDirExist ...
+func EnsureDirExist(dir string) error {
+	exist, err := IsDirExists(dir)
+	if !exist || err != nil {
+		return os.MkdirAll(dir, 0777)
 	}
-
-	return filepath.Abs(os.ExpandEnv(pth))
+	return nil
 }
 
 // ExpandTilde ...
@@ -167,9 +153,19 @@ func ExpandTilde(pth string) (string, error) {
 	return pth, nil
 }
 
-// CurrentWorkingDirectoryAbsolutePath ...
-func CurrentWorkingDirectoryAbsolutePath() (string, error) {
-	return filepath.Abs("./")
+// AbsPath expands ENV vars and the ~ character
+//	then call Go's Abs
+func AbsPath(pth string) (string, error) {
+	if pth == "" {
+		return "", errors.New("No Path provided")
+	}
+
+	pth, err := ExpandTilde(pth)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Abs(os.ExpandEnv(pth))
 }
 
 // UserHomeDir ...
@@ -184,17 +180,23 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-// NormalizedOSTempDirPath ...
-// Creates a temp dir, and returns its path.
-// If tmpDirNamePrefix is provided it'll be used
-//  as the tmp dir's name prefix.
-// Normalized: it's guaranteed that the path won't end with '/'.
-func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
-	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
-	if strings.HasSuffix(retPth, "/") {
-		retPth = retPth[:len(retPth)-1]
+// No need to mock
+
+// IsRelativePath ...
+func IsRelativePath(pth string) bool {
+	if strings.HasPrefix(pth, "./") {
+		return true
 	}
-	return
+
+	if strings.HasPrefix(pth, "/") {
+		return false
+	}
+
+	if strings.HasPrefix(pth, "$") {
+		return false
+	}
+
+	return true
 }
 
 // GetFileName returns the name of the file from a given path or the name of the directory if it is a directory
@@ -202,54 +204,14 @@ func GetFileName(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
-// ListPathInDirSortedByComponents ...
-func ListPathInDirSortedByComponents(searchDir string, relPath bool) ([]string, error) {
-	searchDir, err := filepath.Abs(searchDir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	var fileList []string
-
-	if err := filepath.Walk(searchDir, func(path string, _ os.FileInfo, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+// EscapeGlobPath escapes a partial path, determined at runtime, used as a parameter for filepath.Glob
+func EscapeGlobPath(path string) string {
+	var escaped string
+	for _, ch := range path {
+		if ch == '[' || ch == ']' || ch == '-' || ch == '*' || ch == '?' || ch == '\\' {
+			escaped += "\\"
 		}
-
-		if relPath {
-			rel, err := filepath.Rel(searchDir, path)
-			if err != nil {
-				return err
-			}
-			path = rel
-		}
-
-		fileList = append(fileList, path)
-
-		return nil
-	}); err != nil {
-		return []string{}, err
+		escaped += string(ch)
 	}
-	return SortPathsByComponents(fileList)
-}
-
-// ListEntries filters contents of a directory using the provided filters
-func ListEntries(dir string, filters ...FilterFunc) ([]string, error) {
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	entries, err := ioutil.ReadDir(absDir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	var paths []string
-	for _, entry := range entries {
-		pth := filepath.Join(absDir, entry.Name())
-		paths = append(paths, pth)
-	}
-
-	return FilterPaths(paths, filters...)
+	return escaped
 }

@@ -126,6 +126,7 @@ type PathModifier interface {
 
 type pathModifier struct{}
 
+// NewPathModifier ...
 func NewPathModifier() PathModifier {
 	return pathModifier{}
 }

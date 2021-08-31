@@ -13,6 +13,23 @@ import (
 //
 // Path provider functions
 
+// PathProvider ...
+type PathProvider interface {
+	TempDir(prefix string) (string, error)
+}
+
+type pathProvider struct{}
+
+// NewPathProvider ...
+func NewPathProvider() PathProvider {
+	return pathProvider{}
+}
+
+// TempDir ...
+func (pathProvider) TempDir(prefix string) (string, error) {
+	return NormalizedOSTempDirPath(prefix)
+}
+
 // NormalizedOSTempDirPath ...
 // Creates a temp dir, and returns its path.
 // If tmpDirNamePrefix is provided it'll be used
@@ -102,6 +119,37 @@ func IsPathExists(pth string) (bool, error) {
 //
 // Path modifier functions
 
+// PathModifier ...
+type PathModifier interface {
+	AbsPath(pth string) (string, error)
+}
+
+type pathModifier struct{}
+
+func NewPathModifier() PathModifier {
+	return pathModifier{}
+}
+
+// AbsPath ...
+func (pathModifier) AbsPath(pth string) (string, error) {
+	return AbsPath(pth)
+}
+
+// AbsPath expands ENV vars and the ~ character
+//	then call Go's Abs
+func AbsPath(pth string) (string, error) {
+	if pth == "" {
+		return "", errors.New("No Path provided")
+	}
+
+	pth, err := ExpandTilde(pth)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Abs(os.ExpandEnv(pth))
+}
+
 // ExpandTilde ...
 func ExpandTilde(pth string) (string, error) {
 	if pth == "" {
@@ -129,21 +177,6 @@ func ExpandTilde(pth string) (string, error) {
 	}
 
 	return pth, nil
-}
-
-// AbsPath expands ENV vars and the ~ character
-//	then call Go's Abs
-func AbsPath(pth string) (string, error) {
-	if pth == "" {
-		return "", errors.New("No Path provided")
-	}
-
-	pth, err := ExpandTilde(pth)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Abs(os.ExpandEnv(pth))
 }
 
 // IsRelativePath ...

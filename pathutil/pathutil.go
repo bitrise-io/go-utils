@@ -18,15 +18,15 @@ type PathProvider interface {
 	TempDir(prefix string) (string, error)
 }
 
-type pathProvider struct{}
+type defaultPathProvider struct{}
 
 // NewPathProvider ...
 func NewPathProvider() PathProvider {
-	return pathProvider{}
+	return defaultPathProvider{}
 }
 
 // TempDir ...
-func (pathProvider) TempDir(prefix string) (string, error) {
+func (defaultPathProvider) TempDir(prefix string) (string, error) {
 	return NormalizedOSTempDirPath(prefix)
 }
 
@@ -77,14 +77,14 @@ type PathChecker interface {
 	IsPathExists(pth string) (bool, error)
 }
 
-type pathChecker struct{}
+type defaultPathChecker struct{}
 
 // NewPathChecker ...
 func NewPathChecker() PathChecker {
-	return pathChecker{}
+	return defaultPathChecker{}
 }
 
-func (c pathChecker) IsPathExists(pth string) (bool, error) {
+func (c defaultPathChecker) IsPathExists(pth string) (bool, error) {
 	return IsPathExists(pth)
 }
 
@@ -140,15 +140,15 @@ type PathModifier interface {
 	AbsPath(pth string) (string, error)
 }
 
-type pathModifier struct{}
+type defaultPathModifier struct{}
 
 // NewPathModifier ...
 func NewPathModifier() PathModifier {
-	return pathModifier{}
+	return defaultPathModifier{}
 }
 
 // AbsPath ...
-func (pathModifier) AbsPath(pth string) (string, error) {
+func (defaultPathModifier) AbsPath(pth string) (string, error) {
 	return AbsPath(pth)
 }
 

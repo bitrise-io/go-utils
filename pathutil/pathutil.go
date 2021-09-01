@@ -72,6 +72,21 @@ func EnsureDirExist(dir string) error {
 //
 // Path checker functions
 
+// PathChecker ...
+type PathChecker interface {
+}
+
+type pathChecker struct{}
+
+// NewPathChecker ...
+func NewPathChecker() PathChecker {
+	return pathChecker{}
+}
+
+func (c pathChecker) IsPathExists(pth string) (bool, error) {
+	return IsPathExists(pth)
+}
+
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
 		return nil, false, errors.New("No path provided")

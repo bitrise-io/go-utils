@@ -10,64 +10,53 @@ import (
 	"strings"
 )
 
-// TempDirProvider ...
-type TempDirProvider interface {
+//
+// Path provider functions
+
+// PathProvider ...
+type PathProvider interface {
 	CreateTempDir(prefix string) (string, error)
 }
 
-type defaultTempDirProvider struct{}
+type defaultPathProvider struct{}
 
-// NewTempDirProvider ...
-func NewTempDirProvider() TempDirProvider {
-	return defaultTempDirProvider{}
+// NewPathProvider ...
+func NewPathProvider() PathProvider {
+	return defaultPathProvider{}
 }
 
-// CreateTempDir ...
-func (defaultTempDirProvider) CreateTempDir(prefix string) (string, error) {
+func (defaultPathProvider) CreateTempDir(prefix string) (string, error) {
 	return NormalizedOSTempDirPath(prefix)
 }
 
-// RevokableChangeDir ...
-func RevokableChangeDir(dir string) (func() error, error) {
-	origDir, err := CurrentWorkingDirectoryAbsolutePath()
-	if err != nil {
-		return nil, err
+// NormalizedOSTempDirPath ...
+// Creates a temp dir, and returns its path.
+// If tmpDirNamePrefix is provided it'll be used
+//  as the tmp dir's name prefix.
+// Normalized: it's guaranteed that the path won't end with '/'.
+func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
+	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
+	if strings.HasSuffix(retPth, "/") {
+		retPth = retPth[:len(retPth)-1]
 	}
-
-	revokeFn := func() error {
-		return os.Chdir(origDir)
-	}
-
-	return revokeFn, os.Chdir(dir)
+	return
 }
 
-// ChangeDirForFunction ...
-func ChangeDirForFunction(dir string, fn func()) error {
-	revokeFn, err := RevokableChangeDir(dir)
-	if err != nil {
-		return err
-	}
-
-	fn()
-
-	return revokeFn()
+// CurrentWorkingDirectoryAbsolutePath ...
+func CurrentWorkingDirectoryAbsolutePath() (string, error) {
+	return filepath.Abs("./")
 }
 
-// IsRelativePath ...
-func IsRelativePath(pth string) bool {
-	if strings.HasPrefix(pth, "./") {
-		return true
+// UserHomeDir ...
+func UserHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
 	}
-
-	if strings.HasPrefix(pth, "/") {
-		return false
-	}
-
-	if strings.HasPrefix(pth, "$") {
-		return false
-	}
-
-	return true
+	return os.Getenv("HOME")
 }
 
 // EnsureDirExist ...
@@ -77,6 +66,25 @@ func EnsureDirExist(dir string) error {
 		return os.MkdirAll(dir, 0777)
 	}
 	return nil
+}
+
+//
+// Path checker functions
+
+// PathChecker ...
+type PathChecker interface {
+	IsPathExists(pth string) (bool, error)
+}
+
+type defaultPathChecker struct{}
+
+// NewPathChecker ...
+func NewPathChecker() PathChecker {
+	return defaultPathChecker{}
+}
+
+func (c defaultPathChecker) IsPathExists(pth string) (bool, error) {
+	return IsPathExists(pth)
 }
 
 func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
@@ -91,12 +99,6 @@ func genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 		return nil, false, nil
 	}
 	return fileInf, false, err
-}
-
-// IsPathExists ...
-func IsPathExists(pth string) (bool, error) {
-	_, isExists, err := genericIsPathExists(pth)
-	return isExists, err
 }
 
 // PathCheckAndInfos ...
@@ -121,6 +123,32 @@ func IsDirExists(pth string) (bool, error) {
 		return false, errors.New("No file info available")
 	}
 	return fileInf.IsDir(), nil
+}
+
+// IsPathExists ...
+func IsPathExists(pth string) (bool, error) {
+	_, isExists, err := genericIsPathExists(pth)
+	return isExists, err
+}
+
+//
+// Path modifier functions
+
+// PathModifier ...
+type PathModifier interface {
+	AbsPath(pth string) (string, error)
+}
+
+type defaultPathModifier struct{}
+
+// NewPathModifier ...
+func NewPathModifier() PathModifier {
+	return defaultPathModifier{}
+}
+
+// AbsPath ...
+func (defaultPathModifier) AbsPath(pth string) (string, error) {
+	return AbsPath(pth)
 }
 
 // AbsPath expands ENV vars and the ~ character
@@ -167,34 +195,21 @@ func ExpandTilde(pth string) (string, error) {
 	return pth, nil
 }
 
-// CurrentWorkingDirectoryAbsolutePath ...
-func CurrentWorkingDirectoryAbsolutePath() (string, error) {
-	return filepath.Abs("./")
-}
-
-// UserHomeDir ...
-func UserHomeDir() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
+// IsRelativePath ...
+func IsRelativePath(pth string) bool {
+	if strings.HasPrefix(pth, "./") {
+		return true
 	}
-	return os.Getenv("HOME")
-}
 
-// NormalizedOSTempDirPath ...
-// Creates a temp dir, and returns its path.
-// If tmpDirNamePrefix is provided it'll be used
-//  as the tmp dir's name prefix.
-// Normalized: it's guaranteed that the path won't end with '/'.
-func NormalizedOSTempDirPath(tmpDirNamePrefix string) (retPth string, err error) {
-	retPth, err = ioutil.TempDir("", tmpDirNamePrefix)
-	if strings.HasSuffix(retPth, "/") {
-		retPth = retPth[:len(retPth)-1]
+	if strings.HasPrefix(pth, "/") {
+		return false
 	}
-	return
+
+	if strings.HasPrefix(pth, "$") {
+		return false
+	}
+
+	return true
 }
 
 // GetFileName returns the name of the file from a given path or the name of the directory if it is a directory
@@ -202,54 +217,43 @@ func GetFileName(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
-// ListPathInDirSortedByComponents ...
-func ListPathInDirSortedByComponents(searchDir string, relPath bool) ([]string, error) {
-	searchDir, err := filepath.Abs(searchDir)
-	if err != nil {
-		return []string{}, err
-	}
-
-	var fileList []string
-
-	if err := filepath.Walk(searchDir, func(path string, _ os.FileInfo, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
+// EscapeGlobPath escapes a partial path, determined at runtime, used as a parameter for filepath.Glob
+func EscapeGlobPath(path string) string {
+	var escaped string
+	for _, ch := range path {
+		if ch == '[' || ch == ']' || ch == '-' || ch == '*' || ch == '?' || ch == '\\' {
+			escaped += "\\"
 		}
-
-		if relPath {
-			rel, err := filepath.Rel(searchDir, path)
-			if err != nil {
-				return err
-			}
-			path = rel
-		}
-
-		fileList = append(fileList, path)
-
-		return nil
-	}); err != nil {
-		return []string{}, err
+		escaped += string(ch)
 	}
-	return SortPathsByComponents(fileList)
+	return escaped
 }
 
-// ListEntries filters contents of a directory using the provided filters
-func ListEntries(dir string, filters ...FilterFunc) ([]string, error) {
-	absDir, err := filepath.Abs(dir)
+//
+// Change dir functions
+
+// RevokableChangeDir ...
+func RevokableChangeDir(dir string) (func() error, error) {
+	origDir, err := CurrentWorkingDirectoryAbsolutePath()
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 
-	entries, err := ioutil.ReadDir(absDir)
+	revokeFn := func() error {
+		return os.Chdir(origDir)
+	}
+
+	return revokeFn, os.Chdir(dir)
+}
+
+// ChangeDirForFunction ...
+func ChangeDirForFunction(dir string, fn func()) error {
+	revokeFn, err := RevokableChangeDir(dir)
 	if err != nil {
-		return []string{}, err
+		return err
 	}
 
-	var paths []string
-	for _, entry := range entries {
-		pth := filepath.Join(absDir, entry.Name())
-		paths = append(paths, pth)
-	}
+	fn()
 
-	return FilterPaths(paths, filters...)
+	return revokeFn()
 }

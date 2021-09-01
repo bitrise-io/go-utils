@@ -9,8 +9,8 @@ type PathProvider struct {
 	mock.Mock
 }
 
-// TempDir provides a mock function with given fields: prefix
-func (_m *PathProvider) TempDir(prefix string) (string, error) {
+// CreateTempDir provides a mock function with given fields: prefix
+func (_m *PathProvider) CreateTempDir(prefix string) (string, error) {
 	ret := _m.Called(prefix)
 
 	var r0 string

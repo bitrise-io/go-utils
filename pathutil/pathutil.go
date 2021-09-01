@@ -74,6 +74,7 @@ func EnsureDirExist(dir string) error {
 
 // PathChecker ...
 type PathChecker interface {
+	IsPathExists(pth string) (bool, error)
 }
 
 type pathChecker struct{}

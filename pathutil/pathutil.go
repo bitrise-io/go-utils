@@ -15,7 +15,7 @@ import (
 
 // PathProvider ...
 type PathProvider interface {
-	TempDir(prefix string) (string, error)
+	CreateTempDir(prefix string) (string, error)
 }
 
 type defaultPathProvider struct{}
@@ -25,8 +25,7 @@ func NewPathProvider() PathProvider {
 	return defaultPathProvider{}
 }
 
-// TempDir ...
-func (defaultPathProvider) TempDir(prefix string) (string, error) {
+func (defaultPathProvider) CreateTempDir(prefix string) (string, error) {
 	return NormalizedOSTempDirPath(prefix)
 }
 

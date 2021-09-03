@@ -12,43 +12,32 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// FileRemover ...
-type FileRemover interface {
-	Remove(name string) error
+// FileManager ...
+type FileManager interface {
+	Remove(path string) error
 	RemoveAll(path string) error
-}
-
-type defaultFileRemover struct{}
-
-// NewFileRemover ...
-func NewFileRemover() FileRemover {
-	return defaultFileRemover{}
-}
-
-// Remove ...
-func (r defaultFileRemover) Remove(name string) error {
-	return os.Remove(name)
-}
-
-// RemoveAll ...
-func (r defaultFileRemover) RemoveAll(path string) error {
-	return os.RemoveAll(path)
-}
-
-// FileWriter ...
-type FileWriter interface {
 	Write(path string, value string, mode os.FileMode) error
 }
 
-type defaultFileWriter struct{}
+type fileManager struct{}
 
-// NewFileWriter ...
-func NewFileWriter() FileWriter {
-	return defaultFileWriter{}
+// NewFileManager ...
+func NewFileManager() FileManager {
+	return fileManager{}
+}
+
+// Remove ...
+func (fileManager) Remove(path string) error {
+	return os.Remove(path)
+}
+
+// RemoveAll ...
+func (fileManager) RemoveAll(path string) error {
+	return os.RemoveAll(path)
 }
 
 // Write ...
-func (defaultFileWriter) Write(path string, value string, mode os.FileMode) error {
+func (fileManager) Write(path string, value string, mode os.FileMode) error {
 	if err := ensureSavePath(path); err != nil {
 		return err
 	}

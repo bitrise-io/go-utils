@@ -4,12 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/bitrise-io/go-utils/pathutil"
 )
+
+// FileRemover ...
+type FileRemover interface {
+	Remove(name string) error
+	RemoveAll(path string) error
+}
+
+type defaultFileRemover struct{}
+
+// NewFileRemover ...
+func NewFileRemover() FileRemover {
+	return defaultFileRemover{}
+}
+
+// Remove ...
+func (r defaultFileRemover) Remove(name string) error {
+	return os.Remove(name)
+}
+
+// RemoveAll ...
+func (r defaultFileRemover) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}
 
 // FileWriter ...
 type FileWriter interface {

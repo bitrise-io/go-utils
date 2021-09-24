@@ -1,6 +1,26 @@
 package env
 
-import "os"
+import (
+	"os"
+	"os/exec"
+)
+
+// CommandLocator ...
+type CommandLocator interface {
+	LookPath(file string) (string, error)
+}
+
+type commandLocator struct{}
+
+// NewCommandLocator ...
+func NewCommandLocator() CommandLocator {
+	return commandLocator{}
+}
+
+// LookPath ...
+func (l commandLocator) LookPath(file string) (string, error) {
+	return exec.LookPath(file)
+}
 
 // Repository ...
 type Repository interface {

@@ -82,7 +82,7 @@ func Test_GetWithFallback_FirstSuccess(t *testing.T) {
 			response: http.Response{StatusCode: 400},
 		},
 	}
-	mockedHTTPClient := givenMultiResponseHTTPClient(mockResponses)
+	mockedHTTPClient := givenMultiResponseClient(mockResponses)
 	downloader := givenFileDownloader(mockedHTTPClient)
 
 	// // When
@@ -108,7 +108,7 @@ func Test_GetWithFallback_SecondSuccess(t *testing.T) {
 				Body:       ioutil.NopCloser(strings.NewReader("filecontent2"))},
 		},
 	}
-	mockedHTTPClient := givenMultiResponseHTTPClient(mockResponses)
+	mockedHTTPClient := givenMultiResponseClient(mockResponses)
 	downloader := givenFileDownloader(mockedHTTPClient)
 
 	// // When
@@ -133,7 +133,7 @@ func Test_GetWithFallback_NoneSuccess(t *testing.T) {
 			response: http.Response{StatusCode: 400},
 		},
 	}
-	mockedHTTPClient := givenMultiResponseHTTPClient(mockResponses)
+	mockedHTTPClient := givenMultiResponseClient(mockResponses)
 	downloader := givenFileDownloader(mockedHTTPClient)
 
 	// // When
@@ -143,31 +143,51 @@ func Test_GetWithFallback_NoneSuccess(t *testing.T) {
 	require.Equal(t, expectedErr, actualErr)
 }
 
-type MockHTTPClient struct {
+type MockClient struct {
 	mock.Mock
 }
 
-func (m *MockHTTPClient) Get(source string) (*http.Response, error) {
+func (m *MockClient) Get(source string) (*http.Response, error) {
 	args := m.Called(source)
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
-func givenHTTPClient(response http.Response) *MockHTTPClient {
-	mockedHTTPClient := new(MockHTTPClient)
-	mockedHTTPClient.On("Get", mock.Anything).Return(&response, nil)
-	return mockedHTTPClient
+func (m *MockClient) GetRemoteContents(URL string) ([]byte, error) {
+	args := m.Called(URL)
+	arg0, ok := args.Get(0).([]byte)
+	if !ok {
+		panic("unexpected type")
+	}
+
+	return arg0, args.Error(1)
 }
 
-func givenFailingHTTPClient(err error) *MockHTTPClient {
+func (m *MockClient) ReadLocalFile(path string) ([]byte, error) {
+	args := m.Called(path)
+	arg0, ok := args.Get(0).([]byte)
+	if !ok {
+		panic("unexpected type")
+	}
+
+	return arg0, args.Error(1)
+}
+
+func givenHTTPClient(response http.Response) *MockClient {
+	mockedClient := new(MockClient)
+	mockedClient.On("Get", mock.Anything).Return(&response, nil)
+	return mockedClient
+}
+
+func givenFailingHTTPClient(err error) *MockClient {
 	response := http.Response{StatusCode: 500}
 
-	mockedHTTPClient := new(MockHTTPClient)
+	mockedHTTPClient := new(MockClient)
 	mockedHTTPClient.On("Get", mock.Anything).Return(&response, err)
 	return mockedHTTPClient
 }
 
-func givenMultiResponseHTTPClient(responses []mockResponse) *MockHTTPClient {
-	mockedHTTPClient := new(MockHTTPClient)
+func givenMultiResponseClient(responses []mockResponse) *MockClient {
+	mockedHTTPClient := new(MockClient)
 
 	for _, mockResp := range responses {
 		mockResp := mockResp
@@ -181,8 +201,8 @@ type mockResponse struct {
 	response http.Response
 }
 
-func givenFileDownloader(client HTTPClient) HTTPFileDownloader {
-	return HTTPFileDownloader{client}
+func givenFileDownloader(client HTTPClient) DefaultFileDownloader {
+	return DefaultFileDownloader{client}
 }
 
 func givenTempPath(t *testing.T) string {

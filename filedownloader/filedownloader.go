@@ -2,6 +2,7 @@ package filedownloader
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,17 +13,28 @@ import (
 
 // HTTPClient ...
 type HTTPClient interface {
-	Get(source string) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // DefaultFileDownloader ...
 type DefaultFileDownloader struct {
-	client HTTPClient
+	client  HTTPClient
+	context context.Context
 }
 
 // New ...
 func New(client HTTPClient) DefaultFileDownloader {
-	return DefaultFileDownloader{client}
+	return DefaultFileDownloader{
+		client: client,
+	}
+}
+
+// NewWithContext ...
+func NewWithContext(context context.Context, client HTTPClient) DefaultFileDownloader {
+	return DefaultFileDownloader{
+		client:  client,
+		context: context,
+	}
 }
 
 // GetWithFallback downloads a file from a given source. Provided destination should be a file that does not exist.
@@ -38,6 +50,7 @@ func (downloader DefaultFileDownloader) GetWithFallback(destination, source stri
 			return nil
 		}
 	}
+
 	return fmt.Errorf("None of the sources returned 200 OK status")
 }
 
@@ -54,13 +67,13 @@ func (downloader DefaultFileDownloader) Get(destination, source string) error {
 		}
 	}()
 
-	return download(downloader.client, source, f)
+	return download(downloader.context, downloader.client, source, f)
 }
 
 // GetRemoteContents fetches a remote URL contents
 func (downloader DefaultFileDownloader) GetRemoteContents(URL string) ([]byte, error) {
 	var contents []byte
-	if err := download(downloader.client, URL, bytes.NewBuffer(contents)); err != nil {
+	if err := download(downloader.context, downloader.client, URL, bytes.NewBuffer(contents)); err != nil {
 		return nil, err
 	}
 
@@ -72,21 +85,32 @@ func (downloader DefaultFileDownloader) ReadLocalFile(path string) ([]byte, erro
 	return os.ReadFile(path)
 }
 
-func download(client HTTPClient, source string, destination io.Writer) error {
-	resp, err := client.Get(source)
+func download(context context.Context, client HTTPClient, source string, destination io.Writer) error {
+	req, err := http.NewRequest(http.MethodGet, source, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %s", err)
+	}
+
+	if context != nil {
+		req = req.WithContext(context)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 
+	defer func() {
+		if resp.Body != nil {
+			if err := resp.Body.Close(); err != nil {
+				log.Errorf("Failed to close body, error: %s", err)
+			}
+		}
+	}()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unable to download file from: %s. Status code: %d", source, resp.StatusCode)
 	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("Failed to close body, error: %s", err)
-		}
-	}()
 
 	if _, err = io.Copy(destination, resp.Body); err != nil {
 		return err

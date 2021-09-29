@@ -202,8 +202,8 @@ type mockResponse struct {
 	response http.Response
 }
 
-func givenFileDownloader(client HTTPClient) DefaultFileDownloader {
-	return DefaultFileDownloader{
+func givenFileDownloader(client HTTPClient) FileDownloader {
+	return FileDownloader{
 		client: client,
 	}
 }

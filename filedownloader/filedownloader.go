@@ -16,22 +16,22 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// DefaultFileDownloader ...
-type DefaultFileDownloader struct {
+// FileDownloader ...
+type FileDownloader struct {
 	client  HTTPClient
 	context context.Context
 }
 
 // New ...
-func New(client HTTPClient) DefaultFileDownloader {
-	return DefaultFileDownloader{
+func New(client HTTPClient) FileDownloader {
+	return FileDownloader{
 		client: client,
 	}
 }
 
 // NewWithContext ...
-func NewWithContext(context context.Context, client HTTPClient) DefaultFileDownloader {
-	return DefaultFileDownloader{
+func NewWithContext(context context.Context, client HTTPClient) FileDownloader {
+	return FileDownloader{
 		client:  client,
 		context: context,
 	}
@@ -39,7 +39,7 @@ func NewWithContext(context context.Context, client HTTPClient) DefaultFileDownl
 
 // GetWithFallback downloads a file from a given source. Provided destination should be a file that does not exist.
 // You can specify fallback sources which will be used in order if downloading fails from either source.
-func (downloader DefaultFileDownloader) GetWithFallback(destination, source string, fallbackSources ...string) error {
+func (downloader FileDownloader) GetWithFallback(destination, source string, fallbackSources ...string) error {
 	sources := append([]string{source}, fallbackSources...)
 	for _, source := range sources {
 		err := downloader.Get(destination, source)
@@ -55,7 +55,7 @@ func (downloader DefaultFileDownloader) GetWithFallback(destination, source stri
 }
 
 // Get downloads a file from a given source. Provided destination should be a file that does not exist.
-func (downloader DefaultFileDownloader) Get(destination, source string) error {
+func (downloader FileDownloader) Get(destination, source string) error {
 	f, err := os.Create(destination)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (downloader DefaultFileDownloader) Get(destination, source string) error {
 }
 
 // GetRemoteContents fetches a remote URL contents
-func (downloader DefaultFileDownloader) GetRemoteContents(URL string) ([]byte, error) {
+func (downloader FileDownloader) GetRemoteContents(URL string) ([]byte, error) {
 	var contents []byte
 	if err := download(downloader.context, downloader.client, URL, bytes.NewBuffer(contents)); err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (downloader DefaultFileDownloader) GetRemoteContents(URL string) ([]byte, e
 }
 
 // ReadLocalFile returns a local file contents
-func (downloader DefaultFileDownloader) ReadLocalFile(path string) ([]byte, error) {
+func (downloader FileDownloader) ReadLocalFile(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 

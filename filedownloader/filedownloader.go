@@ -72,12 +72,12 @@ func (downloader FileDownloader) Get(destination, source string) error {
 
 // GetRemoteContents fetches a remote URL contents
 func (downloader FileDownloader) GetRemoteContents(URL string) ([]byte, error) {
-	var contents []byte
-	if err := download(downloader.context, downloader.client, URL, bytes.NewBuffer(contents)); err != nil {
+	var buffer bytes.Buffer
+	if err := download(downloader.context, downloader.client, URL, &buffer); err != nil {
 		return nil, err
 	}
 
-	return contents, nil
+	return buffer.Bytes(), nil
 }
 
 // ReadLocalFile returns a local file contents

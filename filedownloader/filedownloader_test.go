@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -229,4 +231,29 @@ func assertFileContent(t *testing.T, path, expectedContent string) {
 	}
 
 	require.Equal(t, expectedContent, string(actualContent))
+}
+
+func TestFileDownloader_GetRemoteContents(t *testing.T) {
+	want := []byte{1}
+	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write(want)
+		if err != nil {
+			t.Errorf("failed to write response: %s", err)
+		}
+	}))
+
+	downloader := FileDownloader{
+		client:  http.DefaultClient,
+		context: nil,
+	}
+	got, err := downloader.GetRemoteContents(storage.URL)
+
+	assert.NoError(t, err)
+	assert.Equal(t, want, got)
 }

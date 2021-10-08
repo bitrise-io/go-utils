@@ -9,7 +9,7 @@ import (
 )
 
 func TestRetry(t *testing.T) {
-	t.Log("it does not retryies if no error")
+	t.Log("it does not retry if no error")
 	{
 		retryCnt := 0
 
@@ -115,6 +115,33 @@ func TestRetry(t *testing.T) {
 		if duration < time.Duration(3)*time.Second {
 			t.Fatalf("Should take at least 3 sec, but got: %s", duration)
 		}
+	}
+
+	t.Log("it stops retrying when abort indicates it")
+	{
+		type pair struct {
+			error error
+			abort bool
+		}
+
+		pairs := []pair{
+			{errors.New("error-1"), false},
+			{errors.New("error-2"), false},
+			{errors.New("error-3"), true},
+			{errors.New("error-4"), false},
+		}
+		attemptCnt := -1
+
+		err := Times(3).TryWithAbort(func(attempt uint) (error, bool) {
+			attemptCnt++
+			pair := pairs[attempt]
+
+			return pair.error, pair.abort
+		})
+
+		require.Error(t, err)
+		require.Equal(t, "error-3", err.Error())
+		require.Equal(t, 2, attemptCnt)
 	}
 }
 

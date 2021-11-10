@@ -42,20 +42,28 @@ func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 
 // ZipFile ...
 func ZipFile(sourceFilePth, destinationZipPth string) error {
-	if exist, err := pathutil.IsPathExists(sourceFilePth); err != nil {
-		return err
-	} else if !exist {
-		return fmt.Errorf("file (%s) not exist", sourceFilePth)
+	return ZipFiles([]string{sourceFilePth}, destinationZipPth)
+}
+
+// ZipFiles ...
+func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
+	for _, path := range sourceFilePths {
+		if exist, err := pathutil.IsPathExists(path); err != nil {
+			return err
+		} else if !exist {
+			return fmt.Errorf("file (%s) not exist", path)
+		}
 	}
 
-	workDir := filepath.Dir(sourceFilePth)
-	zipTarget := filepath.Base(sourceFilePth)
+	factory := command.NewFactory(env.NewRepository())
 
 	// -T - Test the integrity of the new zip file
 	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
-	opts := &command.Opts{Dir: workDir}
-	factory := command.NewFactory(env.NewRepository())
-	cmd := factory.Create("/usr/bin/zip", []string{"-Ty", destinationZipPth, zipTarget}, opts)
+	// -j - Do not recreate the directory structure inside the zip. Kind of equivalent of copying all the files in one folder and zipping it.
+	parameters := []string{"-Tyj", destinationZipPth}
+	parameters = append(parameters, sourceFilePths...)
+
+	cmd := factory.Create("/usr/bin/zip", parameters, nil)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		return fmt.Errorf("command: (%s) failed, output: %s, error: %s", cmd.PrintableCommandArgs(), out, err)
 	}

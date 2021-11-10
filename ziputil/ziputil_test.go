@@ -10,23 +10,98 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestZip(t *testing.T) {
-	t.Log("create zip from file")
+func TestZipFile(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	require.NoError(t, err)
+
+	sourceFile := filepath.Join(tmpDir, "sourceFile")
+	require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+
+	destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
+	require.NoError(t, ZipFile(sourceFile, destinationZip))
+
+	exist, err := pathutil.IsPathExists(destinationZip)
+	require.NoError(t, err)
+	require.Equal(t, true, exist)
+}
+
+func TestZipFiles(t *testing.T) {
+	t.Log("create zip from files in multiple directories")
 	{
 		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
 		require.NoError(t, err)
 
-		sourceFile := filepath.Join(tmpDir, "sourceFile")
-		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+		sourceDir := filepath.Join(tmpDir, "sourceDir")
+		require.NoError(t, os.MkdirAll(sourceDir, 0777))
+
+		var sourceFilePaths []string
+		for _, name := range []string{"A", "B", "C"} {
+			baseDir := filepath.Join(sourceDir, name)
+			require.NoError(t, pathutil.EnsureDirExist(baseDir))
+
+			sourceFile := filepath.Join(baseDir, "sourceFile" + name)
+			require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+
+			sourceFilePaths = append(sourceFilePaths, sourceFile)
+		}
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
-		require.NoError(t, ZipFile(sourceFile, destinationZip))
+		require.NoError(t, ZipFiles(sourceFilePaths, destinationZip))
 
 		exist, err := pathutil.IsPathExists(destinationZip)
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 	}
 
+	t.Log("create zip from files in the same directory")
+	{
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		require.NoError(t, err)
+
+		sourceDir := filepath.Join(tmpDir, "sourceDir")
+		require.NoError(t, os.MkdirAll(sourceDir, 0777))
+
+		var sourceFilePaths []string
+		for _, name := range []string{"A", "B", "C"} {
+			sourceFile := filepath.Join(sourceDir, "sourceFile" + name)
+			require.NoError(t, fileutil.WriteStringToFile(sourceFile, name))
+
+			sourceFilePaths = append(sourceFilePaths, sourceFile)
+		}
+
+		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
+		require.NoError(t, ZipFiles(sourceFilePaths, destinationZip))
+
+		exist, err := pathutil.IsPathExists(destinationZip)
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+	}
+
+	t.Log("create zip from files with the same name")
+	{
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		require.NoError(t, err)
+
+		sourceDir := filepath.Join(tmpDir, "sourceDir")
+		require.NoError(t, os.MkdirAll(sourceDir, 0777))
+
+		var sourceFilePaths []string
+		for _, name := range []string{"A", "B"} {
+			baseDir := filepath.Join(sourceDir, name)
+			require.NoError(t, pathutil.EnsureDirExist(baseDir))
+
+			sourceFile := filepath.Join(baseDir, "sourceFile")
+			require.NoError(t, fileutil.WriteStringToFile(sourceFile, name))
+
+			sourceFilePaths = append(sourceFilePaths, sourceFile)
+		}
+
+		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
+		require.Error(t, ZipFiles(sourceFilePaths, destinationZip))
+	}
+}
+
+func TestZipDirectory(t *testing.T) {
 	t.Log("create zip from dir")
 	{
 		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
@@ -54,7 +129,7 @@ func TestZip(t *testing.T) {
 		sourceDir := filepath.Join(contentOfDirToZip, "sourceDir")
 		require.NoError(t, os.MkdirAll(sourceDir, 0777))
 
-		sourceFile := filepath.Join(contentOfDirToZip, "sourceFile")
+		sourceFile := filepath.Join(sourceDir, "sourceFile")
 		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
@@ -62,7 +137,7 @@ func TestZip(t *testing.T) {
 	}
 }
 
-func TestUnZip(t *testing.T) {
+func TestUnZipFile(t *testing.T) {
 	t.Log("unzip zipped file")
 	{
 		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
@@ -88,6 +163,39 @@ func TestUnZip(t *testing.T) {
 		require.Equal(t, "", content)
 	}
 
+	t.Log("unzip zipped files")
+	{
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		require.NoError(t, err)
+
+		// create file to zip tmp/source/sourceFile
+		contentOfDirToZip := filepath.Join(tmpDir, "source")
+		require.NoError(t, os.MkdirAll(contentOfDirToZip, 0777))
+
+		var sourceFilePaths []string
+		for _, name := range []string{"A", "B", "C"} {
+			sourceFile := filepath.Join(contentOfDirToZip, "sourceFile" + name)
+			require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+
+			sourceFilePaths = append(sourceFilePaths, sourceFile)
+		}
+
+		// create zip at tmp/destinationFile.zip
+		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
+		require.NoError(t, ZipFiles(sourceFilePaths, destinationZip))
+
+		// unzip into tmp/
+		require.NoError(t, UnZip(destinationZip, tmpDir))
+
+		for _, path := range sourceFilePaths {
+			content, err := fileutil.ReadStringFromFile(filepath.Join(tmpDir, filepath.Base(path)))
+			require.NoError(t, err)
+			require.Equal(t, "", content)
+		}
+	}
+}
+
+func TestUnZipDirectory(t *testing.T) {
 	t.Log("unzip zipped dir")
 	{
 		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")

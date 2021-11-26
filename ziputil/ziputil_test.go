@@ -137,6 +137,55 @@ func TestZipDirectory(t *testing.T) {
 	}
 }
 
+func TestZipDirectories(t *testing.T) {
+	t.Log("create zip from directories living at different places")
+	{
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		require.NoError(t, err)
+
+		mainDir := filepath.Join(tmpDir, "main")
+		require.NoError(t, os.MkdirAll(mainDir, 0777))
+
+		dirA := filepath.Join(mainDir, "A")
+		require.NoError(t, os.MkdirAll(dirA, 0777))
+
+		subDir := filepath.Join(tmpDir, "sub")
+		require.NoError(t, os.MkdirAll(mainDir, 0777))
+
+		dirB := filepath.Join(subDir, "B")
+		require.NoError(t, os.MkdirAll(dirB, 0777))
+
+		destinationZip := filepath.Join(tmpDir, "destinationDir.zip")
+		require.NoError(t, ZipDirs([]string{dirA, dirB}, destinationZip))
+
+		exist, err := pathutil.IsPathExists(destinationZip)
+		require.NoError(t, err)
+		require.Equal(t, true, exist, destinationZip)
+	}
+
+	t.Log("create zip from directories in the same parent directory")
+	{
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		require.NoError(t, err)
+
+		mainDir := filepath.Join(tmpDir, "main")
+		require.NoError(t, os.MkdirAll(mainDir, 0777))
+
+		dirA := filepath.Join(mainDir, "A")
+		require.NoError(t, os.MkdirAll(dirA, 0777))
+
+		dirB := filepath.Join(mainDir, "B")
+		require.NoError(t, os.MkdirAll(dirB, 0777))
+
+		destinationZip := filepath.Join(tmpDir, "destinationDir.zip")
+		require.NoError(t, ZipDirs([]string{dirA, dirB}, destinationZip))
+
+		exist, err := pathutil.IsPathExists(destinationZip)
+		require.NoError(t, err)
+		require.Equal(t, true, exist, destinationZip)
+	}
+}
+
 func TestUnZipFile(t *testing.T) {
 	t.Log("unzip zipped file")
 	{
@@ -219,6 +268,39 @@ func TestUnZipDirectory(t *testing.T) {
 		isDir, err := pathutil.IsDirExists(filepath.Join(tmpDir, "sourceDir"))
 		require.NoError(t, err)
 		require.Equal(t, true, isDir)
+	}
+
+	t.Log("unzip zipped directories")
+	{
+		// Create the multi folder zip files
+		tmpDir, err := pathutil.NormalizedOSTempDirPath("zip")
+		require.NoError(t, err)
+
+		mainDir := filepath.Join(tmpDir, "main")
+		require.NoError(t, os.MkdirAll(mainDir, 0777))
+
+		dirA := filepath.Join(mainDir, "A")
+		require.NoError(t, os.MkdirAll(dirA, 0777))
+
+		dirB := filepath.Join(mainDir, "B")
+		require.NoError(t, os.MkdirAll(dirB, 0777))
+
+		destinationZip := filepath.Join(tmpDir, "destinationDir.zip")
+		require.NoError(t, ZipDirs([]string{dirA, dirB}, destinationZip))
+
+		// unzip
+		destTmpDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+		require.NoError(t, err)
+
+		require.NoError(t, UnZip(destinationZip, destTmpDir))
+
+		exist, err := pathutil.IsPathExists(filepath.Join(destTmpDir, "A"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
+
+		exist, err = pathutil.IsPathExists(filepath.Join(destTmpDir, "B"))
+		require.NoError(t, err)
+		require.Equal(t, true, exist)
 	}
 
 	t.Log("unzip zipped content of dir")

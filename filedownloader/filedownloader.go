@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/v1/log"
 )
 
 // HTTPClient ...

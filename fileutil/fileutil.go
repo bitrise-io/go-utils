@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v1/pathutil"
 )
 
 // WriteStringToFile ...

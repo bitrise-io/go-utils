@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v1/fileutil"
+	"github.com/bitrise-io/go-utils/v1/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +39,7 @@ func TestZipFiles(t *testing.T) {
 			baseDir := filepath.Join(sourceDir, name)
 			require.NoError(t, pathutil.EnsureDirExist(baseDir))
 
-			sourceFile := filepath.Join(baseDir, "sourceFile" + name)
+			sourceFile := filepath.Join(baseDir, "sourceFile"+name)
 			require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
 
 			sourceFilePaths = append(sourceFilePaths, sourceFile)
@@ -63,7 +63,7 @@ func TestZipFiles(t *testing.T) {
 
 		var sourceFilePaths []string
 		for _, name := range []string{"A", "B", "C"} {
-			sourceFile := filepath.Join(sourceDir, "sourceFile" + name)
+			sourceFile := filepath.Join(sourceDir, "sourceFile"+name)
 			require.NoError(t, fileutil.WriteStringToFile(sourceFile, name))
 
 			sourceFilePaths = append(sourceFilePaths, sourceFile)
@@ -223,7 +223,7 @@ func TestUnZipFile(t *testing.T) {
 
 		var sourceFilePaths []string
 		for _, name := range []string{"A", "B", "C"} {
-			sourceFile := filepath.Join(contentOfDirToZip, "sourceFile" + name)
+			sourceFile := filepath.Join(contentOfDirToZip, "sourceFile"+name)
 			require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
 
 			sourceFilePaths = append(sourceFilePaths, sourceFile)

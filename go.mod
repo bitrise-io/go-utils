@@ -1,4 +1,4 @@
-module github.com/bitrise-io/go-utils/v1
+module github.com/bitrise-io/go-utils
 
 go 1.13
 

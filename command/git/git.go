@@ -3,7 +3,7 @@ package git
 import (
 	"os"
 
-	"github.com/bitrise-io/go-utils/v1/command"
+	"github.com/bitrise-io/go-utils/command"
 )
 
 // Git represents a Git project.

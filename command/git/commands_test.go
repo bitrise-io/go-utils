@@ -3,7 +3,7 @@ package git
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/v1/command"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/v1/errorutil"
+	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/stretchr/testify/require"
 )
 

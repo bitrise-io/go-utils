@@ -1,7 +1,7 @@
 package git
 
 import (
-	"github.com/bitrise-io/go-utils/v1/command"
+	"github.com/bitrise-io/go-utils/command"
 )
 
 // Init creates an empty Git reporitory or reinitializes an existing one.

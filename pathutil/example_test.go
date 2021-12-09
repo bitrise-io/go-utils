@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/go-utils/v1/pathutil"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 func Example() {

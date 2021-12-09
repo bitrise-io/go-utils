@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/go-utils/v1/command"
-	"github.com/bitrise-io/go-utils/v1/pathutil"
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/pathutil"
 )
 
 // ZipDir ...

@@ -32,27 +32,27 @@ type Repository interface {
 
 // NewRepository ...
 func NewRepository() Repository {
-	return defaultRepository{}
+	return repository{}
 }
 
-type defaultRepository struct{}
+type repository struct{}
 
 // Get ...
-func (d defaultRepository) Get(key string) string {
+func (d repository) Get(key string) string {
 	return os.Getenv(key)
 }
 
 // Set ...
-func (d defaultRepository) Set(key, value string) error {
+func (d repository) Set(key, value string) error {
 	return os.Setenv(key, value)
 }
 
 // Unset ...
-func (d defaultRepository) Unset(key string) error {
+func (d repository) Unset(key string) error {
 	return os.Unsetenv(key)
 }
 
 // List ...
-func (d defaultRepository) List() []string {
+func (d repository) List() []string {
 	return os.Environ()
 }

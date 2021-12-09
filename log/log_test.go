@@ -10,49 +10,57 @@ import (
 
 func TestSetOutWriter(t *testing.T) {
 	var b bytes.Buffer
-	deprecatedLogger.stdout = &b
-	Printf("test %s", "log")
+	logger := logger{
+		stdout: &b,
+	}
+	logger.Printf("test %s", "log")
 	require.Equal(t, "test log\n", b.String())
 }
 
 func TestSetEnableDebugLog(t *testing.T) {
 	t.Log("enable debug log")
 	{
-		SetEnableDebugLog(true)
 		var b bytes.Buffer
-		deprecatedLogger.stdout = &b
-		Debugf("test %s", "log")
+		logger := logger{
+			enableDebugLog: true,
+			stdout:         &b,
+		}
+		logger.Debugf("test %s", "log")
 		require.Equal(t, "\x1b[35;1mtest log\x1b[0m\n", b.String())
 	}
 
 	t.Log("disable debug log")
 	{
-		SetEnableDebugLog(false)
 		var b bytes.Buffer
-		deprecatedLogger.stdout = &b
-		Debugf("test %s", "log")
+		logger := logger{
+			enableDebugLog: false,
+			stdout:         &b,
+		}
+		logger.Debugf("test %s", "log")
 		require.Equal(t, "", b.String())
 	}
 }
 
 func TestSetTimestampLayout(t *testing.T) {
 	var b bytes.Buffer
-	deprecatedLogger.stdout = &b
-	SetTimestampLayout("15-04-05")
-	TPrintf("test %s", "log")
-	re := regexp.MustCompile(`\[.+-.+-.+\] test log`)
+	logger := logger{
+		timestampLayout: "15-04-05",
+		stdout:          &b,
+	}
+	logger.TPrintf("test %s", "log")
+	re := regexp.MustCompile(`\[.+-.+-.+] test log`)
 	require.True(t, re.MatchString(b.String()), b.String())
 }
 
 func Test_printf_with_time(t *testing.T) {
 	var b bytes.Buffer
-	logger := defaultLogger{
+	logger := logger{
 		enableDebugLog:  false,
 		timestampLayout: "15.04.05",
 		stdout:          &b,
 	}
 	logger.TPrintf("test %s", "log")
-	re := regexp.MustCompile(`\[.+\..+\..+\] test log`)
+	re := regexp.MustCompile(`\[.+\..+\..+] test log`)
 	require.True(t, re.MatchString(b.String()), b.String())
 }
 
@@ -60,7 +68,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("error")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  false,
 			timestampLayout: "",
 			stdout:          &b,
@@ -72,7 +80,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("warn")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  false,
 			timestampLayout: "",
 			stdout:          &b,
@@ -84,7 +92,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("debug")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  true,
 			timestampLayout: "",
 			stdout:          &b,
@@ -96,7 +104,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("normal")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  false,
 			timestampLayout: "",
 			stdout:          &b,
@@ -108,7 +116,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("info")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  false,
 			timestampLayout: "",
 			stdout:          &b,
@@ -120,7 +128,7 @@ func Test_printf_severity(t *testing.T) {
 	t.Log("success")
 	{
 		var b bytes.Buffer
-		logger := defaultLogger{
+		logger := logger{
 			enableDebugLog:  false,
 			timestampLayout: "",
 			stdout:          &b,

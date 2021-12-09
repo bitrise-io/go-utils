@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bitrise-io/go-utils/env"
+	"github.com/bitrise-io/go-utils/v2/env"
 )
 
 // Opts ...
@@ -23,17 +23,17 @@ type Factory interface {
 	Create(name string, args []string, opts *Opts) Command
 }
 
-type defaultFactory struct {
+type factory struct {
 	envRepository env.Repository
 }
 
 // NewFactory ...
 func NewFactory(envRepository env.Repository) Factory {
-	return defaultFactory{envRepository: envRepository}
+	return factory{envRepository: envRepository}
 }
 
 // Create ...
-func (f defaultFactory) Create(name string, args []string, opts *Opts) Command {
+func (f factory) Create(name string, args []string, opts *Opts) Command {
 	cmd := exec.Command(name, args...)
 	if opts != nil {
 		cmd.Stdout = opts.Stdout
@@ -47,7 +47,7 @@ func (f defaultFactory) Create(name string, args []string, opts *Opts) Command {
 		cmd.Env = append(f.envRepository.List(), opts.Env...)
 		cmd.Dir = opts.Dir
 	}
-	return defaultCommand{cmd}
+	return command{cmd}
 }
 
 // Command ...
@@ -61,48 +61,48 @@ type Command interface {
 	Wait() error
 }
 
-type defaultCommand struct {
+type command struct {
 	cmd *exec.Cmd
 }
 
 // PrintableCommandArgs ...
-func (c defaultCommand) PrintableCommandArgs() string {
+func (c command) PrintableCommandArgs() string {
 	return printableCommandArgs(false, c.cmd.Args)
 }
 
 // Run ...
-func (c defaultCommand) Run() error {
+func (c command) Run() error {
 	return c.cmd.Run()
 }
 
 // RunAndReturnExitCode ...
-func (c defaultCommand) RunAndReturnExitCode() (int, error) {
+func (c command) RunAndReturnExitCode() (int, error) {
 	err := c.cmd.Run()
 	exitCode := c.cmd.ProcessState.ExitCode()
 	return exitCode, err
 }
 
 // RunAndReturnTrimmedOutput ...
-func (c defaultCommand) RunAndReturnTrimmedOutput() (string, error) {
+func (c command) RunAndReturnTrimmedOutput() (string, error) {
 	outBytes, err := c.cmd.Output()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
 // RunAndReturnTrimmedCombinedOutput ...
-func (c defaultCommand) RunAndReturnTrimmedCombinedOutput() (string, error) {
+func (c command) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	outBytes, err := c.cmd.CombinedOutput()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
 }
 
 // Start ...
-func (c defaultCommand) Start() error {
+func (c command) Start() error {
 	return c.cmd.Start()
 }
 
 // Wait ...
-func (c defaultCommand) Wait() error {
+func (c command) Wait() error {
 	return c.cmd.Wait()
 }
 

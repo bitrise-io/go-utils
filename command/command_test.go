@@ -1,7 +1,7 @@
 package command
 
 import (
-	"github.com/bitrise-io/go-utils/env"
+	"github.com/bitrise-io/go-utils/v2/env"
 	"testing"
 )
 

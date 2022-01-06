@@ -1,7 +1,6 @@
 package fileutil
 
 import (
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 type FileManager interface {
 	Remove(path string) error
 	RemoveAll(path string) error
-	Write(path string, value string, perm fs.FileMode) error
+	Write(path string, value string, perm os.FileMode) error
 }
 
 type fileManager struct {
@@ -33,11 +32,14 @@ func (fileManager) RemoveAll(path string) error {
 }
 
 // Write ...
-func (f fileManager) Write(path string, value string, mode fs.FileMode) error {
+func (f fileManager) Write(path string, value string, mode os.FileMode) error {
 	if err := f.ensureSavePath(path); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, []byte(value), mode)
+	if err := ioutil.WriteFile(path, []byte(value), mode); err != nil {
+		return err
+	}
+	return os.Chmod(path, mode)
 }
 
 func (fileManager) ensureSavePath(savePath string) error {

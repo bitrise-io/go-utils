@@ -50,5 +50,5 @@ func (fileManager) ensureSavePath(savePath string) error {
 
 // WriteBytes ...
 func (f fileManager) WriteBytes(path string, value []byte) error {
-	return ioutil.WriteFile(path, value, 600)
+	return ioutil.WriteFile(path, value, 0600)
 }

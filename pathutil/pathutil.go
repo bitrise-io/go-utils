@@ -37,3 +37,20 @@ func NewPathChecker() PathChecker {
 func (c pathChecker) IsPathExists(pth string) (bool, error) {
 	return pathutilV1.IsPathExists(pth)
 }
+
+// PathModifier ...
+type PathModifier interface {
+	AbsPath(pth string) (string, error)
+}
+
+type pathModifier struct{}
+
+// NewPathModifier ...
+func NewPathModifier() PathModifier {
+	return pathModifier{}
+}
+
+// AbsPath ...
+func (pathModifier) AbsPath(pth string) (string, error) {
+	return pathutilV1.AbsPath(pth)
+}

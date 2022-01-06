@@ -15,19 +15,24 @@ func TestWrite(t *testing.T) {
 	require.NoError(t, err)
 	manager := NewFileManager()
 
-	t.Log("success test")
+	t.Log("success when dir exists")
+	const content = "test string"
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteStringToFile-success.txt")
-		require.NoError(t, manager.Write(tmpFilePath, "test string", 0600))
+		require.NoError(t, manager.Write(tmpFilePath, content, 0600))
 
 		fileContent, err := ioutil.ReadFile(tmpFilePath)
 		require.NoError(t, err)
-		require.Equal(t, "test string", string(fileContent))
+		require.Equal(t, content, string(fileContent))
 	}
 
-	t.Log("error test")
+	t.Log("success when dir does not exist")
 	{
-		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist", "WriteStringToFile-error.txt")
-		require.Error(t, manager.Write(tmpFilePath, "test string", 0600), "open "+tmpFilePath+": no such file or directory")
+		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist", "WriteStringToFile-success.txt")
+		require.NoError(t, manager.Write(tmpFilePath, content, 0600))
+
+		fileContent, err := ioutil.ReadFile(tmpFilePath)
+		require.NoError(t, err)
+		require.Equal(t, content, string(fileContent))
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // FileManager ...
@@ -33,5 +34,13 @@ func (fileManager) RemoveAll(path string) error {
 
 // Write ...
 func (f fileManager) Write(path string, value string, mode fs.FileMode) error {
+	if err := f.ensureSavePath(path); err != nil {
+		return err
+	}
 	return ioutil.WriteFile(path, []byte(value), mode)
+}
+
+func (fileManager) ensureSavePath(savePath string) error {
+	dirPath := filepath.Dir(savePath)
+	return os.MkdirAll(dirPath, 0600)
 }

@@ -42,5 +42,5 @@ func (f fileManager) Write(path string, value string, mode fs.FileMode) error {
 
 func (fileManager) ensureSavePath(savePath string) error {
 	dirPath := filepath.Dir(savePath)
-	return os.MkdirAll(dirPath, 0600)
+	return os.MkdirAll(dirPath, 0700)
 }

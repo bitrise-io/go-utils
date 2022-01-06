@@ -1,7 +1,7 @@
 package fileutil
 
 import (
-	fileutilV1 "github.com/bitrise-io/go-utils/fileutil"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -10,10 +10,12 @@ import (
 type FileManager interface {
 	Remove(path string) error
 	RemoveAll(path string) error
-	Write(path string, value string, mode os.FileMode) error
+	Write(path string, value string, perm os.FileMode) error
+	WriteBytes(path string, value []byte) error
 }
 
-type fileManager struct{}
+type fileManager struct {
+}
 
 // NewFileManager ...
 func NewFileManager() FileManager {
@@ -31,22 +33,22 @@ func (fileManager) RemoveAll(path string) error {
 }
 
 // Write ...
-func (fileManager) Write(path string, value string, mode os.FileMode) error {
-	if err := ensureSavePath(path); err != nil {
+func (f fileManager) Write(path string, value string, mode os.FileMode) error {
+	if err := f.ensureSavePath(path); err != nil {
 		return err
 	}
-
-	if err := fileutilV1.WriteStringToFile(path, value); err != nil {
+	if err := ioutil.WriteFile(path, []byte(value), mode); err != nil {
 		return err
 	}
-
-	if err := os.Chmod(path, mode); err != nil {
-		return err
-	}
-	return nil
+	return os.Chmod(path, mode)
 }
 
-func ensureSavePath(savePath string) error {
+func (fileManager) ensureSavePath(savePath string) error {
 	dirPath := filepath.Dir(savePath)
 	return os.MkdirAll(dirPath, 0700)
+}
+
+// WriteBytes ...
+func (f fileManager) WriteBytes(path string, value []byte) error {
+	return ioutil.WriteFile(path, value, 0600)
 }

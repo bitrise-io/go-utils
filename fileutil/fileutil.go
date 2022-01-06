@@ -63,9 +63,12 @@ func (f fileManager) writeStringToFile(pth string, fileCont string) (err error) 
 	if err != nil {
 		return
 	}
-	
+
 	defer func() {
-		err = file.Close()
+		err2 := file.Close()
+		if err == nil {
+			err = err2
+		}
 	}()
 
 	if _, err = file.Write(fc); err != nil {

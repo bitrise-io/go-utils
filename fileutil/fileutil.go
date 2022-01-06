@@ -52,27 +52,29 @@ func (fileManager) ensureSavePath(savePath string) error {
 	return os.MkdirAll(dirPath, 0700)
 }
 
-func (f fileManager) writeStringToFile(pth string, fileCont string) error {
+func (f fileManager) writeStringToFile(pth string, fileCont string) (err error) {
 	fc := []byte(fileCont)
 	if pth == "" {
 		return errors.New("no path provided")
 	}
 
 	var file *os.File
-	var err error
 	file, err = os.Create(pth)
 	if err != nil {
-		return err
+		return
 	}
-	defer file.Close()
+	
+	defer func() {
+		err = file.Close()
+	}()
 
-	if _, err := file.Write(fc); err != nil {
-		return err
+	if _, err = file.Write(fc); err != nil {
+		return
 	}
 
-	if err := file.Close(); err != nil {
-		return err
+	if err = file.Close(); err != nil {
+		return
 	}
 
-	return nil
+	return
 }

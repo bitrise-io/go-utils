@@ -15,7 +15,7 @@ func TestWrite(t *testing.T) {
 	require.NoError(t, err)
 	manager := NewFileManager()
 
-	t.Log("success when dir exists")
+	t.Log("Success when writing string to existing dir")
 	const content = "test string"
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteStringToFile-success.txt")
@@ -26,7 +26,7 @@ func TestWrite(t *testing.T) {
 		require.Equal(t, content, string(fileContent))
 	}
 
-	t.Log("success when dir does not exist")
+	t.Log("Success when writing string to non-existing dir")
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist", "WriteStringToFile-success.txt")
 		require.NoError(t, manager.Write(tmpFilePath, content, 0600))
@@ -35,7 +35,7 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, content, string(fileContent))
 	}
-	t.Log("success test")
+	t.Log("Success when writing bytes to existing dir")
 
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteBytesToFile-success.txt")
@@ -46,7 +46,7 @@ func TestWrite(t *testing.T) {
 		require.Equal(t, "test string", string(fileContent))
 	}
 
-	t.Log("error test")
+	t.Log("Failure when writing bytes to non-existing dir")
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist-2", "WriteBytesToFile-error.txt")
 		require.Error(t, manager.WriteBytes(tmpFilePath, []byte("test string")), "open "+tmpFilePath+": no such file or directory")

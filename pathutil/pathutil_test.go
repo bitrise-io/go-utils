@@ -4,10 +4,82 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func Test_pathProvider_CreateTempDir(t *testing.T) {
+	tests := []struct {
+		name   string
+		prefix string
+	}{
+		{
+			name:   "prefix provided",
+			prefix: "some-test",
+		},
+		{
+			name:   "empty prefix",
+			prefix: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := pathProvider{}
+			gotDir, err := p.CreateTempDir(tt.prefix)
+
+			require.NoError(t, err)
+			require.True(t, len(gotDir) != 0)
+			require.True(t, strings.HasPrefix(filepath.Base(gotDir), tt.prefix))
+			// returned temp dir path should not have a / at it's end
+			require.False(t, strings.HasSuffix(gotDir, "/"))
+			// directory is created
+			info, err := os.Lstat(gotDir)
+			require.NoError(t, err)
+			require.True(t, info.IsDir())
+		})
+	}
+}
+
+func Test_pathChecker_IsPathExists(t *testing.T) {
+	tests := []struct {
+		name    string
+		pth     string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "path does not exists",
+			pth:  filepath.Join("this", "should", "not", "exist"),
+			want: false,
+		},
+		{
+			name: "current directory",
+			pth:  ".",
+			want: true,
+		},
+		{
+			name:    "empty path",
+			pth:     "",
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := pathChecker{}
+			got, err := c.IsPathExists(tt.pth)
+
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
 
 func Test_pathModifier_AbsPath(t *testing.T) {
 	currDirPath, err := filepath.Abs(".")

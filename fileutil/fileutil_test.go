@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWriteStringToFile(t *testing.T) {
+func TestWrite(t *testing.T) {
 	provider := pathutil.NewPathProvider()
 	tmpDirPath, err := provider.CreateTempDir("go-utils-test-")
 	require.NoError(t, err)
-	manager := fileManager{}
+	manager := NewFileManager()
 
 	t.Log("success test")
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteStringToFile-success.txt")
-		require.NoError(t, manager.writeStringToFile(tmpFilePath, "test string"))
+		require.NoError(t, manager.Write(tmpFilePath, "test string", 0600))
 
 		fileContent, err := ioutil.ReadFile(tmpFilePath)
 		require.NoError(t, err)
@@ -28,6 +28,6 @@ func TestWriteStringToFile(t *testing.T) {
 	t.Log("error test")
 	{
 		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist", "WriteStringToFile-error.txt")
-		require.Error(t, manager.writeStringToFile(tmpFilePath, "test string"), "open "+tmpFilePath+": no such file or directory")
+		require.Error(t, manager.Write(tmpFilePath, "test string", 0600), "open "+tmpFilePath+": no such file or directory")
 	}
 }

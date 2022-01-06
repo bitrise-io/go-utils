@@ -1,7 +1,7 @@
 package fileutil
 
 import (
-	fileutilV1 "github.com/bitrise-io/go-utils/fileutil"
+	"errors"
 	"os"
 	"path/filepath"
 )
@@ -13,7 +13,8 @@ type FileManager interface {
 	Write(path string, value string, mode os.FileMode) error
 }
 
-type fileManager struct{}
+type fileManager struct {
+}
 
 // NewFileManager ...
 func NewFileManager() FileManager {
@@ -31,12 +32,12 @@ func (fileManager) RemoveAll(path string) error {
 }
 
 // Write ...
-func (fileManager) Write(path string, value string, mode os.FileMode) error {
-	if err := ensureSavePath(path); err != nil {
+func (f fileManager) Write(path string, value string, mode os.FileMode) error {
+	if err := f.ensureSavePath(path); err != nil {
 		return err
 	}
 
-	if err := fileutilV1.WriteStringToFile(path, value); err != nil {
+	if err := f.writeStringToFile(path, value); err != nil {
 		return err
 	}
 
@@ -46,7 +47,32 @@ func (fileManager) Write(path string, value string, mode os.FileMode) error {
 	return nil
 }
 
-func ensureSavePath(savePath string) error {
+func (fileManager) ensureSavePath(savePath string) error {
 	dirPath := filepath.Dir(savePath)
 	return os.MkdirAll(dirPath, 0700)
+}
+
+func (f fileManager) writeStringToFile(pth string, fileCont string) error {
+	fc := []byte(fileCont)
+	if pth == "" {
+		return errors.New("no path provided")
+	}
+
+	var file *os.File
+	var err error
+	file, err = os.Create(pth)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err := file.Write(fc); err != nil {
+		return err
+	}
+
+	if err := file.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

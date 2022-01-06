@@ -35,4 +35,20 @@ func TestWrite(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, content, string(fileContent))
 	}
+	t.Log("success test")
+
+	{
+		tmpFilePath := filepath.Join(tmpDirPath, "WriteBytesToFile-success.txt")
+		require.NoError(t, manager.WriteBytes(tmpFilePath, []byte("test string")))
+
+		fileContent, err := ioutil.ReadFile(tmpFilePath)
+		require.NoError(t, err)
+		require.Equal(t, "test string", string(fileContent))
+	}
+
+	t.Log("error test")
+	{
+		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist-2", "WriteBytesToFile-error.txt")
+		require.Error(t, manager.WriteBytes(tmpFilePath, []byte("test string")), "open "+tmpFilePath+": no such file or directory")
+	}
 }

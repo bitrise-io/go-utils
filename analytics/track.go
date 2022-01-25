@@ -2,19 +2,44 @@ package analytics
 
 import (
 	"bytes"
-	"encoding/json"
 	"sync"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const poolSize = 10
 const bufferSize = 100
 
+// TrackerBuilder ...
+type TrackerBuilder interface {
+	AddSharedProperty(key string, value interface{}) TrackerBuilder
+	Build() Tracker
+}
+
+type trackerBuilder struct {
+	client           Client
+	sharedProperties map[string]interface{}
+}
+
+// NewTrackerBuilder ...
+func NewTrackerBuilder(client Client) TrackerBuilder {
+	return trackerBuilder{client: client, sharedProperties: map[string]interface{}{}}
+}
+
+// AddSharedProperty ...
+func (t trackerBuilder) AddSharedProperty(key string, value interface{}) TrackerBuilder {
+	t.sharedProperties[key] = value
+	return t
+}
+
+// Build ...
+func (t trackerBuilder) Build() Tracker {
+	return newTracker(t.client, t.sharedProperties)
+}
+
 // Tracker ...
 type Tracker interface {
-	Enqueue(eventName string, properties map[string]interface{})
+	Enqueue(event Event)
 	Wait()
 }
 
@@ -25,37 +50,22 @@ type tracker struct {
 	sharedProperties map[string]interface{}
 }
 
-// NewDefaultTracker ...
-func NewDefaultTracker(shared map[string]interface{}) Tracker {
-	return NewTracker(make(chan *bytes.Buffer, bufferSize), &sync.WaitGroup{}, poolSize, NewDefaultClient(), shared)
+// NewDefaultTrackerBuilder ...
+func NewDefaultTrackerBuilder(logger log.Logger) TrackerBuilder {
+	return NewTrackerBuilder(NewDefaultClient(logger))
 }
 
-// NewTracker ...
-func NewTracker(jobs chan *bytes.Buffer, waitGroup *sync.WaitGroup, size int, client Client, sharedProperties map[string]interface{}) Tracker {
-	t := tracker{jobs: jobs, waitGroup: waitGroup, client: client, sharedProperties: sharedProperties}
-	t.init(size)
+// newTracker ...
+func newTracker(client Client, shared map[string]interface{}) Tracker {
+	t := tracker{jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, client: client, sharedProperties: shared}
+	t.init(poolSize)
 	return &t
 }
 
 // Enqueue ...
-func (t tracker) Enqueue(eventName string, properties map[string]interface{}) {
-	mergedProperties := make(map[string]interface{})
-	for k, v := range t.sharedProperties {
-		mergedProperties[k] = v
-	}
-	for k, v := range properties {
-		mergedProperties[k] = v
-	}
-	event := Event{
-		ID:         uuid.NewString(),
-		EventName:  eventName,
-		Timestamp:  time.Now().UnixNano(),
-		Properties: mergedProperties,
-	}
+func (t tracker) Enqueue(event Event) {
 	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(event); err != nil {
-		panic("Analytics event should be serializable to JSON")
-	}
+	event.toJson(&b, t.sharedProperties)
 	t.jobs <- &b
 	t.waitGroup.Add(1)
 }

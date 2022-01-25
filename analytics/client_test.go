@@ -2,22 +2,45 @@ package analytics
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/bitrise-io/go-utils/v2/analytics/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func Test_trackerClient_send(t *testing.T) {
+func Test_trackerClient_send_success(t *testing.T) {
+	mockLogger := new(mocks.Logger)
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		b, _ := io.ReadAll(req.Body)
 		assert.Equal(t, string(b), "{}")
 		assert.Equal(t, req.Method, http.MethodPost)
+		assert.Equal(t, req.Header.Get("Content-Type"), "application/json")
 		res.WriteHeader(200)
 		_, _ = res.Write([]byte("ok"))
 	}))
 	defer func() { testServer.Close() }()
-	client := NewClient(http.DefaultClient, testServer.URL)
+	client := NewClient(http.DefaultClient, testServer.URL, mockLogger)
 	client.Send(bytes.NewBufferString("{}"))
+	mockLogger.AssertNotCalled(t, "Debugf", mock.Anything, mock.Anything)
+}
+
+func Test_trackerClient_send_failure(t *testing.T) {
+	mockLogger := new(mocks.Logger)
+	mockLogger.On("Debugf", mock.Anything, mock.Anything).Return()
+	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		b, _ := io.ReadAll(req.Body)
+		assert.Equal(t, string(b), "{}")
+		assert.Equal(t, req.Method, http.MethodPost)
+		assert.Equal(t, req.Header.Get("Content-Type"), "application/json")
+		res.WriteHeader(500)
+		_, _ = res.Write([]byte("failure"))
+	}))
+	defer func() { testServer.Close() }()
+	client := NewClient(http.DefaultClient, testServer.URL, mockLogger)
+	client.Send(bytes.NewBufferString("{}"))
+	mockLogger.AssertCalled(t, "Debugf", "Couldn't send analytics event, status code: %d", 500)
 }

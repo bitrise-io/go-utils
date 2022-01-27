@@ -18,7 +18,7 @@ type EventDTO struct {
 
 // Event ...
 type Event interface {
-	toJson(writer io.Writer, properties ...Property)
+	toJSON(writer io.Writer, properties ...Property)
 }
 
 type event struct {
@@ -38,7 +38,7 @@ func NewEvent(name string, properties ...Property) Event {
 	}
 }
 
-func (e event) toJson(writer io.Writer, shared ...Property) {
+func (e event) toJSON(writer io.Writer, shared ...Property) {
 	dto := EventDTO{
 		ID:        e.ID,
 		EventName: e.EventName,

@@ -38,7 +38,7 @@ func NewTracker(client Client, shared ...Property) Tracker {
 // Enqueue ...
 func (t tracker) Enqueue(event Event) {
 	var b bytes.Buffer
-	event.toJson(&b, t.sharedProperties...)
+	event.toJSON(&b, t.sharedProperties...)
 	t.jobs <- &b
 	t.waitGroup.Add(1)
 }

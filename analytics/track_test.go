@@ -13,12 +13,12 @@ func Test_tracker_EnqueueWaitCycleExecutesSends(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTrackerBuilder(mockClient).Build()
-	tracker.Enqueue(NewEventBuilder("first").Build())
-	tracker.Enqueue(NewEventBuilder("second").Build())
-	tracker.Enqueue(NewEventBuilder("third").Build())
-	tracker.Enqueue(NewEventBuilder("fourth").Build())
-	tracker.Enqueue(NewEventBuilder("fifth").Build())
+	tracker := NewTracker(mockClient)
+	tracker.Enqueue(NewEvent("first"))
+	tracker.Enqueue(NewEvent("second"))
+	tracker.Enqueue(NewEvent("third"))
+	tracker.Enqueue(NewEvent("fourth"))
+	tracker.Enqueue(NewEvent("fifth"))
 	tracker.Wait()
 
 	mockClient.AssertNumberOfCalls(t, "Send", 5)
@@ -28,16 +28,20 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTrackerBuilder(mockClient).AddSharedProperty("session", "id").Build()
-	tracker.Enqueue(
-		NewEventBuilder("first").
-			AddProperty("property", "value").
-			AddProperty("property2", map[string]string{"foo": "bar"}).
-			Build())
+	tracker := NewTracker(mockClient, StringProperty("session", "id"))
+	tracker.Enqueue(NewEvent(
+		"first",
+		StringProperty("property", "value"),
+		IntProperty("intproperty", 42),
+		LongProperty("longproperty", 42),
+		FloatProperty("floatproperty", 3.14),
+		BoolProperty("boolproperty", true),
+		NestedProperty("property2", StringProperty("foo", "bar"))),
+	)
 	tracker.Wait()
 
 	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
-		var event event
+		var event EventDTO
 		err := json.Unmarshal(buffer.Bytes(), &event)
 		if err != nil {
 			return false
@@ -45,8 +49,12 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 		if event.EventName != "first" {
 			return false
 		}
-		if len(event.Properties) != 3 ||
+		if len(event.Properties) != 7 ||
 			event.Properties["property"] != "value" ||
+			event.Properties["intproperty"].(float64) != 42 ||
+			event.Properties["longproperty"].(float64) != 42 ||
+			event.Properties["floatproperty"].(float64) != 3.14 ||
+			event.Properties["boolproperty"].(bool) != true ||
 			event.Properties["session"] != "id" ||
 			event.Properties["property2"].(map[string]interface{})["foo"] != "bar" {
 			return false

@@ -8,46 +8,28 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// EventBuilder ...
-type EventBuilder interface {
-	AddProperty(key string, value interface{}) EventBuilder
-	Build() Event
-}
-
-type eventBuilder struct {
-	eventName  string
-	properties map[string]interface{}
-}
-
-// NewEventBuilder ...
-func NewEventBuilder(name string) EventBuilder {
-	return eventBuilder{eventName: name, properties: map[string]interface{}{}}
-}
-
-// AddProperty ...
-func (e eventBuilder) AddProperty(key string, value interface{}) EventBuilder {
-	e.properties[key] = value
-	return e
-}
-
-// Build ...
-func (e eventBuilder) Build() Event {
-	return newEvent(e.eventName, e.properties)
-}
-
-// Event ...
-type Event interface {
-	toJson(writer io.Writer, shared map[string]interface{})
-}
-
-type event struct {
+// EventDTO ...
+type EventDTO struct {
 	ID         string                 `json:"id"`
 	EventName  string                 `json:"event_name"`
 	Timestamp  int64                  `json:"timestamp"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
-func newEvent(name string, properties map[string]interface{}) Event {
+// Event ...
+type Event interface {
+	toJson(writer io.Writer, properties ...Property)
+}
+
+type event struct {
+	ID         string
+	EventName  string
+	Timestamp  int64
+	Properties []Property
+}
+
+// NewEvent ...
+func NewEvent(name string, properties ...Property) Event {
 	return event{
 		ID:         uuid.Must(uuid.NewV4()).String(),
 		EventName:  name,
@@ -56,17 +38,26 @@ func newEvent(name string, properties map[string]interface{}) Event {
 	}
 }
 
-func (e event) toJson(writer io.Writer, shared map[string]interface{}) {
-	if e.Properties == nil {
-		e.Properties = map[string]interface{}{}
+func (e event) toJson(writer io.Writer, shared ...Property) {
+	dto := EventDTO{
+		ID:        e.ID,
+		EventName: e.EventName,
+		Timestamp: e.Timestamp,
 	}
-	for k, v := range shared {
-		_, ok := e.Properties[k] // More specific property takes precedence
-		if !ok {
-			e.Properties[k] = v
-		}
+	if len(shared) > 0 || len(e.Properties) > 0 {
+		dto.Properties = map[string]interface{}{}
 	}
-	if err := json.NewEncoder(writer).Encode(e); err != nil {
+	for _, property := range shared {
+		dto.appendProperty(property)
+	}
+	for _, property := range e.Properties {
+		dto.appendProperty(property)
+	}
+	if err := json.NewEncoder(writer).Encode(dto); err != nil {
 		panic("Analytics event should be serializable to JSON")
 	}
+}
+
+func (e EventDTO) appendProperty(property Property) {
+	e.Properties[property.GetKey()] = property.GetValue()
 }

@@ -10,33 +10,6 @@ import (
 const poolSize = 10
 const bufferSize = 100
 
-// TrackerBuilder ...
-type TrackerBuilder interface {
-	AddSharedProperty(key string, value interface{}) TrackerBuilder
-	Build() Tracker
-}
-
-type trackerBuilder struct {
-	client           Client
-	sharedProperties map[string]interface{}
-}
-
-// NewTrackerBuilder ...
-func NewTrackerBuilder(client Client) TrackerBuilder {
-	return trackerBuilder{client: client, sharedProperties: map[string]interface{}{}}
-}
-
-// AddSharedProperty ...
-func (t trackerBuilder) AddSharedProperty(key string, value interface{}) TrackerBuilder {
-	t.sharedProperties[key] = value
-	return t
-}
-
-// Build ...
-func (t trackerBuilder) Build() Tracker {
-	return newTracker(t.client, t.sharedProperties)
-}
-
 // Tracker ...
 type Tracker interface {
 	Enqueue(event Event)
@@ -47,16 +20,16 @@ type tracker struct {
 	jobs             chan *bytes.Buffer
 	waitGroup        *sync.WaitGroup
 	client           Client
-	sharedProperties map[string]interface{}
+	sharedProperties []Property
 }
 
-// NewDefaultTrackerBuilder ...
-func NewDefaultTrackerBuilder(logger log.Logger) TrackerBuilder {
-	return NewTrackerBuilder(NewDefaultClient(logger))
+// NewDefaultTracker ...
+func NewDefaultTracker(logger log.Logger, shared ...Property) Tracker {
+	return NewTracker(NewDefaultClient(logger), shared...)
 }
 
-// newTracker ...
-func newTracker(client Client, shared map[string]interface{}) Tracker {
+// NewTracker ...
+func NewTracker(client Client, shared ...Property) Tracker {
 	t := tracker{jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, client: client, sharedProperties: shared}
 	t.init(poolSize)
 	return &t
@@ -65,7 +38,7 @@ func newTracker(client Client, shared map[string]interface{}) Tracker {
 // Enqueue ...
 func (t tracker) Enqueue(event Event) {
 	var b bytes.Buffer
-	event.toJson(&b, t.sharedProperties)
+	event.toJson(&b, t.sharedProperties...)
 	t.jobs <- &b
 	t.waitGroup.Add(1)
 }

@@ -2,7 +2,6 @@ package analytics
 
 import (
 	"bytes"
-	"sync"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 )
@@ -13,51 +12,33 @@ const bufferSize = 100
 // Tracker ...
 type Tracker interface {
 	Enqueue(event Event)
-	Wait()
+	Fork(properties ...Property) Tracker
 }
 
 type tracker struct {
-	jobs             chan *bytes.Buffer
-	waitGroup        *sync.WaitGroup
-	client           Client
-	sharedProperties []Property
+	worker     Worker
+	Properties []Property
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger, shared ...Property) Tracker {
-	return NewTracker(NewDefaultClient(logger), shared...)
+func NewDefaultTracker(logger log.Logger, properties ...Property) Tracker {
+	return NewTracker(NewWorker(NewDefaultClient(logger)), properties...)
 }
 
 // NewTracker ...
-func NewTracker(client Client, shared ...Property) Tracker {
-	t := tracker{jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, client: client, sharedProperties: shared}
-	t.init(poolSize)
+func NewTracker(worker Worker, properties ...Property) Tracker {
+	t := tracker{worker: worker, Properties: properties}
 	return &t
 }
 
 // Enqueue ...
 func (t tracker) Enqueue(event Event) {
 	var b bytes.Buffer
-	event.toJSON(&b, t.sharedProperties...)
-	t.jobs <- &b
-	t.waitGroup.Add(1)
+	event.toJSON(&b, t.Properties...)
+	t.worker.Run(&b)
 }
 
-// Wait ...
-func (t tracker) Wait() {
-	close(t.jobs)
-	t.waitGroup.Wait()
-}
-
-func (t tracker) init(size int) {
-	for w := 0; w < size; w++ {
-		go t.worker()
-	}
-}
-
-func (t tracker) worker() {
-	for job := range t.jobs {
-		t.client.Send(job)
-		t.waitGroup.Done()
-	}
+// Fork ...
+func (t tracker) Fork(properties ...Property) Tracker {
+	return NewTracker(t.worker, append(t.Properties, properties...)...)
 }

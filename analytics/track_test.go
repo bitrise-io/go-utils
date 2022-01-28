@@ -13,13 +13,14 @@ func Test_tracker_EnqueueWaitCycleExecutesSends(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTracker(mockClient)
+	worker := NewWorker(mockClient)
+	tracker := NewTracker(worker)
 	tracker.Enqueue(NewEvent("first"))
 	tracker.Enqueue(NewEvent("second"))
 	tracker.Enqueue(NewEvent("third"))
 	tracker.Enqueue(NewEvent("fourth"))
 	tracker.Enqueue(NewEvent("fifth"))
-	tracker.Wait()
+	worker.Wait()
 
 	mockClient.AssertNumberOfCalls(t, "Send", 5)
 }
@@ -28,7 +29,8 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTracker(mockClient, StringProperty("session", "id"))
+	worker := NewWorker(mockClient)
+	tracker := NewTracker(worker, StringProperty("session", "id"))
 	tracker.Enqueue(NewEvent(
 		"first",
 		StringProperty("property", "value"),
@@ -38,7 +40,7 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 		BoolProperty("boolproperty", true),
 		NestedProperty("property2", StringProperty("foo", "bar"))),
 	)
-	tracker.Wait()
+	worker.Wait()
 
 	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
 		var event event
@@ -65,5 +67,40 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 		return true
 	})
 	mockClient.AssertNumberOfCalls(t, "Send", 1)
+	mockClient.AssertCalled(t, "Send", matcher)
+}
+
+func Test_tracker_ForkedTrackerAddsProperties(t *testing.T) {
+	mockClient := new(mocks.Client)
+	mockClient.On("Send", mock.Anything).Return()
+
+	worker := NewWorker(mockClient)
+	tracker := NewTracker(worker, StringProperty("first", "first"))
+	tracker.Enqueue(NewEvent("event"))
+	forked := tracker.Fork(StringProperty("second", "second"))
+	forked.Enqueue(NewEvent("event2"))
+	worker.Wait()
+
+	mockClient.AssertNumberOfCalls(t, "Send", 2)
+	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
+		var event event
+		err := json.Unmarshal(buffer.Bytes(), &event)
+		if err != nil {
+			return false
+		}
+		if event.EventName == "event" {
+			if len(event.Properties) != 1 || event.Properties["first"] != "first" {
+				return false
+			}
+			return true
+		}
+		if event.EventName == "event2" {
+			if len(event.Properties) != 2 || event.Properties["first"] != "first" || event.Properties["second"] != "second" {
+				return false
+			}
+			return true
+		}
+		return false
+	})
 	mockClient.AssertCalled(t, "Send", matcher)
 }

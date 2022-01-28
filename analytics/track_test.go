@@ -41,7 +41,7 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 	tracker.Wait()
 
 	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
-		var event EventDTO
+		var event event
 		err := json.Unmarshal(buffer.Bytes(), &event)
 		if err != nil {
 			return false

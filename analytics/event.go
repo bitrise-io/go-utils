@@ -50,14 +50,10 @@ func (e event) toJSON(writer io.Writer, shared ...Property) {
 			if _, ok := e.Properties[property.GetKey()]; ok {
 				continue
 			}
-			e.appendProperty(property)
+			e.Properties[property.GetKey()] = property.GetValue()
 		}
 	}
 	if err := json.NewEncoder(writer).Encode(e); err != nil {
 		panic("Analytics event should be serializable to JSON")
 	}
-}
-
-func (e event) appendProperty(property Property) {
-	e.Properties[property.GetKey()] = property.GetValue()
 }

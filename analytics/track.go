@@ -9,36 +9,50 @@ import (
 const poolSize = 10
 const bufferSize = 100
 
+// Properties ...
+type Properties map[string]interface{}
+
+func (p Properties) merge(properties Properties) Properties {
+	r := Properties{}
+	for key, value := range p {
+		r[key] = value
+	}
+	for key, value := range properties {
+		r[key] = value
+	}
+	return r
+}
+
 // Tracker ...
 type Tracker interface {
-	Enqueue(event Event)
-	Fork(properties ...Property) Tracker
+	Enqueue(eventName string, properties ...Properties)
+	Fork(properties ...Properties) Tracker
 }
 
 type tracker struct {
 	worker     Worker
-	Properties []Property
+	properties []Properties
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger, properties ...Property) Tracker {
-	return NewTracker(NewWorker(NewDefaultClient(logger)), properties...)
+func NewDefaultTracker(logger log.Logger) Tracker {
+	return NewTracker(NewWorker(NewDefaultClient(logger)))
 }
 
 // NewTracker ...
-func NewTracker(worker Worker, properties ...Property) Tracker {
-	t := tracker{worker: worker, Properties: properties}
+func NewTracker(worker Worker, properties ...Properties) Tracker {
+	t := tracker{worker: worker, properties: properties}
 	return &t
 }
 
 // Enqueue ...
-func (t tracker) Enqueue(event Event) {
+func (t tracker) Enqueue(eventName string, properties ...Properties) {
 	var b bytes.Buffer
-	event.toJSON(&b, t.Properties...)
+	newEvent(eventName, append(t.properties, properties...)).toJSON(&b)
 	t.worker.Run(&b)
 }
 
 // Fork ...
-func (t tracker) Fork(properties ...Property) Tracker {
-	return NewTracker(t.worker, append(t.Properties, properties...)...)
+func (t tracker) Fork(properties ...Properties) Tracker {
+	return NewTracker(t.worker, append(t.properties, properties...)...)
 }

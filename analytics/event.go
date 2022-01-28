@@ -31,17 +31,6 @@ func NewEvent(name string, properties ...Property) Event {
 	}
 }
 
-func unwrap(properties []Property) map[string]interface{} {
-	if len(properties) == 0 {
-		return nil
-	}
-	m := map[string]interface{}{}
-	for _, property := range properties {
-		m[property.GetKey()] = property.GetValue()
-	}
-	return m
-}
-
 func (e event) toJSON(writer io.Writer, shared ...Property) {
 	if len(shared) > 0 {
 		if e.Properties == nil {
@@ -57,4 +46,15 @@ func (e event) toJSON(writer io.Writer, shared ...Property) {
 	if err := json.NewEncoder(writer).Encode(e); err != nil {
 		panic(fmt.Sprintf("Analytics event should be serializable to JSON: %s", err.Error()))
 	}
+}
+
+func unwrap(properties []Property) map[string]interface{} {
+	if len(properties) == 0 {
+		return nil
+	}
+	m := map[string]interface{}{}
+	for _, property := range properties {
+		m[property.GetKey()] = property.GetValue()
+	}
+	return m
 }

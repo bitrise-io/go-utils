@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -54,6 +55,6 @@ func (e event) toJSON(writer io.Writer, shared ...Property) {
 		}
 	}
 	if err := json.NewEncoder(writer).Encode(e); err != nil {
-		panic("Analytics event should be serializable to JSON")
+		panic(fmt.Sprintf("Analytics event should be serializable to JSON: %s", err.Error()))
 	}
 }

@@ -109,17 +109,17 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 	mockClient.AssertCalled(t, "Send", matcher)
 }
 
-func Test_tracker_ForkedClientWork(t *testing.T) {
+func Test_tracker_PinnedClientWork(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
 	worker := NewWorker(mockClient)
 	tracker := NewTracker(worker)
-	firstFork := tracker.Fork(Properties{"first": "first"})
+	firstFork := tracker.Pin(Properties{"first": "first"})
 	firstFork.Enqueue("event")
-	secondFork := firstFork.Fork(Properties{"second": "second"})
+	secondFork := firstFork.Pin(Properties{"second": "second"})
 	secondFork.Enqueue("event2")
-	thirdFork := tracker.Fork(Properties{"first": "first"}, Properties{"second": "second"})
+	thirdFork := tracker.Pin(Properties{"first": "first"}, Properties{"second": "second"})
 	thirdFork.Enqueue("event3")
 	worker.Wait()
 

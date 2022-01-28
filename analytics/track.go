@@ -26,7 +26,7 @@ func (p Properties) merge(properties Properties) Properties {
 // Tracker ...
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)
-	Fork(properties ...Properties) Tracker
+	Pin(properties ...Properties) Tracker
 }
 
 type tracker struct {
@@ -53,6 +53,6 @@ func (t tracker) Enqueue(eventName string, properties ...Properties) {
 }
 
 // Fork ...
-func (t tracker) Fork(properties ...Properties) Tracker {
+func (t tracker) Pin(properties ...Properties) Tracker {
 	return NewTracker(t.worker, append(t.properties, properties...)...)
 }

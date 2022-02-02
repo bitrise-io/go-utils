@@ -12,7 +12,8 @@ const bufferSize = 100
 // Properties ...
 type Properties map[string]interface{}
 
-func (p Properties) merge(properties Properties) Properties {
+// Merge ...
+func (p Properties) Merge(properties Properties) Properties {
 	r := Properties{}
 	for key, value := range p {
 		r[key] = value

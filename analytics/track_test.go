@@ -81,7 +81,7 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 	tracker := NewTracker(worker)
 	baseProperties := Properties{"first": "first"}
 	tracker.Enqueue("event", baseProperties)
-	newBaseProperties := baseProperties.merge(Properties{"second": "second"})
+	newBaseProperties := baseProperties.Merge(Properties{"second": "second"})
 	tracker.Enqueue("event2", newBaseProperties)
 	worker.Wait()
 

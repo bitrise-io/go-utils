@@ -115,12 +115,12 @@ func Test_tracker_PinnedClientWork(t *testing.T) {
 
 	worker := NewWorker(mockClient)
 	tracker := NewTracker(worker)
-	firstFork := tracker.Pin(Properties{"first": "first"})
-	firstFork.Enqueue("event")
-	secondFork := firstFork.Pin(Properties{"second": "second"})
-	secondFork.Enqueue("event2")
-	thirdFork := tracker.Pin(Properties{"first": "first"}, Properties{"second": "second"})
-	thirdFork.Enqueue("event3")
+	firstPin := tracker.Pin(Properties{"first": "first"})
+	firstPin.Enqueue("event")
+	secondPin := firstPin.Pin(Properties{"second": "second"})
+	secondPin.Enqueue("event2")
+	thirdPin := tracker.Pin(Properties{"first": "first"}, Properties{"second": "second"})
+	thirdPin.Enqueue("event3")
 	worker.Wait()
 
 	mockClient.AssertNumberOfCalls(t, "Send", 3)

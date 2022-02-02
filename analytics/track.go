@@ -53,7 +53,7 @@ func (t tracker) Enqueue(eventName string, properties ...Properties) {
 	t.worker.Run(&b)
 }
 
-// Fork ...
+// Pin ...
 func (t tracker) Pin(properties ...Properties) Tracker {
 	return NewTracker(t.worker, append(t.properties, properties...)...)
 }

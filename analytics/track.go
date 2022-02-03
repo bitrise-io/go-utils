@@ -2,8 +2,6 @@ package analytics
 
 import (
 	"bytes"
-
-	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const poolSize = 10
@@ -36,8 +34,8 @@ type tracker struct {
 }
 
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger) Tracker {
-	return NewTracker(NewWorker(NewDefaultClient(logger)))
+func NewDefaultTracker(worker Worker) Tracker {
+	return NewTracker(worker)
 }
 
 // NewTracker ...

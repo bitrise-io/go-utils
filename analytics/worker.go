@@ -3,6 +3,8 @@ package analytics
 import (
 	"bytes"
 	"sync"
+
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 // Worker ...
@@ -21,6 +23,11 @@ type worker struct {
 func (w worker) Wait() {
 	close(w.jobs)
 	w.waitGroup.Wait()
+}
+
+// NewDefaultWorker ...
+func NewDefaultWorker() Worker {
+	return NewWorker(NewDefaultClient(log.NewLogger()))
 }
 
 // NewWorker ...

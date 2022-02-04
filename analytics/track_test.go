@@ -13,14 +13,13 @@ func Test_tracker_EnqueueWaitCycleExecutesSends(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	worker := NewWorker(mockClient)
-	tracker := NewTracker(worker)
+	tracker := NewTracker(mockClient)
 	tracker.Enqueue("first")
 	tracker.Enqueue("second")
 	tracker.Enqueue("third")
 	tracker.Enqueue("fourth")
 	tracker.Enqueue("fifth")
-	worker.Wait()
+	tracker.Wait()
 
 	mockClient.AssertNumberOfCalls(t, "Send", 5)
 }
@@ -29,8 +28,7 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	worker := NewWorker(mockClient)
-	tracker := NewTracker(worker)
+	tracker := NewTracker(mockClient)
 	baseProperties := Properties{"session": "id"}
 	tracker.Enqueue(
 		"first",
@@ -43,7 +41,7 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 			"property2":     Properties{"foo": "bar"},
 		},
 	)
-	worker.Wait()
+	tracker.Wait()
 
 	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
 		var event event
@@ -77,13 +75,12 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	worker := NewWorker(mockClient)
-	tracker := NewTracker(worker)
+	tracker := NewTracker(mockClient, Properties{"base": "base"})
 	baseProperties := Properties{"first": "first"}
 	tracker.Enqueue("event", baseProperties)
 	newBaseProperties := baseProperties.Merge(Properties{"second": "second"})
 	tracker.Enqueue("event2", newBaseProperties)
-	worker.Wait()
+	tracker.Wait()
 
 	mockClient.AssertNumberOfCalls(t, "Send", 2)
 	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
@@ -93,57 +90,13 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 			return false
 		}
 		if event.EventName == "event" {
-			if len(event.Properties) != 1 || event.Properties["first"] != "first" {
+			if len(event.Properties) != 2 || event.Properties["base"] != "base" || event.Properties["first"] != "first" {
 				return false
 			}
 			return true
 		}
 		if event.EventName == "event2" {
-			if len(event.Properties) != 2 || event.Properties["first"] != "first" || event.Properties["second"] != "second" {
-				return false
-			}
-			return true
-		}
-		return false
-	})
-	mockClient.AssertCalled(t, "Send", matcher)
-}
-
-func Test_tracker_PinnedClientWork(t *testing.T) {
-	mockClient := new(mocks.Client)
-	mockClient.On("Send", mock.Anything).Return()
-
-	worker := NewWorker(mockClient)
-	tracker := NewTracker(worker)
-	firstPin := tracker.Pin(Properties{"first": "first"})
-	firstPin.Enqueue("event")
-	secondPin := firstPin.Pin(Properties{"second": "second"})
-	secondPin.Enqueue("event2")
-	thirdPin := tracker.Pin(Properties{"first": "first"}, Properties{"second": "second"})
-	thirdPin.Enqueue("event3")
-	worker.Wait()
-
-	mockClient.AssertNumberOfCalls(t, "Send", 3)
-	matcher := mock.MatchedBy(func(buffer *bytes.Buffer) bool {
-		var event event
-		err := json.Unmarshal(buffer.Bytes(), &event)
-		if err != nil {
-			return false
-		}
-		if event.EventName == "event" {
-			if len(event.Properties) != 1 || event.Properties["first"] != "first" {
-				return false
-			}
-			return true
-		}
-		if event.EventName == "event2" {
-			if len(event.Properties) != 2 || event.Properties["first"] != "first" || event.Properties["second"] != "second" {
-				return false
-			}
-			return true
-		}
-		if event.EventName == "event3" {
-			if len(event.Properties) != 2 || event.Properties["first"] != "first" || event.Properties["second"] != "second" {
+			if len(event.Properties) != 3 || event.Properties["base"] != "base" || event.Properties["first"] != "first" || event.Properties["second"] != "second" {
 				return false
 			}
 			return true

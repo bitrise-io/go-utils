@@ -2,12 +2,15 @@ package analytics
 
 import (
 	"bytes"
-	"github.com/bitrise-io/go-utils/v2/log"
 	"sync"
+	"time"
+
+	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 const poolSize = 10
 const bufferSize = 100
+const timeout = 30 * time.Second
 
 // Properties ...
 type Properties map[string]interface{}
@@ -31,20 +34,21 @@ type Tracker interface {
 }
 
 type tracker struct {
-	jobs       chan *bytes.Buffer
-	waitGroup  *sync.WaitGroup
-	client     Client
-	properties []Properties
+	jobs        chan *bytes.Buffer
+	waitGroup   *sync.WaitGroup
+	client      Client
+	properties  []Properties
+	waitTimeout time.Duration
 }
 
 // NewDefaultTracker ...
 func NewDefaultTracker(properties ...Properties) Tracker {
-	return NewTracker(NewDefaultClient(log.NewLogger()), properties...)
+	return NewTracker(NewDefaultClient(log.NewLogger()), timeout, properties...)
 }
 
 // NewTracker ...
-func NewTracker(client Client, properties ...Properties) Tracker {
-	t := tracker{client: client, jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, properties: properties}
+func NewTracker(client Client, waitTimeout time.Duration, properties ...Properties) Tracker {
+	t := tracker{client: client, jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, properties: properties, waitTimeout: waitTimeout}
 	t.init(poolSize)
 	return &t
 }
@@ -60,7 +64,15 @@ func (t tracker) Enqueue(eventName string, properties ...Properties) {
 // Wait ...
 func (t tracker) Wait() {
 	close(t.jobs)
-	t.waitGroup.Wait()
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		t.waitGroup.Wait()
+	}()
+	select {
+	case <-c:
+	case <-time.After(t.waitTimeout):
+	}
 }
 
 func (t tracker) init(size int) {

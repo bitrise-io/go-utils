@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/go-utils/v2/analytics/mocks"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +14,7 @@ func Test_tracker_EnqueueWaitCycleExecutesSends(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTracker(mockClient)
+	tracker := NewTracker(mockClient, timeout)
 	tracker.Enqueue("first")
 	tracker.Enqueue("second")
 	tracker.Enqueue("third")
@@ -28,7 +29,7 @@ func Test_tracker_SendIsCalledWithExpectedData(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTracker(mockClient)
+	tracker := NewTracker(mockClient, timeout)
 	baseProperties := Properties{"session": "id"}
 	tracker.Enqueue(
 		"first",
@@ -75,7 +76,7 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("Send", mock.Anything).Return()
 
-	tracker := NewTracker(mockClient, Properties{"base": "base"})
+	tracker := NewTracker(mockClient, timeout, Properties{"base": "base"})
 	baseProperties := Properties{"first": "first"}
 	tracker.Enqueue("event", baseProperties)
 	newBaseProperties := baseProperties.Merge(Properties{"second": "second"})
@@ -104,4 +105,25 @@ func Test_tracker_MergingPropertiesWork(t *testing.T) {
 		return false
 	})
 	mockClient.AssertCalled(t, "Send", matcher)
+}
+
+func Test_tracker_WaitTimesOutOnBlockingClient(t *testing.T) {
+	timeout := time.After(3 * time.Second)
+	done := make(chan bool)
+	go func() {
+		mockClient := new(mocks.Client)
+		mockClient.On("Send", mock.Anything).Run(func(args mock.Arguments) {
+			select {}
+		})
+		tracker := NewTracker(mockClient, 2*time.Second)
+		tracker.Enqueue("block")
+		tracker.Wait()
+		done <- true
+	}()
+
+	select {
+	case <-timeout:
+		t.Fatal("Test didn't finish in time")
+	case <-done:
+	}
 }

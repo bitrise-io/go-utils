@@ -27,6 +27,13 @@ func (p Properties) Merge(properties Properties) Properties {
 	return r
 }
 
+// AppendIfNotEmpty ...
+func (p Properties) AppendIfNotEmpty(key string, value string) {
+	if value != "" {
+		p[key] = value
+	}
+}
+
 // Tracker ...
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)

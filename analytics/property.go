@@ -26,8 +26,8 @@ func (p Properties) AppendIfNotEmpty(key string, value string) {
 	}
 }
 
-// ToProperty Converts struct into Properties map based on json tags
-func ToProperty(item interface{}) Properties {
+// NewProperty Converts struct into Properties map based on json tags
+func NewProperty(item interface{}) Properties {
 	result := Properties{}
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName: "json",

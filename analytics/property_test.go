@@ -28,7 +28,7 @@ type complexTestStruct struct {
 type emptyTestStruct struct {
 }
 
-func TestToProperty(t *testing.T) {
+func TestNewProperty(t *testing.T) {
 	tests := []struct {
 		name string
 		item interface{}
@@ -75,7 +75,7 @@ func TestToProperty(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, ToProperty(tt.item), "ToProperty(%v)", tt.item)
+			assert.Equalf(t, tt.want, NewProperty(tt.item), "NewProperty(%v)", tt.item)
 		})
 	}
 }

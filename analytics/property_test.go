@@ -11,8 +11,8 @@ type simpleTestStruct struct {
 	Address          string `json:"address,omitempty"`
 	Age              int    `json:"age"`
 	Happy            bool   `json:"happy"`
-	NotJsonField     string
-	IgnoredJsonField string `json:"-"`
+	NotJSONField     string
+	IgnoredJSONField string `json:"-"`
 }
 
 type complexTestStruct struct {
@@ -40,13 +40,13 @@ func TestToProperty(t *testing.T) {
 				Name:         "John",
 				Age:          42,
 				Happy:        true,
-				NotJsonField: "Not a json field",
+				NotJSONField: "Not a json field",
 			},
 			want: Properties{
 				"name":         "John",
 				"age":          42,
 				"happy":        true,
-				"NotJsonField": "Not a json field",
+				"NotJSONField": "Not a json field",
 			},
 		},
 		{

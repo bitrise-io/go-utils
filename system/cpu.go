@@ -8,6 +8,7 @@ import (
 
 type cpu struct{}
 
+// CPU is a singleton that returns information about the CPU
 var CPU cpu
 
 // Architecture returns the CPU's architecture name as a string
@@ -31,7 +32,7 @@ func (cpu) IsARM() (bool, error) {
 
 	if err != nil {
 		return false, err
-	} else {
-		return strings.Contains(cpuType, "arm"), nil
 	}
+
+	return strings.Contains(cpuType, "arm"), nil
 }

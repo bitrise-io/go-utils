@@ -12,6 +12,10 @@ type cpu struct{}
 var CPU cpu
 
 // Architecture returns the CPU's architecture name as a string
+//
+// Some example return values:
+//   - "x86_64"
+//   - "arm64"
 func (cpu) Architecture() (string, error) {
 	var utsname unix.Utsname
 	err := unix.Uname(&utsname)

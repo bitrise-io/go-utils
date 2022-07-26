@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"time"
 
@@ -37,12 +38,26 @@ func NewClient(httpClient *http.Client, endpoint string, logger log.Logger) Clie
 
 // Send ...
 func (t client) Send(buffer *bytes.Buffer) {
-	res, err := t.httpClient.Post(t.endpoint, "application/json", buffer)
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.endpoint, buffer)
 	if err != nil {
-		t.logger.Debugf("Couldn't send analytics event: %s", err.Error())
-		return
+		t.logger.Warnf("Couldn't create analytics request: %s", err)
 	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := t.httpClient.Do(req)
+	if err != nil {
+		t.logger.Debugf("Couldn't send analytics event: %s", err)
+	}
+
 	if statusOK := res.StatusCode >= 200 && res.StatusCode < 300; !statusOK {
 		t.logger.Debugf("Couldn't send analytics event, status code: %d", res.StatusCode)
+	}
+
+	if err := res.Body.Close(); err != nil {
+		t.logger.Debugf("Couldn't close anaytics body: %s", err)
 	}
 }

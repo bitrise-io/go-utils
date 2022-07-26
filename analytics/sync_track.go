@@ -14,12 +14,12 @@ type syncTracker struct {
 	properties []Properties
 }
 
-// NewDefaultTracker ...
+// NewDefaultSyncTracker ...
 func NewDefaultSyncTracker(logger log.Logger, properties ...Properties) Tracker {
 	return NewSyncTracker(NewDefaultClient(logger, syncClientTimeout), properties...)
 }
 
-// NewTracker ...
+// NewSyncTracker ...
 func NewSyncTracker(client Client, properties ...Properties) Tracker {
 	t := syncTracker{client: client, properties: properties}
 	return &t

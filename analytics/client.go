@@ -11,7 +11,6 @@ import (
 )
 
 const trackEndpoint = "https://bitrise-step-analytics.herokuapp.com/track"
-const timeOut = 30 * time.Second
 
 // Client ...
 type Client interface {
@@ -20,25 +19,26 @@ type Client interface {
 
 type client struct {
 	httpClient *http.Client
+	timeout    time.Duration
 	endpoint   string
 	logger     log.Logger
 }
 
 // NewDefaultClient ...
-func NewDefaultClient(logger log.Logger) Client {
+func NewDefaultClient(logger log.Logger, timeout time.Duration) Client {
 	httpClient := retry.NewHTTPClient().StandardClient()
-	httpClient.Timeout = timeOut
-	return NewClient(httpClient, trackEndpoint, logger)
+	httpClient.Timeout = timeout
+	return NewClient(httpClient, trackEndpoint, logger, timeout)
 }
 
 // NewClient ...
-func NewClient(httpClient *http.Client, endpoint string, logger log.Logger) Client {
-	return client{httpClient: httpClient, endpoint: endpoint, logger: logger}
+func NewClient(httpClient *http.Client, endpoint string, logger log.Logger, timeout time.Duration) Client {
+	return client{httpClient: httpClient, endpoint: endpoint, logger: logger, timeout: timeout}
 }
 
 // Send ...
 func (t client) Send(buffer *bytes.Buffer) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.endpoint, buffer)

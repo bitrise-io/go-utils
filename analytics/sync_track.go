@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 
-const syncTimeout = 10 * time.Second
+const syncClientTimeout = 10 * time.Second
 
 type syncTracker struct {
 	client     Client
@@ -16,11 +16,11 @@ type syncTracker struct {
 
 // NewDefaultTracker ...
 func NewDefaultSyncTracker(logger log.Logger, properties ...Properties) Tracker {
-	return NewSyncTracker(NewDefaultClient(logger), syncTimeout, properties...)
+	return NewSyncTracker(NewDefaultClient(logger, syncClientTimeout), properties...)
 }
 
 // NewTracker ...
-func NewSyncTracker(client Client, waitTimeout time.Duration, properties ...Properties) Tracker {
+func NewSyncTracker(client Client, properties ...Properties) Tracker {
 	t := syncTracker{client: client, properties: properties}
 	return &t
 }

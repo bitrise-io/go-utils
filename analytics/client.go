@@ -51,13 +51,16 @@ func (t client) Send(buffer *bytes.Buffer) {
 	res, err := t.httpClient.Do(req)
 	if err != nil {
 		t.logger.Debugf("Couldn't send analytics event: %s", err)
+		return
 	}
+
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			t.logger.Debugf("Couldn't close anaytics body: %s", err)
+		}
+	}()
 
 	if statusOK := res.StatusCode >= 200 && res.StatusCode < 300; !statusOK {
 		t.logger.Debugf("Couldn't send analytics event, status code: %d", res.StatusCode)
-	}
-
-	if err := res.Body.Close(); err != nil {
-		t.logger.Debugf("Couldn't close anaytics body: %s", err)
 	}
 }

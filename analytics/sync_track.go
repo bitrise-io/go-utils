@@ -35,4 +35,5 @@ func (t syncTracker) Enqueue(eventName string, properties ...Properties) {
 
 // Wait ...
 func (t syncTracker) Wait() {
+	// no-op in sync tracker
 }

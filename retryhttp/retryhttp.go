@@ -1,4 +1,4 @@
-package http
+package retryhttp
 
 import (
 	"github.com/bitrise-io/go-utils/v2/log"

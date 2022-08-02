@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-// NewHTTPClient returns a retryable HTTP client with common defaults
-func NewHTTPClient(logger log.Logger) *retryablehttp.Client {
+// NewClient returns a retryable HTTP client with common defaults
+func NewClient(logger log.Logger) *retryablehttp.Client {
 	client := retryablehttp.NewClient()
 	client.Logger = &httpLogAdaptor{logger: logger}
 	client.ErrorHandler = retryablehttp.PassthroughErrorHandler

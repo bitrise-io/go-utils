@@ -5,21 +5,21 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-// HTTPLogAdaptor adapts the retryablehttp.Logger interface to the go-utils logger.
-type HTTPLogAdaptor struct {
+// NewHTTPClient returns a retryable HTTP client with common defaults
+func NewHTTPClient(logger log.Logger) *retryablehttp.Client {
+	client := retryablehttp.NewClient()
+	client.Logger = &httpLogAdaptor{logger: logger}
+	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
+
+	return client
+}
+
+// httpLogAdaptor adapts the retryablehttp.Logger interface to the go-utils logger.
+type httpLogAdaptor struct {
 	logger log.Logger
 }
 
 // Printf implements the retryablehttp.Logger interface
-func (a *HTTPLogAdaptor) Printf(fmtStr string, vars ...interface{}) {
+func (a *httpLogAdaptor) Printf(fmtStr string, vars ...interface{}) {
 	a.logger.Debugf(fmtStr, vars...)
-}
-
-// NewHTTPClient returns a retryable HTTP client with common defaults
-func NewHTTPClient(logger log.Logger) *retryablehttp.Client {
-	client := retryablehttp.NewClient()
-	client.Logger = &HTTPLogAdaptor{}
-	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
-
-	return client
 }

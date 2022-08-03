@@ -2,10 +2,7 @@ package progress
 
 import (
 	"fmt"
-	"os"
 	"strings"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Wrapper ...
@@ -21,13 +18,6 @@ func NewWrapper(spinner Spinner, interactiveMode bool) Wrapper {
 		spinner:         spinner,
 		interactiveMode: interactiveMode,
 	}
-}
-
-// NewDefaultWrapper ...
-func NewDefaultWrapper(message string) Wrapper {
-	spinner := NewDefaultSpinner(message)
-	interactiveMode := OutputDeviceIsTerminal()
-	return NewWrapper(spinner, interactiveMode)
 }
 
 // WrapAction ...
@@ -46,9 +36,4 @@ func (w Wrapper) WrapAction(action func()) {
 		}
 		action()
 	}
-}
-
-// OutputDeviceIsTerminal ...
-func OutputDeviceIsTerminal() bool {
-	return terminal.IsTerminal(int(os.Stdout.Fd()))
 }

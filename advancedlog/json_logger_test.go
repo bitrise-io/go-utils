@@ -34,7 +34,7 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 		expectedMessage testJSONLogMessage
 	}{
 		{
-			name:            "Cli log",
+			name:            "CLI log",
 			enableDebugLogs: false,
 			hasOutput:       true,
 			parameters: testLogParameters{
@@ -93,7 +93,6 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 				level:    DebugLevel,
 				message:  "This debug log will not show up",
 			},
-			expectedMessage: testJSONLogMessage{},
 		},
 	}
 

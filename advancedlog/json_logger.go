@@ -45,8 +45,8 @@ func (j *jsonLogger) LogMessage(producer Producer, level Level, message string) 
 	logMessage := logMessage{
 		Timestamp:   j.timeProvider().Format(RFC3339Micro),
 		MessageType: "log",
-		Producer:    producer.String(),
-		Level:       level.String(),
+		Producer:    string(producer),
+		Level:       string(level),
 		Message:     message,
 	}
 

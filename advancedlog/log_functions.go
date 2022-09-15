@@ -12,11 +12,6 @@ func Debugf(format string, args ...interface{}) {
 	DefaultLogger.Debugf(format, args...)
 }
 
-// Debugln ...
-func Debugln(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, DebugLevel, fmt.Sprintln(args...))
-}
-
 // Info ...
 func Info(args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, InfoLevel, fmt.Sprint(args...))
@@ -25,11 +20,6 @@ func Info(args ...interface{}) {
 // Infof ...
 func Infof(format string, args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, InfoLevel, fmt.Sprintf(format, args...))
-}
-
-// Infoln ...
-func Infoln(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, InfoLevel, fmt.Sprintln(args...))
 }
 
 // Done ...
@@ -42,11 +32,6 @@ func Donef(format string, args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, DoneLevel, fmt.Sprintf(format, args...))
 }
 
-// Doneln ...
-func Doneln(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, DoneLevel, fmt.Sprintln(args...))
-}
-
 // Warn ...
 func Warn(args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, WarnLevel, fmt.Sprint(args...))
@@ -55,11 +40,6 @@ func Warn(args ...interface{}) {
 // Warnf ...
 func Warnf(format string, args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, WarnLevel, fmt.Sprintf(format, args...))
-}
-
-// Warnln ...
-func Warnln(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, WarnLevel, fmt.Sprintln(args...))
 }
 
 // Error ...
@@ -72,11 +52,6 @@ func Errorf(format string, args ...interface{}) {
 	DefaultLogger.LogMessage(CLI, ErrorLevel, fmt.Sprintf(format, args...))
 }
 
-// Errorln ...
-func Errorln(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, ErrorLevel, fmt.Sprintln(args...))
-}
-
 // Fatal ...
 func Fatal(args ...interface{}) {
 	Error(args...)
@@ -85,11 +60,6 @@ func Fatal(args ...interface{}) {
 // Fatalf ...
 func Fatalf(format string, args ...interface{}) {
 	Errorf(format, args...)
-}
-
-// Fatalln ...
-func Fatalln(args ...interface{}) {
-	Errorln(args...)
 }
 
 // Print ...

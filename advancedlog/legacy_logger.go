@@ -41,13 +41,13 @@ func (l *legacyLogger) LogMessage(producer Producer, level Level, message string
 		l.logger.Errorf(message)
 	case WarnLevel:
 		l.logger.Warnf(message)
+	case InfoLevel:
+		l.logger.Infof(message)
 	case DoneLevel:
 		l.logger.Donef(message)
-	case NormalLevel:
-		l.logger.Printf(message)
 	case DebugLevel:
 		l.logger.Debugf(message)
 	default:
-		l.logger.Infof(message)
+		l.logger.Printf(message)
 	}
 }

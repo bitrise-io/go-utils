@@ -2,124 +2,121 @@ package logger
 
 import (
 	"fmt"
-	
+
 	logutils "github.com/bitrise-io/go-utils/v2/log"
 )
 
-type mainLogger struct {
+// MainLogger ...
+type MainLogger struct {
 	internalLogger  SimplifiedLogger
 	debugLogEnabled bool
 }
 
-func (m *mainLogger) Debug(args ...interface{}) {
+// NewMainLogger ...
+func NewMainLogger() MainLogger {
+	return MainLogger{
+		internalLogger:  newLegacyLogger(logutils.NewLogger()),
+		debugLogEnabled: false,
+	}
+}
+
+// Debug ...
+func (m *MainLogger) Debug(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, DebugLevel, fmt.Sprint(args...))
 }
 
-func (m *mainLogger) Debugf(format string, args ...interface{}) {
+// Debugf ...
+func (m *MainLogger) Debugf(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, DebugLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Debugln(args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, DebugLevel, fmt.Sprintln(args...))
-}
-
-func (m *mainLogger) Info(args ...interface{}) {
+// Info ...
+func (m *MainLogger) Info(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, InfoLevel, fmt.Sprint(args...))
 }
 
-func (m *mainLogger) Infof(format string, args ...interface{}) {
+// Infof ...
+func (m *MainLogger) Infof(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, InfoLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Infoln(args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, InfoLevel, fmt.Sprintln(args...))
-}
-
-func (m *mainLogger) Done(args ...interface{}) {
+// Done ...
+func (m *MainLogger) Done(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, DoneLevel, fmt.Sprint(args...))
 }
 
-func (m *mainLogger) Donef(format string, args ...interface{}) {
+// Donef ...
+func (m *MainLogger) Donef(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, DoneLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Doneln(args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, DoneLevel, fmt.Sprintln(args...))
-}
-
-func (m *mainLogger) Warn(args ...interface{}) {
+// Warn ...
+func (m *MainLogger) Warn(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, WarnLevel, fmt.Sprint(args...))
 }
 
-func (m *mainLogger) Warnf(format string, args ...interface{}) {
+// Warnf ...
+func (m *MainLogger) Warnf(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, WarnLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Warnln(args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, WarnLevel, fmt.Sprintln(args...))
-}
-
-func (m *mainLogger) Error(args ...interface{}) {
+// Error ...
+func (m *MainLogger) Error(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, ErrorLevel, fmt.Sprint(args...))
 }
 
-func (m *mainLogger) Errorf(format string, args ...interface{}) {
+// Errorf ...
+func (m *MainLogger) Errorf(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, ErrorLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Errorln(args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, ErrorLevel, fmt.Sprintln(args...))
-}
-
-func (m *mainLogger) Fatal(args ...interface{}) {
+// Fatal ...
+func (m *MainLogger) Fatal(args ...interface{}) {
 	m.Error(args...)
 }
 
-func (m *mainLogger) Fatalf(format string, args ...interface{}) {
+// Fatalf ...
+func (m *MainLogger) Fatalf(format string, args ...interface{}) {
 	m.Errorf(format, args...)
 }
 
-func (m *mainLogger) Fatalln(args ...interface{}) {
-	m.Errorln(args...)
-}
-
-func (m *mainLogger) Print(args ...interface{}) {
+// Print ...
+func (m *MainLogger) Print(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintln(args...))
 }
 
-func (m *mainLogger) Printf(format string, args ...interface{}) {
+// Printf ...
+func (m *MainLogger) Printf(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) Println(args ...interface{}) {
+// Println ...
+func (m *MainLogger) Println(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintln(args...))
 }
 
-func (m *mainLogger) TPrintf(format string, args ...interface{}) {
+// TPrintf ...
+func (m *MainLogger) TPrintf(format string, args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintf(format, args...))
 }
 
-func (m *mainLogger) EnableDebugLog(enable bool) {
+// EnableDebugLog ...
+func (m *MainLogger) EnableDebugLog(enable bool) {
 	m.internalLogger.EnableDebugLog(enable)
 	m.debugLogEnabled = enable
 }
 
-func (m *mainLogger) IsDebugLogEnabled() bool {
+// IsDebugLogEnabled ...
+func (m *MainLogger) IsDebugLogEnabled() bool {
 	return m.debugLogEnabled
 }
 
-func (m *mainLogger) setInternalLogger(logger SimplifiedLogger) {
+func (m *MainLogger) setInternalLogger(logger SimplifiedLogger) {
 	m.internalLogger = logger
 	m.internalLogger.EnableDebugLog(m.debugLogEnabled)
 }
 
-func (m *mainLogger) LogMessage(producer Producer, level Level, message string) {
+// LogMessage ...
+func (m *MainLogger) LogMessage(producer Producer, level Level, message string) {
 	m.internalLogger.LogMessage(producer, level, message)
-}
-
-func newMainLogger() mainLogger {
-	return mainLogger{
-		internalLogger:  newLegacyLogger(logutils.NewLogger()),
-		debugLogEnabled: false,
-	}
 }

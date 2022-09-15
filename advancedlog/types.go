@@ -1,55 +1,29 @@
 package logger
 
 // Producer ...
-type Producer int
-
-func (p Producer) String() string {
-	switch p {
-	case Step:
-		return "step"
-	default:
-		return "cli"
-	}
-}
+type Producer string
 
 const (
 	// CLI ...
-	CLI Producer = iota
+	CLI Producer = "cli"
 	// Step ...
-	Step
+	Step Producer = "step"
 )
 
 // Level ...
-type Level int
-
-func (l Level) String() string {
-	switch l {
-	case ErrorLevel:
-		return "error"
-	case WarnLevel:
-		return "warn"
-	case DoneLevel:
-		return "done"
-	case NormalLevel:
-		return "normal"
-	case DebugLevel:
-		return "debug"
-	default:
-		return "info"
-	}
-}
+type Level string
 
 const (
 	// ErrorLevel ...
-	ErrorLevel Level = iota
+	ErrorLevel Level = "error"
 	// WarnLevel ...
-	WarnLevel
+	WarnLevel Level = "warn"
 	// InfoLevel ...
-	InfoLevel
+	InfoLevel Level = "info"
 	// DoneLevel ...
-	DoneLevel
+	DoneLevel Level = "done"
 	// NormalLevel ...
-	NormalLevel
+	NormalLevel Level = "normal"
 	// DebugLevel ...
-	DebugLevel
+	DebugLevel Level = "debug"
 )

@@ -8,16 +8,16 @@ type outputInterceptor struct {
 	callback func(text string)
 }
 
-func (o outputInterceptor) Write(p []byte) (n int, err error) {
-	o.callback(string(p))
-
-	return len(p), nil
-}
-
 func newOutputInterceptor(callback func(text string)) outputInterceptor {
 	return outputInterceptor{
 		callback: callback,
 	}
+}
+
+func (o outputInterceptor) Write(p []byte) (n int, err error) {
+	o.callback(string(p))
+
+	return len(p), nil
 }
 
 // LogWriter ...

@@ -50,12 +50,6 @@ func Test_converterConversion(t *testing.T) {
 			expectedMessage: "This is a done message",
 		},
 		{
-			name:            "Normal message",
-			message:         "\u001B[0mThis is a normal message\u001B[0m",
-			expectedLevel:   NormalLevel,
-			expectedMessage: "This is a normal message",
-		},
-		{
 			name:            "Normal message without a color literal",
 			message:         "This is a normal message without a closing literal\n",
 			expectedLevel:   NormalLevel,

@@ -122,8 +122,7 @@ func (l *logger) prefixCurrentTime(message string) string {
 }
 
 func (l *logger) createLogMsg(severity Severity, withTime bool, format string, v ...interface{}) string {
-	colorFunc := severityColorFuncMap[severity]
-	message := colorFunc(format, v...)
+	message := FormatWithSeverityColor(severity, format, v...)
 	if withTime {
 		message = l.prefixCurrentTime(message)
 	}

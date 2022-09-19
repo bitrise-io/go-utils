@@ -3,9 +3,10 @@ package logger
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testJSONLogMessage struct {
@@ -24,7 +25,7 @@ type testLogParameters struct {
 
 func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageFormat(t *testing.T) {
 	currentTime := time.Now()
-	currentTimeString := currentTime.Format("2006-01-02T15:04:05.999999Z07:0")
+	currentTimeString := currentTime.Format(RFC3339Micro)
 
 	tests := []struct {
 		name            string

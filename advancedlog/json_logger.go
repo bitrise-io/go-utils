@@ -7,7 +7,7 @@ import (
 )
 
 // RFC3339Micro ...
-const RFC3339Micro = "2006-01-02T15:04:05.999999Z07:0"
+const RFC3339Micro = "2006-01-02T15:04:05.999999Z07:00"
 
 func defaultTimeProvider() time.Time {
 	return time.Now()

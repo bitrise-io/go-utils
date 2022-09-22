@@ -2,6 +2,7 @@ package logger
 
 import "os"
 
+// OutputFormat ...
 type OutputFormat string
 
 const (

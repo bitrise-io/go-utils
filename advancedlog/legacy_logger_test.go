@@ -110,19 +110,7 @@ func Test_GivenLEgacyLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testing
 				message:  "\n",
 			},
 			expectedLogFunction: "Infof",
-			expectedMessage:     "\n",
-		},
-		{
-			name:            "Closing newline is removed from the message",
-			enableDebugLogs: false,
-			hasOutput:       true,
-			parameters: testLogParameters{
-				producer: CLI,
-				level:    InfoLevel,
-				message:  "This is the message\n",
-			},
-			expectedLogFunction: "Infof",
-			expectedMessage:     "This is the message",
+			expectedMessage:     "",
 		},
 	}
 

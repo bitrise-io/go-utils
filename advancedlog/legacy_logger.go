@@ -2,7 +2,6 @@ package logger
 
 import (
 	logutils "github.com/bitrise-io/go-utils/v2/log"
-	"strings"
 )
 
 type legacyLogger struct {
@@ -31,9 +30,10 @@ func (l *legacyLogger) LogMessage(producer Producer, level Level, message string
 		return
 	}
 
-	// It is needed to trim the newline char from the end because the wrapped logger will automatically add one
-	if message != "\n" {
-		message = strings.TrimSuffix(message, "\n")
+	// All the print functions below automatically add a newline to the end. We need to replace the newline with an
+	// empty line not to log multiple newlines.
+	if message == "\n" {
+		message = ""
 	}
 
 	switch level {

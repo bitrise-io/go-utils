@@ -3,6 +3,8 @@ package logger
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -46,7 +48,7 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			expectedMessage: testJSONLogMessage{
 				Timestamp:   currentTimeString,
 				MessageType: "log",
-				Producer:    "cli",
+				Producer:    "bitrise_cli",
 				Level:       "info",
 				Message:     "This is a cli log",
 			},
@@ -118,4 +120,32 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			}
 		})
 	}
+}
+
+func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessageFormat(t *testing.T) {
+	err := fmt.Errorf("this is an error")
+	currentTime := time.Now()
+	currentTimeString := currentTime.Format(RFC3339Micro)
+
+	logger := jsonLogger{
+		debugLogEnabled: false,
+		encoder:         json.NewEncoder(os.Stdout),
+		timeProvider: func() time.Time {
+			return currentTime
+		},
+	}
+
+	message := logMessage{
+		Timestamp:   currentTimeString,
+		MessageType: "log",
+		Producer:    string(CLI),
+		Level:       string(ErrorLevel),
+		Message:     fmt.Sprintf("log message serialization failed: %s", err),
+	}
+	expected, jsonErr := json.Marshal(message)
+	assert.NoError(t, jsonErr)
+
+	received := logger.logMessageForError(err)
+
+	assert.Equal(t, string(expected), received)
 }

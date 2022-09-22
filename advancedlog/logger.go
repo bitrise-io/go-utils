@@ -2,9 +2,11 @@ package logger
 
 import "os"
 
+type OutputFormat string
+
 const (
 	// JSONFormat ...
-	JSONFormat = "json"
+	JSONFormat OutputFormat = "json"
 )
 
 // Logger ...
@@ -24,7 +26,6 @@ type Logger interface {
 	Print(args ...interface{})
 	Printf(format string, args ...interface{})
 	Println(args ...interface{})
-	TPrintf(format string, args ...interface{})
 	EnableDebugLog(enable bool)
 	IsDebugLogEnabled() bool
 }
@@ -39,14 +40,14 @@ type SimplifiedLogger interface {
 // DefaultLogger ...
 var DefaultLogger = NewMainLogger()
 
-// SetupLogger ...
-func SetupLogger(outputFormat string) {
-	if outputFormat == JSONFormat {
+// SetOutputFormat ...
+func SetOutputFormat(outputFormat string) {
+	if OutputFormat(outputFormat) == JSONFormat {
 		DefaultLogger.setInternalLogger(newJSONLogger(os.Stdout, defaultTimeProvider))
 	}
 }
 
-// EnableDebugLog ...
-func EnableDebugLog(enable bool) {
+// SetEnableDebugLog ...
+func SetEnableDebugLog(enable bool) {
 	DefaultLogger.EnableDebugLog(enable)
 }

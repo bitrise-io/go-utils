@@ -5,7 +5,7 @@ type Producer string
 
 const (
 	// CLI ...
-	CLI Producer = "cli"
+	CLI Producer = "bitrise_cli"
 	// Step ...
 	Step Producer = "step"
 )

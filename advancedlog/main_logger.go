@@ -95,11 +95,6 @@ func (m *MainLogger) Println(args ...interface{}) {
 	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintln(args...))
 }
 
-// TPrintf ...
-func (m *MainLogger) TPrintf(format string, args ...interface{}) {
-	m.internalLogger.LogMessage(CLI, NormalLevel, fmt.Sprintf(format, args...))
-}
-
 // EnableDebugLog ...
 func (m *MainLogger) EnableDebugLog(enable bool) {
 	m.internalLogger.EnableDebugLog(enable)

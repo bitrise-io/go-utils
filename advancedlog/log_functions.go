@@ -64,7 +64,7 @@ func Fatalf(format string, args ...interface{}) {
 
 // Print ...
 func Print(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprintln(args...))
+	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprint(args...))
 }
 
 // Printf ...
@@ -74,12 +74,7 @@ func Printf(format string, args ...interface{}) {
 
 // Println ...
 func Println(args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprintln(args...))
-}
-
-// TPrintf ...
-func TPrintf(format string, args ...interface{}) {
-	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprintf(format, args...))
+	DefaultLogger.LogMessage(CLI, NormalLevel, fmt.Sprint(args...))
 }
 
 // IsDebugLogEnabled ...

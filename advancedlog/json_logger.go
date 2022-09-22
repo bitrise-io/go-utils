@@ -2,6 +2,7 @@ package logger
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
@@ -52,6 +53,20 @@ func (j *jsonLogger) LogMessage(producer Producer, level Level, message string) 
 
 	err := j.encoder.Encode(logMessage)
 	if err != nil {
-		// This is only to satisfy errcheck.
+		// Encountered an error during writing the json message to the output. Manually construct a json message for
+		// the error and print it to the output
+		fmt.Println(j.logMessageForError(err))
 	}
+}
+
+func (j *jsonLogger) logMessageForError(err error) string {
+	message := "{"
+	message += fmt.Sprintf("\"timestamp\":\"%s\",", j.timeProvider().Format(RFC3339Micro))
+	message += "\"type\":\"log\","
+	message += fmt.Sprintf("\"producer\":\"%s\",", string(CLI))
+	message += fmt.Sprintf("\"level\":\"%s\",", string(ErrorLevel))
+	message += fmt.Sprintf("\"message\":\"log message serialization failed: %s\"", err)
+	message += "}"
+
+	return message
 }

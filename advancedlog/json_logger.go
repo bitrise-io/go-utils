@@ -30,16 +30,19 @@ func newJSONLogger(output io.Writer, provider func() time.Time) SimplifiedLogger
 	return &logger
 }
 
+// EnableDebugLog ...
 func (j *jsonLogger) EnableDebugLog(enabled bool) {
 	j.debugLogEnabled = enabled
 }
 
+// IsDebugLogEnabled ...
 func (j *jsonLogger) IsDebugLogEnabled() bool {
 	return j.debugLogEnabled
 }
 
+// LogMessage ...
 func (j *jsonLogger) LogMessage(producer Producer, level Level, message string) {
-	if j.debugLogEnabled == false && level == DebugLevel {
+	if !j.debugLogEnabled && level == DebugLevel {
 		return
 	}
 

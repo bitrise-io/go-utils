@@ -16,17 +16,20 @@ func newLegacyLogger(logger logutils.Logger) SimplifiedLogger {
 	}
 }
 
+// EnableDebugLog ...
 func (l *legacyLogger) EnableDebugLog(enabled bool) {
 	l.logger.EnableDebugLog(enabled)
 	l.debugLogEnabled = enabled
 }
 
+// IsDebugLogEnabled ...
 func (l *legacyLogger) IsDebugLogEnabled() bool {
 	return l.debugLogEnabled
 }
 
+// LogMessage ...
 func (l *legacyLogger) LogMessage(producer Producer, level Level, message string) {
-	if l.debugLogEnabled == false && level == DebugLevel {
+	if !l.debugLogEnabled && level == DebugLevel {
 		return
 	}
 

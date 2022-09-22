@@ -22,14 +22,14 @@ func Test_converterConversion(t *testing.T) {
 		{
 			name:            "Error message without a closing color literal",
 			message:         "\u001B[31;1mAnother error\n",
-			expectedLevel:   ErrorLevel,
-			expectedMessage: "Another error\n",
+			expectedLevel:   NormalLevel,
+			expectedMessage: "\u001B[31;1mAnother error",
 		},
 		{
 			name:            "Error message with a newline at the end",
 			message:         "\u001B[31;1mLast error\u001B[0m\n",
 			expectedLevel:   ErrorLevel,
-			expectedMessage: "Last error\n",
+			expectedMessage: "Last error",
 		},
 		{
 			name:            "Warn message",
@@ -53,13 +53,19 @@ func Test_converterConversion(t *testing.T) {
 			name:            "Normal message without a color literal",
 			message:         "This is a normal message without a closing literal\n",
 			expectedLevel:   NormalLevel,
-			expectedMessage: "This is a normal message without a closing literal\n",
+			expectedMessage: "This is a normal message without a closing literal",
 		},
 		{
 			name:            "Debug message",
 			message:         "\u001B[35;1mThis is a debug message\u001B[0m",
 			expectedLevel:   DebugLevel,
 			expectedMessage: "This is a debug message",
+		},
+		{
+			name:            "Info message with multiple embedded colors",
+			message:         "\u001B[34;1mThis is \u001B[33;1mmulti color \u001B[31;1mInfo message\u001B[0m",
+			expectedLevel:   NormalLevel,
+			expectedMessage: "\u001B[34;1mThis is \u001B[33;1mmulti color \u001B[31;1mInfo message\u001B[0m",
 		},
 	}
 

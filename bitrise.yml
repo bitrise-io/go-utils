@@ -1,11 +1,13 @@
 format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
-
 workflows:
   test:
     steps:
-    - go-list:
-    - golint:
-    - errcheck:
-    - go-test:
+    - git::https://github.com/bitrise-steplib/steps-check.git:
+        title: Lint
+        inputs:
+        - workflow: lint
+        - skip_step_yml_validation: "yes"
+    - go-list: { }
+    - go-test: { }

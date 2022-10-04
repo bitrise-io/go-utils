@@ -110,7 +110,7 @@ func Test_GivenLEgacyLogger_WhenLogMessageInvoked_ThenLogsItCorrectly(t *testing
 				message:  "\n",
 			},
 			expectedLogFunction: "Infof",
-			expectedMessage:     "",
+			expectedMessage:     "\n",
 		},
 	}
 

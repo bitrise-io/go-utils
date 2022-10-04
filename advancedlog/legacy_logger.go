@@ -33,12 +33,6 @@ func (l *legacyLogger) LogMessage(producer Producer, level Level, message string
 		return
 	}
 
-	// All the print functions below automatically add a newline to the end. We need to replace the newline with an
-	// empty line not to log multiple newlines.
-	if message == "\n" {
-		message = ""
-	}
-
 	switch level {
 	case ErrorLevel:
 		l.logger.Errorf(message)

@@ -1,4 +1,4 @@
-package logger
+package corelog
 
 import (
 	"bytes"
@@ -31,17 +31,15 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 
 	tests := []struct {
 		name            string
-		enableDebugLogs bool
 		hasOutput       bool
 		parameters      testLogParameters
 		expectedMessage testJSONLogMessage
 	}{
 		{
-			name:            "CLI log",
-			enableDebugLogs: false,
-			hasOutput:       true,
+			name:      "CLI log",
+			hasOutput: true,
 			parameters: testLogParameters{
-				producer: CLI,
+				producer: BitriseCLI,
 				level:    InfoLevel,
 				message:  "This is a cli log",
 			},
@@ -54,9 +52,8 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			},
 		},
 		{
-			name:            "Step log",
-			enableDebugLogs: false,
-			hasOutput:       true,
+			name:      "Step log",
+			hasOutput: true,
 			parameters: testLogParameters{
 				producer: Step,
 				level:    NormalLevel,
@@ -71,9 +68,8 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			},
 		},
 		{
-			name:            "Debug log",
-			enableDebugLogs: true,
-			hasOutput:       true,
+			name:      "Debug log",
+			hasOutput: true,
 			parameters: testLogParameters{
 				producer: Step,
 				level:    DebugLevel,
@@ -87,16 +83,6 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 				Message:     "A useful debug log",
 			},
 		},
-		{
-			name:            "Disabled debug log",
-			enableDebugLogs: false,
-			hasOutput:       false,
-			parameters: testLogParameters{
-				producer: CLI,
-				level:    DebugLevel,
-				message:  "This debug log will not show up",
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -106,7 +92,6 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			logger := newJSONLogger(&buf, func() time.Time {
 				return currentTime
 			})
-			logger.EnableDebugLog(tt.enableDebugLogs)
 			logger.LogMessage(tt.parameters.producer, tt.parameters.level, tt.parameters.message)
 
 			if tt.hasOutput {
@@ -114,9 +99,9 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 				assert.NoError(t, err)
 
 				expected := string(b) + "\n"
-				assert.Equal(t, buf.String(), expected)
+				assert.Equal(t, expected, buf.String())
 			} else {
-				assert.Equal(t, buf.Len(), 0)
+				assert.Equal(t, 0, buf.Len())
 			}
 		})
 	}
@@ -128,8 +113,7 @@ func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessag
 	currentTimeString := currentTime.Format(RFC3339Micro)
 
 	logger := jsonLogger{
-		debugLogEnabled: false,
-		encoder:         json.NewEncoder(os.Stdout),
+		encoder: json.NewEncoder(os.Stdout),
 		timeProvider: func() time.Time {
 			return currentTime
 		},
@@ -138,7 +122,7 @@ func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessag
 	message := logMessage{
 		Timestamp:   currentTimeString,
 		MessageType: "log",
-		Producer:    string(CLI),
+		Producer:    string(BitriseCLI),
 		Level:       string(ErrorLevel),
 		Message:     fmt.Sprintf("log message serialization failed: %s", err),
 	}

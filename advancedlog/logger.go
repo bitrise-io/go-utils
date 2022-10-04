@@ -1,54 +1,30 @@
 package logger
 
-import "os"
+import (
+	"io"
+	"time"
 
-// OutputFormat ...
-type OutputFormat string
-
-const (
-	// JSONFormat ...
-	JSONFormat OutputFormat = "json"
+	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 )
 
 // Logger ...
 type Logger interface {
-	Debug(args ...interface{})
-	Debugf(format string, args ...interface{})
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+	Warn(args ...interface{})
+	Warnf(format string, args ...interface{})
 	Info(args ...interface{})
 	Infof(format string, args ...interface{})
 	Done(args ...interface{})
 	Donef(format string, args ...interface{})
-	Warn(args ...interface{})
-	Warnf(format string, args ...interface{})
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
 	Print(args ...interface{})
 	Printf(format string, args ...interface{})
-	Println(args ...interface{})
-	EnableDebugLog(enable bool)
-	IsDebugLogEnabled() bool
+	Debug(args ...interface{})
+	Debugf(format string, args ...interface{})
 }
 
-// SimplifiedLogger ...
-type SimplifiedLogger interface {
-	EnableDebugLog(enabled bool)
-	IsDebugLogEnabled() bool
-	LogMessage(producer Producer, level Level, message string)
-}
+var globalLogger Logger
 
-// DefaultLogger ...
-var DefaultLogger = NewMainLogger()
-
-// SetOutputFormat ...
-func SetOutputFormat(outputFormat OutputFormat) {
-	if OutputFormat(outputFormat) == JSONFormat {
-		DefaultLogger.setInternalLogger(newJSONLogger(os.Stdout, defaultTimeProvider))
-	}
-}
-
-// SetEnableDebugLog ...
-func SetEnableDebugLog(enable bool) {
-	DefaultLogger.EnableDebugLog(enable)
+func InitGlobalLogger(t corelog.LoggerType, writer io.Writer, provider func() time.Time, debugLogEnabled bool) {
+	globalLogger = NewMainLogger(t, writer, provider, debugLogEnabled)
 }

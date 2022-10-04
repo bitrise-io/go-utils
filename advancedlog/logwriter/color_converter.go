@@ -1,20 +1,20 @@
-package logger
+package logwriter
 
 import (
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 )
 
-const resetCode = "\u001b[0m"
-
-var ansiEscapeCodeToLevel = map[string]Level{
-	"\u001b[31;1m": ErrorLevel,
-	"\u001b[33;1m": WarnLevel,
-	"\u001b[34;1m": InfoLevel,
-	"\u001b[32;1m": DoneLevel,
-	"\u001b[35;1m": DebugLevel,
+var ansiEscapeCodeToLevel = map[corelog.ANSIColorCode]corelog.Level{
+	corelog.RedCode:     corelog.ErrorLevel,
+	corelog.YellowCode:  corelog.WarnLevel,
+	corelog.BlueCode:    corelog.InfoLevel,
+	corelog.GreenCode:   corelog.DoneLevel,
+	corelog.MagentaCode: corelog.DebugLevel,
 }
 
 // convertColoredString determines the log level of the given message and removes related ANSI escape codes from it.
@@ -23,29 +23,29 @@ var ansiEscapeCodeToLevel = map[string]Level{
 // - starts with a color code
 // - the first trailing non-whitespace characters have to be part of the reset-color code
 // - contains exactly one color and reset code pair.
-func convertColoredString(message string) (Level, string) {
+func convertColoredString(message string) (corelog.Level, string) {
 	// We need to remove all the possible noise from the end as we need remove the reset ansi code from the end
 	trimmedMessage := strings.TrimRightFunc(message, unicode.IsSpace)
 
 	// If the message has more than one color then let the website do the coloring and do not modify the message
 	if hasMoreThanOneColor(trimmedMessage) {
-		return NormalLevel, message
+		return corelog.NormalLevel, message
 	}
 
 	// Some messages have the starting color but do not have the reset code at the end. Ignore these.
-	if !strings.HasSuffix(trimmedMessage, resetCode) {
-		return NormalLevel, message
+	if !strings.HasSuffix(trimmedMessage, string(corelog.ResetCode)) {
+		return corelog.NormalLevel, message
 	}
 
 	for code, level := range ansiEscapeCodeToLevel {
-		if strings.HasPrefix(message, code) {
-			message = strings.TrimPrefix(message, code)
-			message = strings.Replace(message, resetCode, "", 1)
+		if strings.HasPrefix(message, string(code)) {
+			message = strings.TrimPrefix(message, string(code))
+			message = strings.Replace(message, string(corelog.ResetCode), "", 1)
 			return level, message
 		}
 	}
 
-	return NormalLevel, message
+	return corelog.NormalLevel, message
 }
 
 func hasMoreThanOneColor(message string) bool {

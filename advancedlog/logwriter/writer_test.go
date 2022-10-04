@@ -1,18 +1,21 @@
-package logger
+package logwriter
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testWriterParameters struct {
-	producer Producer
+	producer corelog.Producer
 	message  string
 }
 
 type testWriterExpectedValues struct {
-	producer Producer
-	level    Level
+	producer corelog.Producer
+	level    corelog.Level
 	message  string
 }
 
@@ -27,12 +30,12 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 			name:      "Cli stdout message",
 			useStdout: true,
 			parameters: testWriterParameters{
-				producer: CLI,
+				producer: corelog.BitriseCLI,
 				message:  "Test message",
 			},
 			expectedValues: testWriterExpectedValues{
-				producer: CLI,
-				level:    NormalLevel,
+				producer: corelog.BitriseCLI,
+				level:    corelog.NormalLevel,
 				message:  "Test message",
 			},
 		},
@@ -40,12 +43,12 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 			name:      "Step stderr message",
 			useStdout: false,
 			parameters: testWriterParameters{
-				producer: Step,
+				producer: corelog.Step,
 				message:  "This is an error",
 			},
 			expectedValues: testWriterExpectedValues{
-				producer: Step,
-				level:    ErrorLevel,
+				producer: corelog.Step,
+				level:    corelog.ErrorLevel,
 				message:  "This is an error",
 			},
 		},
@@ -53,11 +56,11 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var receivedProducer Producer
-			var receivedLevel Level
+			var receivedProducer corelog.Producer
+			var receivedLevel corelog.Level
 			var receivedMessage string
 
-			writer := NewLogWriter(tt.parameters.producer, func(producer Producer, level Level, message string) {
+			writer := NewLogWriter(tt.parameters.producer, func(producer corelog.Producer, level corelog.Level, message string) {
 				receivedProducer = producer
 				receivedLevel = level
 				receivedMessage = message

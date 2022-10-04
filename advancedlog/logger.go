@@ -42,7 +42,7 @@ type SimplifiedLogger interface {
 var DefaultLogger = NewMainLogger()
 
 // SetOutputFormat ...
-func SetOutputFormat(outputFormat string) {
+func SetOutputFormat(outputFormat OutputFormat) {
 	if OutputFormat(outputFormat) == JSONFormat {
 		DefaultLogger.setInternalLogger(newJSONLogger(os.Stdout, defaultTimeProvider))
 	}

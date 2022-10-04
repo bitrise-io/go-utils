@@ -14,22 +14,16 @@ func Test_converterConversion(t *testing.T) {
 		expectedMessage string
 	}{
 		{
+			name:            "Normal message without a color literal",
+			message:         "This is a normal message without a color literal\n",
+			expectedLevel:   NormalLevel,
+			expectedMessage: "This is a normal message without a color literal\n",
+		},
+		{
 			name:            "Error message",
 			message:         "\u001B[31;1mThis is an error\u001B[0m",
 			expectedLevel:   ErrorLevel,
 			expectedMessage: "This is an error",
-		},
-		{
-			name:            "Error message without a closing color literal",
-			message:         "\u001B[31;1mAnother error\n",
-			expectedLevel:   NormalLevel,
-			expectedMessage: "\u001B[31;1mAnother error",
-		},
-		{
-			name:            "Error message with a newline at the end",
-			message:         "\u001B[31;1mLast error\u001B[0m\n",
-			expectedLevel:   ErrorLevel,
-			expectedMessage: "Last error",
 		},
 		{
 			name:            "Warn message",
@@ -50,16 +44,28 @@ func Test_converterConversion(t *testing.T) {
 			expectedMessage: "This is a done message",
 		},
 		{
-			name:            "Normal message without a color literal",
-			message:         "This is a normal message without a closing literal\n",
-			expectedLevel:   NormalLevel,
-			expectedMessage: "This is a normal message without a closing literal",
-		},
-		{
 			name:            "Debug message",
 			message:         "\u001B[35;1mThis is a debug message\u001B[0m",
 			expectedLevel:   DebugLevel,
 			expectedMessage: "This is a debug message",
+		},
+		{
+			name:            "Error message with whitespaces at the end",
+			message:         "\u001B[31;1mLast error\u001B[0m   \n",
+			expectedLevel:   ErrorLevel,
+			expectedMessage: "Last error   \n",
+		},
+		{
+			name:            "Error message with whitespaces at the beginning",
+			message:         "  \u001B[31;1mLast error\u001B[0m   \n",
+			expectedLevel:   NormalLevel,
+			expectedMessage: "  \u001B[31;1mLast error\u001B[0m   \n",
+		},
+		{
+			name:            "Error message without a closing color literal",
+			message:         "\u001B[31;1mAnother error\n",
+			expectedLevel:   NormalLevel,
+			expectedMessage: "\u001B[31;1mAnother error\n",
 		},
 		{
 			name:            "Info message with multiple embedded colors",

@@ -17,33 +17,35 @@ var ansiEscapeCodeToLevel = map[string]Level{
 	"\u001b[35;1m": DebugLevel,
 }
 
+// convertColoredString determines the log level of the given message and removes related ANSI escape codes from it.
+// Messages without a log level are returned untouched.
+// A message is considered a message with a log level if:
+// - starts with a color code
+// - the first trailing non-whitespace characters have to be part of the reset-color code
+// - contains exactly one color and reset code pair.
 func convertColoredString(message string) (Level, string) {
-	logLevel := NormalLevel
-
 	// We need to remove all the possible noise from the end as we need remove the reset ansi code from the end
-	message = strings.TrimRightFunc(message, unicode.IsSpace)
+	trimmedMessage := strings.TrimRightFunc(message, unicode.IsSpace)
 
 	// If the message has more than one color then let the website do the coloring and do not modify the message
-	if hasMoreThanOneColor(message) {
-		return logLevel, message
+	if hasMoreThanOneColor(trimmedMessage) {
+		return NormalLevel, message
 	}
 
 	// Some messages have the starting color but do not have the reset code at the end. Ignore these.
-	if !strings.HasSuffix(message, resetCode) {
-		return logLevel, message
+	if !strings.HasSuffix(trimmedMessage, resetCode) {
+		return NormalLevel, message
 	}
 
 	for code, level := range ansiEscapeCodeToLevel {
 		if strings.HasPrefix(message, code) {
-			logLevel = level
 			message = strings.TrimPrefix(message, code)
-			message = strings.TrimSuffix(message, resetCode)
-
-			break
+			message = strings.Replace(message, resetCode, "", 1)
+			return level, message
 		}
 	}
 
-	return logLevel, message
+	return NormalLevel, message
 }
 
 func hasMoreThanOneColor(message string) bool {

@@ -56,8 +56,8 @@ func (l *legacyLogger) createLogMsg(level Level, message string) string {
 func (l *legacyLogger) printf(level Level, message string) {
 	message = l.createLogMsg(level, message)
 	if _, err := fmt.Fprintln(l.output, message); err != nil {
-		// Encountered an error during writing the json message to the output. Manually construct a json message for
-		// the error and print it to the output
+		// Encountered an error during writing the message to the output. Manually construct a message for
+		// the error and print it to the stdout.
 		fmt.Printf("writing log message failed: %s", err)
 	}
 }

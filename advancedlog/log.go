@@ -81,7 +81,7 @@ func (m *defaultLogger) Donef(format string, args ...interface{}) {
 
 // Print ...
 func (m *defaultLogger) Print(args ...interface{}) {
-	m.logger.LogMessage(m.producer, corelog.NormalLevel, fmt.Sprintln(args...))
+	m.logger.LogMessage(m.producer, corelog.NormalLevel, fmt.Sprint(args...))
 }
 
 // Printf ...

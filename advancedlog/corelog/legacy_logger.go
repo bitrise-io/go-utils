@@ -47,7 +47,10 @@ var levelToANSIColorCode = map[Level]ANSIColorCode{
 
 func (l *legacyLogger) createLogMsg(level Level, message string) string {
 	color := levelToANSIColorCode[level]
-	return addColor(color, message)
+	if color != "" {
+		return addColor(color, message)
+	}
+	return message
 }
 
 func (l *legacyLogger) printf(level Level, message string) {

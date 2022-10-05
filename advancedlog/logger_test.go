@@ -20,10 +20,6 @@ func ExampleLogger() {
 	logger = log.NewLogger(log.JSONLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
 	logger.Debug("This is a debug message")
 
-	log.InitGlobalLogger(log.ConsoleLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
+	log.InitGlobalLogger(log.JSONLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
 	log.Info("This is an info message")
-
-	// Output: [31;1mThis is an error[0m
-	// {"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"bitrise_cli","level":"debug","message":"This is a debug message"}
-	// [34;1mThis is an info message[0m
 }

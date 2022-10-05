@@ -29,15 +29,14 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 			producer:        logwriter.BitriseCLI,
 			loggerType:      logwriter.ConsoleLogger,
 			message:         "Test message",
-			expectedMessage: "Test message\n",
+			expectedMessage: "Test message",
 		},
 		{
-			name:       "Step JSON log",
-			producer:   logwriter.BitriseCLI,
-			loggerType: logwriter.JSONLogger,
-			message:    "Test message",
-			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"bitrise_cli","level":"normal","message":"Test message"}
-`,
+			name:            "Step JSON log",
+			producer:        logwriter.BitriseCLI,
+			loggerType:      logwriter.JSONLogger,
+			message:         "Test message",
+			expectedMessage: `{"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"bitrise_cli","level":"normal","message":"Test message"}` + "\n",
 		},
 	}
 

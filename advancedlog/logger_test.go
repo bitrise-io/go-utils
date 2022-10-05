@@ -5,7 +5,6 @@ import (
 	"time"
 
 	log "github.com/bitrise-io/go-utils/v2/advancedlog"
-	"github.com/bitrise-io/go-utils/v2/advancedlog/corelog"
 )
 
 func referenceTime() time.Time {
@@ -15,13 +14,13 @@ func referenceTime() time.Time {
 func ExampleLogger() {
 	var logger log.Logger
 
-	logger = log.NewMainLogger(corelog.RawLogger, os.Stdout, referenceTime, true)
+	logger = log.NewLogger(log.ConsoleLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
 	logger.Errorf("This is an %s", "error")
 
-	logger = log.NewMainLogger(corelog.JSONLogger, os.Stdout, referenceTime, true)
+	logger = log.NewLogger(log.JSONLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
 	logger.Debug("This is a debug message")
 
-	log.InitGlobalLogger(corelog.RawLogger, os.Stdout, referenceTime, true)
+	log.InitGlobalLogger(log.ConsoleLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
 	log.Info("This is an info message")
 
 	// Output: [31;1mThis is an error[0m

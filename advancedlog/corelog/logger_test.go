@@ -17,7 +17,7 @@ func ExampleLogger() {
 	logger = corelog.NewLogger(corelog.JSONLogger, os.Stdout, referenceTime)
 	logger.LogMessage(corelog.BitriseCLI, corelog.DebugLevel, "Debug message")
 
-	logger = corelog.NewLogger(corelog.RawLogger, os.Stdout, referenceTime)
+	logger = corelog.NewLogger(corelog.ConsoleLogger, os.Stdout, referenceTime)
 	logger.LogMessage(corelog.Step, corelog.InfoLevel, "Info message")
 
 	// Output: {"timestamp":"2022-01-01T01:01:01Z","type":"log","producer":"bitrise_cli","level":"debug","message":"Debug message"}

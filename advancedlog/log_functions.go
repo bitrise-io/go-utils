@@ -1,5 +1,17 @@
 package logger
 
+import (
+	"io"
+	"time"
+)
+
+var globalLogger Logger
+
+// InitGlobalLogger ...
+func InitGlobalLogger(t LoggerType, producer Producer, out io.Writer, debugLogEnabled bool, timeProvider func() time.Time) {
+	globalLogger = NewLogger(t, producer, out, debugLogEnabled, timeProvider)
+}
+
 // Error ...
 func Error(args ...interface{}) {
 	globalLogger.Error(args...)

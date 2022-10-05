@@ -15,10 +15,10 @@ type jsonLogger struct {
 	timeProvider func() time.Time
 }
 
-func newJSONLogger(output io.Writer, provider func() time.Time) *jsonLogger {
+func newJSONLogger(output io.Writer, timeProvider func() time.Time) *jsonLogger {
 	logger := jsonLogger{
 		encoder:      json.NewEncoder(output),
-		timeProvider: provider,
+		timeProvider: timeProvider,
 	}
 
 	return &logger

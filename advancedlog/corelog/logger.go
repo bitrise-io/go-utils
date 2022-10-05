@@ -13,14 +13,14 @@ type Logger interface {
 type LoggerType string
 
 const (
-	JSONLogger LoggerType = "json"
-	RawLogger  LoggerType = "raw"
+	JSONLogger    LoggerType = "json"
+	ConsoleLogger LoggerType = "console"
 )
 
-func NewLogger(t LoggerType, output io.Writer, provider func() time.Time) Logger {
+func NewLogger(t LoggerType, output io.Writer, timeProvider func() time.Time) Logger {
 	switch t {
 	case JSONLogger:
-		return newJSONLogger(output, provider)
+		return newJSONLogger(output, timeProvider)
 	default:
 		return newLegacyLogger(output)
 	}

@@ -41,7 +41,7 @@ func CompareVersions(version1, version2 string) (int, error) {
 
 		num2, err2 := strconv.ParseInt(version2Slice[i], 0, 64)
 		if err2 != nil {
-			return -2, fmt.Errorf("failed to parse int (%s): %s", num, err)
+			return -2, fmt.Errorf("failed to parse int (%s): %s", version2Slice[i], err2)
 		}
 
 		if num2 > num1 {

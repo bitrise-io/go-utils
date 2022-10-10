@@ -92,7 +92,10 @@ func Test_GivenJsonLogger_WhenLogMessageInvoked_ThenGeneratesCorrectMessageForma
 			logger := newJSONLogger(&buf, func() time.Time {
 				return currentTime
 			})
-			logger.LogMessage(tt.parameters.producer, tt.parameters.level, tt.parameters.message)
+			logger.LogMessage(tt.parameters.message, MessageFields{
+				Level:    tt.parameters.level,
+				Producer: tt.parameters.producer,
+			})
 
 			if tt.hasOutput {
 				b, err := json.Marshal(tt.expectedMessage)
@@ -129,7 +132,7 @@ func Test_GivenJsonLogger_WhenManualErrorMessageCreation_ThenMatchesTheLogMessag
 	expected, jsonErr := json.Marshal(message)
 	assert.NoError(t, jsonErr)
 
-	received := logger.logMessageForError(err)
+	received := logger.logMessageForError(err, BitriseCLI, "")
 
 	assert.Equal(t, string(expected), received)
 }

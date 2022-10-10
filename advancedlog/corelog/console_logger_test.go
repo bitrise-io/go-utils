@@ -104,7 +104,7 @@ package corelog
 //			mockLogger.On(tt.expectedLogFunction, mock.Anything).Return()
 //			mockLogger.On("EnableDebugLog", mock.Anything).Return()
 //
-//			logger := newLegacyLogger(mockLogger)
+//			logger := newConsoleLogger(mockLogger)
 //			logger.LogMessage(tt.parameters.producer, tt.parameters.level, tt.parameters.message)
 //
 //			if tt.hasOutput {

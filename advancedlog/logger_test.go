@@ -14,12 +14,12 @@ func referenceTime() time.Time {
 func ExampleLogger() {
 	var logger log.Logger
 
-	logger = log.NewLogger(log.ConsoleLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
+	logger = log.NewLogger(log.ConsoleLogger, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, true, referenceTime)
 	logger.Errorf("This is an %s", "error")
 
-	logger = log.NewLogger(log.JSONLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
+	logger = log.NewLogger(log.JSONLogger, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, true, referenceTime)
 	logger.Debug("This is a debug message")
 
-	log.InitGlobalLogger(log.JSONLogger, log.BitriseCLI, os.Stdout, true, referenceTime)
+	log.InitGlobalLogger(log.JSONLogger, log.LoggerOpts{Producer: log.BitriseCLI}, os.Stdout, true, referenceTime)
 	log.Info("This is an info message")
 }

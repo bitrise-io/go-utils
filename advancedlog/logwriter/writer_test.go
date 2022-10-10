@@ -43,7 +43,8 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			writer := logwriter.NewLogWriter(tt.loggerType, tt.producer, &buf, true, referenceTime)
+			opts := logwriter.LogWriterOpts{Producer: tt.producer}
+			writer := logwriter.NewLogWriter(tt.loggerType, opts, &buf, true, referenceTime)
 
 			b := []byte(tt.message)
 
@@ -55,7 +56,8 @@ func Test_GivenWriter_WhenStdoutIsUsed_ThenCapturesTheOutput(t *testing.T) {
 }
 
 func ExampleNewLogWriter() {
-	writer := logwriter.NewLogWriter(logwriter.JSONLogger, logwriter.BitriseCLI, os.Stdout, true, referenceTime)
+	opts := logwriter.LogWriterOpts{Producer: logwriter.BitriseCLI}
+	writer := logwriter.NewLogWriter(logwriter.JSONLogger, opts, os.Stdout, true, referenceTime)
 	cmd := exec.Command("echo", "test")
 	cmd.Stdout = writer
 	if err := cmd.Run(); err != nil {

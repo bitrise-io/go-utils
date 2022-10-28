@@ -34,6 +34,7 @@ func (pathProvider) CreateTempDir(prefix string) (dir string, err error) {
 // PathChecker ...
 type PathChecker interface {
 	IsPathExists(pth string) (bool, error)
+	IsDirExists(pth string) (bool, error)
 }
 
 type pathChecker struct{}
@@ -49,9 +50,15 @@ func (c pathChecker) IsPathExists(pth string) (bool, error) {
 	return isExists, err
 }
 
+// IsDirExists ...
+func (c pathChecker) IsDirExists(pth string) (bool, error) {
+	info, isExists, err := c.genericIsPathExists(pth)
+	return isExists && info.IsDir(), err
+}
+
 func (pathChecker) genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 	if pth == "" {
-		return nil, false, errors.New("No path provided")
+		return nil, false, errors.New("no path provided")
 	}
 
 	fileInf, err := os.Lstat(pth)

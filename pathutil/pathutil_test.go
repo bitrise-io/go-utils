@@ -1,6 +1,7 @@
 package pathutil
 
 import (
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -70,6 +71,59 @@ func Test_pathChecker_IsPathExists(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := pathChecker{}
 			got, err := c.IsPathExists(tt.pth)
+
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_pathChecker_IsDirExists(t *testing.T) {
+	tmpDirPath := t.TempDir()
+	tmpFilePath := filepath.Join(t.TempDir(), "hello.txt")
+	require.NoError(t, ioutil.WriteFile(tmpFilePath, []byte("hello"), 0700))
+
+	tests := []struct {
+		name    string
+		path    string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "path does not exists",
+			path: filepath.Join("this", "should", "not", "exist"),
+			want: false,
+		},
+		{
+			name: "current dir",
+			path: ".",
+			want: true,
+		},
+		{
+			name:    "empty path",
+			path:    "",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name: "existing file",
+			path: tmpFilePath,
+			want: false,
+		},
+		{
+			name: "existing dir",
+			path: tmpDirPath,
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := pathChecker{}
+			got, err := c.IsDirExists(tt.path)
 
 			if tt.wantErr {
 				require.Error(t, err)

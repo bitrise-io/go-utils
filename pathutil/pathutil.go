@@ -2,7 +2,6 @@ package pathutil
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -25,7 +24,7 @@ func NewPathProvider() PathProvider {
 // If prefix is provided it'll be used as the tmp dir's name prefix.
 // Normalized: it's guaranteed that the path won't end with '/'.
 func (pathProvider) CreateTempDir(prefix string) (dir string, err error) {
-	dir, err = ioutil.TempDir("", prefix)
+	dir, err = os.MkdirTemp("", prefix)
 	dir = strings.TrimSuffix(dir, "/")
 
 	return

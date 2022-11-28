@@ -10,6 +10,6 @@ const (
 	// Success indicates that the program exited successfully.
 	Success ExitCode = 0
 
-	// Fail indicates that the program exited unsuccessfully.
-	Fail ExitCode = 1
+	// Failure indicates that the program exited unsuccessfully.
+	Failure ExitCode = 1
 )

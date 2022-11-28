@@ -9,12 +9,12 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[Success-0]
-	_ = x[Fail-1]
+	_ = x[Failure-1]
 }
 
-const _ExitCode_name = "SuccessFail"
+const _ExitCode_name = "SuccessFailure"
 
-var _ExitCode_index = [...]uint8{0, 7, 11}
+var _ExitCode_index = [...]uint8{0, 7, 14}
 
 func (i ExitCode) String() string {
 	if i < 0 || i >= ExitCode(len(_ExitCode_index)-1) {

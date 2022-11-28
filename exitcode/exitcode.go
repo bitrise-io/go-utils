@@ -2,7 +2,8 @@
 
 package exitcode
 
-// ExitCode is a simple integer type that represents an exit code. It can be used to provide a more semantically meaningful exit code than a simple integer.
+// ExitCode is a simple integer type that represents an exit code.
+// It can be used to provide a more semantically meaningful exit code than a simple integer.
 type ExitCode int
 
 const (

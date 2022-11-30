@@ -1,7 +1,6 @@
 package fileutil
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -37,7 +36,7 @@ func (f fileManager) Write(path string, value string, mode os.FileMode) error {
 	if err := f.ensureSavePath(path); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path, []byte(value), mode); err != nil {
+	if err := os.WriteFile(path, []byte(value), mode); err != nil {
 		return err
 	}
 	return os.Chmod(path, mode)
@@ -50,5 +49,5 @@ func (fileManager) ensureSavePath(savePath string) error {
 
 // WriteBytes ...
 func (f fileManager) WriteBytes(path string, value []byte) error {
-	return ioutil.WriteFile(path, value, 0600)
+	return os.WriteFile(path, value, 0600)
 }

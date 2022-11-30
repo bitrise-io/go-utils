@@ -1,7 +1,6 @@
 package pathutil
 
 import (
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -85,7 +84,7 @@ func Test_pathChecker_IsPathExists(t *testing.T) {
 func Test_pathChecker_IsDirExists(t *testing.T) {
 	tmpDirPath := t.TempDir()
 	tmpFilePath := filepath.Join(t.TempDir(), "hello.txt")
-	require.NoError(t, ioutil.WriteFile(tmpFilePath, []byte("hello"), 0700))
+	require.NoError(t, os.WriteFile(tmpFilePath, []byte("hello"), 0700))
 
 	tests := []struct {
 		name    string

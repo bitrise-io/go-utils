@@ -1,9 +1,72 @@
 package command
 
 import (
-	"github.com/bitrise-io/go-utils/v2/env"
+	"bytes"
+	"os/exec"
+	"strings"
 	"testing"
+
+	"github.com/bitrise-io/go-utils/v2/env"
 )
+
+func TestRunErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		cmd     command
+		wantErr string
+	}{
+		{
+			name:    "command without stdout set",
+			cmd:     command{cmd: exec.Command("brew", "install", "invalid")},
+			wantErr: `command failed with exit status 1 (brew "install" "invalid")`,
+		},
+		{
+			name: "command with stdout set",
+			cmd: func() command {
+				c := exec.Command("brew", "install", "invalid")
+				var out bytes.Buffer
+				c.Stdout = &out
+				return command{cmd: c}
+			}(),
+			wantErr: `command failed with exit status 1 (brew "install" "invalid")`,
+		},
+		{
+			name: "command with error finder",
+			cmd: func() command {
+				c := exec.Command("brew", "install", "invalid")
+				var out bytes.Buffer
+				c.Stdout = &out
+				return command{
+					cmd: c,
+					errorFinder: func(out string) []string {
+						var errors []string
+						for _, line := range strings.Split(out, "\n") {
+							if strings.Contains(line, "Error:") {
+								errors = append(errors, line)
+							}
+						}
+						return errors
+					},
+				}
+			}(),
+			wantErr: `command failed with exit status 1 (brew "install" "invalid"): Error: No previously deleted formula found.
+Error: No formulae found in taps.`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cmd.Run()
+			var gotErrMsg string
+			if err != nil {
+				gotErrMsg = err.Error()
+			}
+			if gotErrMsg != tt.wantErr {
+				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
+				return
+			}
+		})
+	}
+}
 
 func TestRunCmdAndReturnExitCode(t *testing.T) {
 	type args struct {

@@ -1,6 +1,9 @@
 package command
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
@@ -11,11 +14,12 @@ import (
 
 // Opts ...
 type Opts struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	Stdin  io.Reader
-	Env    []string
-	Dir    string
+	Stdout      io.Writer
+	Stderr      io.Writer
+	Stdin       io.Reader
+	Env         []string
+	Dir         string
+	ErrorFinder func(out string) []string
 }
 
 // Factory ...
@@ -47,7 +51,10 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 		cmd.Env = append(f.envRepository.List(), opts.Env...)
 		cmd.Dir = opts.Dir
 	}
-	return command{cmd}
+	return &command{
+		cmd:         cmd,
+		errorFinder: opts.ErrorFinder,
+	}
 }
 
 // Command ...
@@ -62,7 +69,8 @@ type Command interface {
 }
 
 type command struct {
-	cmd *exec.Cmd
+	cmd         *exec.Cmd
+	errorFinder func(out string) []string
 }
 
 // PrintableCommandArgs ...
@@ -71,8 +79,29 @@ func (c command) PrintableCommandArgs() string {
 }
 
 // Run ...
-func (c command) Run() error {
-	return c.cmd.Run()
+func (c *command) Run() error {
+	var outBuffer, errBuffer bytes.Buffer
+	if c.errorFinder != nil {
+		if c.cmd.Stdout != nil {
+			outWriter := io.MultiWriter(&outBuffer, c.cmd.Stdout)
+			c.cmd.Stdout = outWriter
+		} else {
+			c.cmd.Stdout = &outBuffer
+		}
+
+		if c.cmd.Stderr != nil {
+			errWriter := io.MultiWriter(&errBuffer, c.cmd.Stderr)
+			c.cmd.Stderr = errWriter
+		} else {
+			c.cmd.Stderr = &errBuffer
+		}
+	}
+
+	if err := c.cmd.Run(); err != nil {
+		return c.wrapError(err, outBuffer.String(), errBuffer.String())
+	}
+
+	return nil
 }
 
 // RunAndReturnExitCode ...
@@ -117,4 +146,20 @@ func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	}
 
 	return strings.Join(cmdArgsDecorated, " ")
+}
+
+func (c command) wrapError(err error, stdout, stderr string) error {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		if c.errorFinder != nil {
+			reasonsO := c.errorFinder(stdout)
+			reasonsE := c.errorFinder(stderr)
+			reasons := append(reasonsO, reasonsE...)
+			if len(reasons) > 0 {
+				return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(reasons, "\n")))
+			}
+		}
+		return fmt.Errorf("command failed with exit status %d (%s)", exitErr.ExitCode(), c.PrintableCommandArgs())
+	}
+	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

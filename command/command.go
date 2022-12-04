@@ -12,6 +12,9 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 )
 
+// ErrorFinder ...
+type ErrorFinder func(out string) []string
+
 // Opts ...
 type Opts struct {
 	Stdout      io.Writer
@@ -19,7 +22,7 @@ type Opts struct {
 	Stdin       io.Reader
 	Env         []string
 	Dir         string
-	ErrorFinder func(out string) []string
+	ErrorFinder ErrorFinder
 }
 
 // Factory ...
@@ -39,7 +42,11 @@ func NewFactory(envRepository env.Repository) Factory {
 // Create ...
 func (f factory) Create(name string, args []string, opts *Opts) Command {
 	cmd := exec.Command(name, args...)
+	var errorFinder ErrorFinder
+
 	if opts != nil {
+		errorFinder = opts.ErrorFinder
+
 		cmd.Stdout = opts.Stdout
 		cmd.Stderr = opts.Stderr
 		cmd.Stdin = opts.Stdin
@@ -53,7 +60,7 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 	}
 	return &command{
 		cmd:         cmd,
-		errorFinder: opts.ErrorFinder,
+		errorFinder: errorFinder,
 	}
 }
 
@@ -70,7 +77,7 @@ type Command interface {
 
 type command struct {
 	cmd         *exec.Cmd
-	errorFinder func(out string) []string
+	errorFinder ErrorFinder
 }
 
 // PrintableCommandArgs ...

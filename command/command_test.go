@@ -125,3 +125,89 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 		})
 	}
 }
+
+func TestRunAndReturnTrimmedOutput(t *testing.T) {
+	tests := []struct {
+		name    string
+		cmd     command
+		wantErr string
+	}{
+		{
+			name: "command with error finder",
+			cmd: func() command {
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
+				return command{
+					cmd: c,
+					errorFinder: func(out string) []string {
+						var errors []string
+						for _, line := range strings.Split(out, "\n") {
+							if strings.Contains(line, "Error:") {
+								errors = append(errors, line)
+							}
+						}
+						return errors
+					},
+				}
+			}(),
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+Error: second error`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.cmd.RunAndReturnTrimmedOutput()
+			var gotErrMsg string
+			if err != nil {
+				gotErrMsg = err.Error()
+			}
+			if gotErrMsg != tt.wantErr {
+				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
+	tests := []struct {
+		name    string
+		cmd     command
+		wantErr string
+	}{
+		{
+			name: "command with error finder",
+			cmd: func() command {
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
+				return command{
+					cmd: c,
+					errorFinder: func(out string) []string {
+						var errors []string
+						for _, line := range strings.Split(out, "\n") {
+							if strings.Contains(line, "Error:") {
+								errors = append(errors, line)
+							}
+						}
+						return errors
+					},
+				}
+			}(),
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+Error: second error
+Error: third error
+Error: fourth error`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.cmd.RunAndReturnTrimmedCombinedOutput()
+			var gotErrMsg string
+			if err != nil {
+				gotErrMsg = err.Error()
+			}
+			if gotErrMsg != tt.wantErr {
+				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
+				return
+			}
+		})
+	}
+}

@@ -87,22 +87,7 @@ func (c command) PrintableCommandArgs() string {
 
 // Run ...
 func (c *command) Run() error {
-	var outBuffer, errBuffer bytes.Buffer
-	if c.errorFinder != nil {
-		if c.cmd.Stdout != nil {
-			outWriter := io.MultiWriter(&outBuffer, c.cmd.Stdout)
-			c.cmd.Stdout = outWriter
-		} else {
-			c.cmd.Stdout = &outBuffer
-		}
-
-		if c.cmd.Stderr != nil {
-			errWriter := io.MultiWriter(&errBuffer, c.cmd.Stderr)
-			c.cmd.Stderr = errWriter
-		} else {
-			c.cmd.Stderr = &errBuffer
-		}
-	}
+	outBuffer, errBuffer := c.wrappedOutputBuffers()
 
 	if err := c.cmd.Run(); err != nil {
 		return c.wrapError(err, outBuffer.String(), errBuffer.String())
@@ -113,7 +98,12 @@ func (c *command) Run() error {
 
 // RunAndReturnExitCode ...
 func (c command) RunAndReturnExitCode() (int, error) {
+	outBuffer, errBuffer := c.wrappedOutputBuffers()
 	err := c.cmd.Run()
+	if err != nil {
+		err = c.wrapError(err, outBuffer.String(), errBuffer.String())
+	}
+
 	exitCode := c.cmd.ProcessState.ExitCode()
 	return exitCode, err
 }
@@ -122,6 +112,10 @@ func (c command) RunAndReturnExitCode() (int, error) {
 func (c command) RunAndReturnTrimmedOutput() (string, error) {
 	outBytes, err := c.cmd.Output()
 	outStr := string(outBytes)
+	if err != nil {
+		err = c.wrapError(err, outStr, "")
+	}
+
 	return strings.TrimSpace(outStr), err
 }
 
@@ -129,6 +123,11 @@ func (c command) RunAndReturnTrimmedOutput() (string, error) {
 func (c command) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	outBytes, err := c.cmd.CombinedOutput()
 	outStr := string(outBytes)
+
+	if err != nil {
+		err = c.wrapError(err, outStr, "")
+	}
+
 	return strings.TrimSpace(outStr), err
 }
 
@@ -139,7 +138,13 @@ func (c command) Start() error {
 
 // Wait ...
 func (c command) Wait() error {
-	return c.cmd.Wait()
+	outBuffer, errBuffer := c.wrappedOutputBuffers()
+	err := c.cmd.Wait()
+	if err != nil {
+		err = c.wrapError(err, outBuffer.String(), errBuffer.String())
+	}
+
+	return err
 }
 
 func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
@@ -169,4 +174,24 @@ func (c command) wrapError(err error, stdout, stderr string) error {
 		return fmt.Errorf("command failed with exit status %d (%s)", exitErr.ExitCode(), c.PrintableCommandArgs())
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
+}
+
+func (c command) wrappedOutputBuffers() (*bytes.Buffer, *bytes.Buffer) {
+	var outBuffer, errBuffer bytes.Buffer
+	if c.errorFinder != nil {
+		if c.cmd.Stdout != nil {
+			outWriter := io.MultiWriter(&outBuffer, c.cmd.Stdout)
+			c.cmd.Stdout = outWriter
+		} else {
+			c.cmd.Stdout = &outBuffer
+		}
+
+		if c.cmd.Stderr != nil {
+			errWriter := io.MultiWriter(&errBuffer, c.cmd.Stderr)
+			c.cmd.Stderr = errWriter
+		} else {
+			c.cmd.Stderr = &errBuffer
+		}
+	}
+	return &outBuffer, &errBuffer
 }

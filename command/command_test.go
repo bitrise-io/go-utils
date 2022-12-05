@@ -33,7 +33,7 @@ func TestRunErrors(t *testing.T) {
 		{
 			name: "command with error finder",
 			cmd: func() command {
-				c := exec.Command("brew", "install", "invalid")
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				var out bytes.Buffer
 				c.Stdout = &out
 				return command{
@@ -49,8 +49,10 @@ func TestRunErrors(t *testing.T) {
 					},
 				}
 			}(),
-			wantErr: `command failed with exit status 1 (brew "install" "invalid"): Error: No previously deleted formula found.
-Error: No formulae found in taps.`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+Error: second error
+Error: third error
+Error: fourth error`,
 		},
 	}
 	for _, tt := range tests {

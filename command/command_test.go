@@ -17,18 +17,18 @@ func TestRunErrors(t *testing.T) {
 	}{
 		{
 			name:    "command without stdout set",
-			cmd:     command{cmd: exec.Command("brew", "install", "invalid")},
-			wantErr: `command failed with exit status 1 (brew "install" "invalid")`,
+			cmd:     command{cmd: exec.Command("bash", "testdata/exit_with_message.sh")},
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh")`,
 		},
 		{
 			name: "command with stdout set",
 			cmd: func() command {
-				c := exec.Command("brew", "install", "invalid")
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				var out bytes.Buffer
 				c.Stdout = &out
 				return command{cmd: c}
 			}(),
-			wantErr: `command failed with exit status 1 (brew "install" "invalid")`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh")`,
 		},
 		{
 			name: "command with error finder",

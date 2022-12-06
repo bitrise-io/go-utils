@@ -115,7 +115,7 @@ func (c command) RunAndReturnTrimmedOutput() (string, error) {
 	outStr := string(outBytes)
 	if err != nil {
 		if c.errorCollector != nil {
-			c.errorCollector.CollectErrors(outStr)
+			c.errorCollector.collectErrors(outStr)
 		}
 		err = c.wrapError(err)
 	}
@@ -129,7 +129,7 @@ func (c command) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	outStr := string(outBytes)
 	if err != nil {
 		if c.errorCollector != nil {
-			c.errorCollector.CollectErrors(outStr)
+			c.errorCollector.collectErrors(outStr)
 		}
 		err = c.wrapError(err)
 	}

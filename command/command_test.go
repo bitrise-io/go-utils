@@ -34,9 +34,6 @@ func TestRunErrors(t *testing.T) {
 			name: "command with error finder",
 			cmd: func() command {
 				c := exec.Command("bash", "testdata/exit_with_message.sh")
-				var out bytes.Buffer
-				c.Stdout = &out
-
 				errorFinder := func(out string) []string {
 					var errors []string
 					for _, line := range strings.Split(out, "\n") {

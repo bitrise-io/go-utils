@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -42,10 +41,12 @@ func NewFactory(envRepository env.Repository) Factory {
 // Create ...
 func (f factory) Create(name string, args []string, opts *Opts) Command {
 	cmd := exec.Command(name, args...)
-	var errorFinder ErrorFinder
+	var collector *errorCollector
 
 	if opts != nil {
-		errorFinder = opts.ErrorFinder
+		if opts.ErrorFinder != nil {
+			collector = &errorCollector{errorFinder: opts.ErrorFinder}
+		}
 
 		cmd.Stdout = opts.Stdout
 		cmd.Stderr = opts.Stderr
@@ -59,8 +60,8 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 		cmd.Dir = opts.Dir
 	}
 	return &command{
-		cmd:         cmd,
-		errorFinder: errorFinder,
+		cmd:            cmd,
+		errorCollector: collector,
 	}
 }
 
@@ -76,8 +77,8 @@ type Command interface {
 }
 
 type command struct {
-	cmd         *exec.Cmd
-	errorFinder ErrorFinder
+	cmd            *exec.Cmd
+	errorCollector *errorCollector
 }
 
 // PrintableCommandArgs ...
@@ -87,10 +88,10 @@ func (c command) PrintableCommandArgs() string {
 
 // Run ...
 func (c *command) Run() error {
-	outBuffer, errBuffer := c.wrappedOutputBuffers()
+	c.wrapOutputs()
 
 	if err := c.cmd.Run(); err != nil {
-		return c.wrapError(err, outBuffer.String(), errBuffer.String())
+		return c.wrapError(err)
 	}
 
 	return nil
@@ -98,10 +99,10 @@ func (c *command) Run() error {
 
 // RunAndReturnExitCode ...
 func (c command) RunAndReturnExitCode() (int, error) {
-	outBuffer, errBuffer := c.wrappedOutputBuffers()
+	c.wrapOutputs()
 	err := c.cmd.Run()
 	if err != nil {
-		err = c.wrapError(err, outBuffer.String(), errBuffer.String())
+		err = c.wrapError(err)
 	}
 
 	exitCode := c.cmd.ProcessState.ExitCode()
@@ -113,7 +114,10 @@ func (c command) RunAndReturnTrimmedOutput() (string, error) {
 	outBytes, err := c.cmd.Output()
 	outStr := string(outBytes)
 	if err != nil {
-		err = c.wrapError(err, outStr, "")
+		if c.errorCollector != nil {
+			c.errorCollector.CollectErrors(outStr)
+		}
+		err = c.wrapError(err)
 	}
 
 	return strings.TrimSpace(outStr), err
@@ -123,9 +127,11 @@ func (c command) RunAndReturnTrimmedOutput() (string, error) {
 func (c command) RunAndReturnTrimmedCombinedOutput() (string, error) {
 	outBytes, err := c.cmd.CombinedOutput()
 	outStr := string(outBytes)
-
 	if err != nil {
-		err = c.wrapError(err, outStr, "")
+		if c.errorCollector != nil {
+			c.errorCollector.CollectErrors(outStr)
+		}
+		err = c.wrapError(err)
 	}
 
 	return strings.TrimSpace(outStr), err
@@ -133,15 +139,15 @@ func (c command) RunAndReturnTrimmedCombinedOutput() (string, error) {
 
 // Start ...
 func (c command) Start() error {
+	c.wrapOutputs()
 	return c.cmd.Start()
 }
 
 // Wait ...
 func (c command) Wait() error {
-	outBuffer, errBuffer := c.wrappedOutputBuffers()
 	err := c.cmd.Wait()
 	if err != nil {
-		err = c.wrapError(err, outBuffer.String(), errBuffer.String())
+		err = c.wrapError(err)
 	}
 
 	return err
@@ -160,38 +166,33 @@ func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 	return strings.Join(cmdArgsDecorated, " ")
 }
 
-func (c command) wrapError(err error, stdout, stderr string) error {
+func (c command) wrapError(err error) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		if c.errorFinder != nil {
-			reasonsO := c.errorFinder(stdout)
-			reasonsE := c.errorFinder(stderr)
-			reasons := append(reasonsO, reasonsE...)
-			if len(reasons) > 0 {
-				return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(reasons, "\n")))
-			}
+		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
+			return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
 		}
 		return fmt.Errorf("command failed with exit status %d (%s)", exitErr.ExitCode(), c.PrintableCommandArgs())
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }
 
-func (c command) wrappedOutputBuffers() (*bytes.Buffer, *bytes.Buffer) {
-	var outBuffer, errBuffer bytes.Buffer
-	if c.errorFinder != nil {
-		if c.cmd.Stdout != nil {
-			outWriter := io.MultiWriter(&outBuffer, c.cmd.Stdout)
-			c.cmd.Stdout = outWriter
-		} else {
-			c.cmd.Stdout = &outBuffer
-		}
-
-		if c.cmd.Stderr != nil {
-			errWriter := io.MultiWriter(&errBuffer, c.cmd.Stderr)
-			c.cmd.Stderr = errWriter
-		} else {
-			c.cmd.Stderr = &errBuffer
-		}
+func (c command) wrapOutputs() {
+	if c.errorCollector == nil {
+		return
 	}
-	return &outBuffer, &errBuffer
+
+	if c.cmd.Stdout != nil {
+		outWriter := io.MultiWriter(c.errorCollector, c.cmd.Stdout)
+		c.cmd.Stdout = outWriter
+	} else {
+		c.cmd.Stdout = c.errorCollector
+	}
+
+	if c.cmd.Stderr != nil {
+		errWriter := io.MultiWriter(c.errorCollector, c.cmd.Stderr)
+		c.cmd.Stderr = errWriter
+	} else {
+		c.cmd.Stderr = c.errorCollector
+	}
 }

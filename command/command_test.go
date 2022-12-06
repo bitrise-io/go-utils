@@ -36,17 +36,20 @@ func TestRunErrors(t *testing.T) {
 				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				var out bytes.Buffer
 				c.Stdout = &out
-				return command{
-					cmd: c,
-					errorFinder: func(out string) []string {
-						var errors []string
-						for _, line := range strings.Split(out, "\n") {
-							if strings.Contains(line, "Error:") {
-								errors = append(errors, line)
-							}
+
+				errorFinder := func(out string) []string {
+					var errors []string
+					for _, line := range strings.Split(out, "\n") {
+						if strings.Contains(line, "Error:") {
+							errors = append(errors, line)
 						}
-						return errors
-					},
+					}
+					return errors
+				}
+
+				return command{
+					cmd:            c,
+					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
 			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
@@ -135,20 +138,32 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "command with error finder",
+			name: "command without error finder",
 			cmd: func() command {
 				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				return command{
 					cmd: c,
-					errorFinder: func(out string) []string {
-						var errors []string
-						for _, line := range strings.Split(out, "\n") {
-							if strings.Contains(line, "Error:") {
-								errors = append(errors, line)
-							}
+				}
+			}(),
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\")",
+		},
+		{
+			name: "command with error finder",
+			cmd: func() command {
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
+				errorFinder := func(out string) []string {
+					var errors []string
+					for _, line := range strings.Split(out, "\n") {
+						if strings.Contains(line, "Error:") {
+							errors = append(errors, line)
 						}
-						return errors
-					},
+					}
+					return errors
+				}
+
+				return command{
+					cmd:            c,
+					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
 			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
@@ -177,20 +192,32 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "command with error finder",
+			name: "command without error finder",
 			cmd: func() command {
 				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				return command{
 					cmd: c,
-					errorFinder: func(out string) []string {
-						var errors []string
-						for _, line := range strings.Split(out, "\n") {
-							if strings.Contains(line, "Error:") {
-								errors = append(errors, line)
-							}
+				}
+			}(),
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\")",
+		},
+		{
+			name: "command with error finder",
+			cmd: func() command {
+				c := exec.Command("bash", "testdata/exit_with_message.sh")
+				errorFinder := func(out string) []string {
+					var errors []string
+					for _, line := range strings.Split(out, "\n") {
+						if strings.Contains(line, "Error:") {
+							errors = append(errors, line)
 						}
-						return errors
-					},
+					}
+					return errors
+				}
+
+				return command{
+					cmd:            c,
+					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
 			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error

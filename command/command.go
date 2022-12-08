@@ -172,7 +172,7 @@ func (c command) wrapError(err error) error {
 		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
 			return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
 		}
-		return fmt.Errorf("command failed with exit status %d (%s)", exitErr.ExitCode(), c.PrintableCommandArgs())
+		return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

@@ -18,7 +18,7 @@ func TestRunErrors(t *testing.T) {
 		{
 			name:    "command without stdout set",
 			cmd:     command{cmd: exec.Command("bash", "testdata/exit_with_message.sh")},
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh")`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
 		},
 		{
 			name: "command with stdout set",
@@ -28,7 +28,7 @@ func TestRunErrors(t *testing.T) {
 				c.Stdout = &out
 				return command{cmd: c}
 			}(),
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh")`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
 		},
 		{
 			name: "command with error finder",
@@ -142,7 +142,7 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\")",
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
 		},
 		{
 			name: "command with error finder",
@@ -196,7 +196,7 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\")",
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
 		},
 		{
 			name: "command with error finder",

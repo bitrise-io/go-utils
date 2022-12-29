@@ -36,6 +36,23 @@ func TestGitCommands(t *testing.T) {
 			command: (&Git{}).Log("%H", "refs/head/hcnarb"),
 			want:    `git "log" "-1" "--format=%H" "refs/head/hcnarb"`,
 		},
+		// Clone
+		{
+			command: (&Git{}).Clone("https://github.com/bitrise-io/go-utils.git"),
+			want:    `git "clone" "https://github.com/bitrise-io/go-utils.git" "."`,
+		},
+		{
+			command: (&Git{}).Clone("https://github.com/bitrise-io/go-utils.git", "--depth=1"),
+			want:    `git "clone" "--depth=1" "https://github.com/bitrise-io/go-utils.git" "."`,
+		},
+		{
+			command: (&Git{}).CloneTagOrBranch("https://github.com/bitrise-io/go-utils.git", "v1"),
+			want:    `git "clone" "--recursive" "--branch" "v1" "https://github.com/bitrise-io/go-utils.git" "."`,
+		},
+		{
+			command: (&Git{}).CloneTagOrBranch("https://github.com/bitrise-io/go-utils.git", "v1", "--depth=1"),
+			want:    `git "clone" "--recursive" "--branch" "v1" "--depth=1" "https://github.com/bitrise-io/go-utils.git" "."`,
+		},
 	}
 
 	for _, testCase := range testCases {

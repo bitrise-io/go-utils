@@ -12,6 +12,6 @@ func TestCopyFileErrorIfDirectory(t *testing.T) {
 	{
 		tmpFolder, err := pathutil.NormalizedOSTempDirPath("_tmp")
 		require.NoError(t, err)
-		require.EqualError(t, CopyFile(tmpFolder, "./nothing/whatever"), "Source is a directory: "+tmpFolder)
+		require.EqualError(t, CopyFile(tmpFolder, "./nothing/whatever"), "source is a directory: "+tmpFolder)
 	}
 }

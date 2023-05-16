@@ -103,6 +103,7 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// Close implements io.Writer interface
 func (w *Writer) Close() error {
 	_, err := w.flush()
 	return err

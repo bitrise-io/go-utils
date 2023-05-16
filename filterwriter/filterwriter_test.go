@@ -6,7 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/v2/analytics/mocks"
+	"github.com/bitrise-io/go-utils/v2/mocks"
+
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/stretchr/testify/require"
 )

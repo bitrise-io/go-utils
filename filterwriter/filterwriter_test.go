@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/v2/analytics/mocks"
+	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,7 +93,8 @@ func TestWrite(t *testing.T) {
 	t.Log("trivial test")
 	{
 		var buff bytes.Buffer
-		out := New([]string{"abc", "a\nb\nc"}, &buff)
+		var mockLogger log.Logger = new(mocks.Logger)
+		out := New([]string{"abc", "a\nb\nc"}, &buff, mockLogger)
 		log := []byte("test with\nnew line\nand single line secret:abc\nand multiline secret:a\nb\nc")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -105,7 +108,8 @@ func TestWrite(t *testing.T) {
 	t.Log("chunk without newline")
 	{
 		var buff bytes.Buffer
-		out := New([]string{"ab", "a\nb"}, &buff)
+		var mockLogger log.Logger = new(mocks.Logger)
+		out := New([]string{"ab", "a\nb"}, &buff, mockLogger)
 		log := []byte("test without newline, secret:ab")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -119,7 +123,8 @@ func TestWrite(t *testing.T) {
 	t.Log("multiple secret in the same line")
 	{
 		var buff bytes.Buffer
-		out := New([]string{"x1", "x\n2"}, &buff)
+		var mockLogger log.Logger = new(mocks.Logger)
+		out := New([]string{"x1", "x\n2"}, &buff, mockLogger)
 		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
 		wc, err := out.Write(log)
 		require.NoError(t, err)
@@ -137,7 +142,8 @@ func TestWrite(t *testing.T) {
 		chStr := make(chan string, maxRun)
 
 		var buff bytes.Buffer
-		out := New([]string{"x1", "x\n2"}, &buff)
+		var mockLogger log.Logger = new(mocks.Logger)
+		out := New([]string{"x1", "x\n2"}, &buff, mockLogger)
 		log := []byte("multiple secrets like: x1 and x\n2 and some extra text")
 		for i := 0; i < maxRun; i++ {
 			go func(buff bytes.Buffer, out *Writer, log []byte) {
@@ -187,7 +193,8 @@ func TestSecrets(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 	require.Equal(t, [][][]byte{
 		[][]byte{[]byte("a\n"), []byte("b\n"), []byte("c")},
 		[][]byte{[]byte("b")},
@@ -219,7 +226,8 @@ func TestMatchSecrets(t *testing.T) {
 		[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 
 	matchMap, partialMatchMap := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -249,7 +257,8 @@ func TestLinesToKeepRange(t *testing.T) {
 	// 	[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 
 	partialMatchMap := map[int]bool{6: true, 2: true, 5: true, 7: true}
 	first := out.linesToKeepRange(partialMatchMap) // minimal index in the partialMatchMap
@@ -275,7 +284,8 @@ func TestMatchLine(t *testing.T) {
 		[]byte("b\n")}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 
 	_, partialMatchMap := out.matchSecrets(lines)
 	print, remaining := out.matchLines(lines, partialMatchMap)
@@ -307,7 +317,8 @@ func TestSecretLinesToRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 
 	matchMap, _ := out.matchSecrets(lines)
 	require.Equal(t, map[int][]int{
@@ -401,7 +412,8 @@ func TestRedact(t *testing.T) {
 	}
 
 	var buff bytes.Buffer
-	out := New(secrets, &buff)
+	var mockLogger log.Logger = new(mocks.Logger)
+	out := New(secrets, &buff, mockLogger)
 
 	matchMap := map[int][]int{0: []int{2}, 1: []int{3}}
 	redacted := out.redact(lines, matchMap)
@@ -429,7 +441,8 @@ func TestRedact(t *testing.T) {
 			[]byte("99\n")}
 
 		var buff bytes.Buffer
-		out := New(secrets, &buff)
+		var mockLogger log.Logger = new(mocks.Logger)
+		out := New(secrets, &buff, mockLogger)
 
 		matchMap := map[int][]int{
 			0: []int{0},

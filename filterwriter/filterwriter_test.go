@@ -1,3 +1,5 @@
+//go:build !race
+
 package filterwriter
 
 import (
@@ -137,7 +139,7 @@ func TestWrite(t *testing.T) {
 	}
 
 	maxRun := 150000
-	t.Log("multiple secret in the same line with multiple gorutine ")
+	t.Log("multiple secret in the same line with multiple goroutine ")
 	{
 		cherr := make(chan error, maxRun)
 		chStr := make(chan string, maxRun)

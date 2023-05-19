@@ -7,6 +7,7 @@ import (
 
 // FileManager ...
 type FileManager interface {
+	Open(path string) (*os.File, error)
 	Remove(path string) error
 	RemoveAll(path string) error
 	Write(path string, value string, perm os.FileMode) error
@@ -19,6 +20,11 @@ type fileManager struct {
 // NewFileManager ...
 func NewFileManager() FileManager {
 	return fileManager{}
+}
+
+// Open ...
+func (fileManager) Open(path string) (*os.File, error) {
+	return os.Open(path)
 }
 
 // Remove ...

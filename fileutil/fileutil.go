@@ -7,6 +7,7 @@ import (
 
 // FileManager ...
 type FileManager interface {
+	Open(path string) (*os.File, error)
 	Remove(path string) error
 	RemoveAll(path string) error
 	Write(path string, value string, perm os.FileMode) error

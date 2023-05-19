@@ -21,6 +21,11 @@ func NewFileManager() FileManager {
 	return fileManager{}
 }
 
+// Open ...
+func (fileManager) Open(path string) (*os.File, error) {
+	return os.Open(path)
+}
+
 // Remove ...
 func (fileManager) Remove(path string) error {
 	return os.Remove(path)

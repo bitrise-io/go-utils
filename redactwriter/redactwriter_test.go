@@ -1,6 +1,6 @@
 //go:build !race
 
-package filterwriter
+package redactwriter
 
 import (
 	"bytes"

@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/go-utils/v2/analytics/mocks"
+	"github.com/bitrise-io/go-utils/v2/mocks"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

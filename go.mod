@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/sys v0.2.0
+	golang.org/x/sys v0.13.0
 )
 
 require (
@@ -15,5 +15,6 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/zachgrayio/go-retryablehttp v0.0.0-20231107032107-5944aac728fe
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

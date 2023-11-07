@@ -14,6 +14,6 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	github.com/zachgrayio/go-retryablehttp v0.0.0-20231107032107-5944aac728fe
+	github.com/zachgrayio/go-retryablehttp v0.0.0-20231107210008-cef3afb4371b
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

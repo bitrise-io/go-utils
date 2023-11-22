@@ -198,7 +198,7 @@ func Test_pathModifier_AbsPath(t *testing.T) {
 		},
 		{
 			name: "Tilde + username",
-			pth:  "~" + currentUser.Name,
+			pth:  "~" + currentUser.Username,
 			want: currentUser.HomeDir,
 		},
 		{
@@ -208,12 +208,12 @@ func Test_pathModifier_AbsPath(t *testing.T) {
 		},
 		{
 			name: "Tilde + username, slash suffix",
-			pth:  "~" + currentUser.Name + sep,
+			pth:  "~" + currentUser.Username + sep,
 			want: currentUser.HomeDir,
 		},
 		{
 			name: "Tilde + username with path",
-			pth:  filepath.Join("~"+currentUser.Name, "folder"),
+			pth:  filepath.Join("~"+currentUser.Username, "folder"),
 			want: filepath.Join(currentUser.HomeDir, "folder"),
 		},
 		{

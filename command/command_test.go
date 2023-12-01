@@ -1,10 +1,12 @@
 package command_test
 
 import (
+	"fmt"
 	"os/exec"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/command"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,4 +107,17 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSpecialCharactersAreNotEscaped(t *testing.T) {
+	programName := "test"
+	argument := `-----BEGIN PRIVATE KEY-----\nThis\nis\na\nprivate-key\n-----END PRIVATE KEY-----`
+
+	cmd, err := command.NewWithParams(programName, argument)
+	require.NoError(t, err)
+
+	got := cmd.PrintableCommandArgs()
+	expected := fmt.Sprintf("%s \"%s\"", programName, argument)
+
+	assert.Equal(t, expected, got)
 }

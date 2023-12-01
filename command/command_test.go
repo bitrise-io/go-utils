@@ -2,11 +2,13 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/v2/env"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRunErrors(t *testing.T) {
@@ -236,4 +238,14 @@ Error: fourth error`,
 			}
 		})
 	}
+}
+
+func TestSpecialCharactersAreNotEscaped(t *testing.T) {
+	programName := "test"
+	argument := `-----BEGIN PRIVATE KEY-----\nThis\nis\na\nprivate-key\n-----END PRIVATE KEY-----`
+
+	got := NewFactory(env.NewRepository()).Create(programName, []string{argument}, nil).PrintableCommandArgs()
+	expected := fmt.Sprintf("%s \"%s\"", programName, argument)
+
+	assert.Equal(t, expected, got)
 }

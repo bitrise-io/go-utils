@@ -1,10 +1,16 @@
+//go:build !race
 // +build !race
 
 package progress
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewWrapper(t *testing.T) {
@@ -22,4 +28,17 @@ func TestNewDefaultWrapper(t *testing.T) {
 	NewDefaultWrapper(message).WrapAction(func() {
 		time.Sleep(2 * time.Second)
 	})
+}
+
+func TestNewDefaultWrapperWithOutput(t *testing.T) {
+	message := "loading"
+
+	var b bytes.Buffer
+	NewDefaultWrapperWithOutput(message, io.Writer(&b)).WrapAction(func() {
+		time.Sleep(2 * time.Second)
+	})
+
+	expected := fmt.Sprintf("%s...\n", message)
+	got := b.String()
+	assert.Equal(t, expected, got)
 }

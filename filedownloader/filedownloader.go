@@ -109,11 +109,9 @@ func download(context context.Context, client HTTPClient, source string, destina
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.Body != nil {
-			responseBytes, err := httputil.DumpResponse(resp, true)
-			if err == nil {
-				return fmt.Errorf("unable to download file from: %s. Status code: %d. Response: %s", source, resp.StatusCode, string(responseBytes))
-			}
+		responseBytes, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			return fmt.Errorf("unable to download file from: %s. Status code: %d. Response: %s", source, resp.StatusCode, string(responseBytes))
 		}
 		return fmt.Errorf("unable to download file from: %s. Status code: %d", source, resp.StatusCode)
 	}

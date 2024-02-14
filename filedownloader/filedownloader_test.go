@@ -41,7 +41,7 @@ func Test_get_InvalidStatusCode_NoBody(t *testing.T) {
 	path := givenTempPath(t)
 	url := "http://url.com"
 	statusCode := 404
-	expectedErr := fmt.Errorf("unable to download file from: %s. Status code: %d. Response: HTTP/0.0 404 Not Found\r\nContent-Length: 0\r\n\r\n", url, statusCode)
+	expectedErrString := fmt.Sprintf("unable to download file from: %s. Status code: %d. Response: HTTP/0.0 404 Not Found\r\nContent-Length: 0\r\n\r\n", url, statusCode)
 	mockedHTTPClient := givenHTTPClient(
 		http.Response{
 			StatusCode: statusCode,
@@ -52,7 +52,7 @@ func Test_get_InvalidStatusCode_NoBody(t *testing.T) {
 	err := downloader.Get(path, url)
 
 	// Then
-	require.Equal(t, expectedErr, err)
+	require.Equal(t, errors.New(expectedErrString).Error(), err.Error())
 	assertFileNotExists(t, path)
 }
 

@@ -171,9 +171,9 @@ func (c command) wrapError(err error) error {
 	if errors.As(err, &exitErr) {
 		origErr := errorutil.NewHiddenOriginalError(err)
 		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
-			return fmt.Errorf("command failed with exit status %d (%s): %w%w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")), origErr)
+			return fmt.Errorf("[%w] command failed with exit status %d (%s): %w", origErr, exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
 		}
-		return fmt.Errorf("command failed with exit status %d (%s): %w %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"), origErr)
+		return fmt.Errorf("[%w] command failed with exit status %d (%s): %w", origErr, exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

@@ -198,7 +198,7 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details ",
 		},
 		{
 			name: "command with error finder",

@@ -25,7 +25,7 @@ func (c *ExitStatusError) Unwrap() []error {
 	return []error{c.readableReason, c.originalCommandErr}
 }
 
-// Reason returns the user-friendly error message.
+// Reason returns the user-friendly error, to be used by errorutil.ErrorFormatter.
 func (c *ExitStatusError) Reason() error {
 	return c.readableReason
 }

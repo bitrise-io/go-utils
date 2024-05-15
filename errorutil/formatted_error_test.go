@@ -66,7 +66,7 @@ func TestFormattedError(t *testing.T) {
 	}
 }
 
-func TestRunErrors(t *testing.T) {
+func TestFormattedErrorWithCommand(t *testing.T) {
 	commandFactory := command.NewFactory(env.NewRepository())
 
 	tests := []struct {

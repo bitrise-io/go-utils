@@ -1,5 +1,7 @@
 package command
 
+import "os/exec"
+
 // ExitStatusError ...
 type ExitStatusError struct {
 	readableReason     error
@@ -7,7 +9,7 @@ type ExitStatusError struct {
 }
 
 // NewExitStatusError ...
-func NewExitStatusError(reasonErr error, originalExitErr error) error {
+func NewExitStatusError(reasonErr error, originalExitErr *exec.ExitError) error {
 	if reasonErr.Error() == "" {
 		panic("reason must not be empty")
 	}

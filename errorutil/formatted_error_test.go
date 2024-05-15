@@ -49,13 +49,39 @@ func TestFormattedError(t *testing.T) {
 				return err
 			}, wantFormattedError: "fourth layer also failed: third layer also failed: second layer also failed: the magic has failed",
 		},
+		{
+			name: "Multiple wrapped errors in the same level",
+			error: func() error {
+				err := errors.New("the internal debug info")
+				err2 := fmt.Errorf("the description")
+				err = fmt.Errorf("third layer also failed: %w %w", err2, err)
+				err = fmt.Errorf("fourth layer also failed: %w", err)
+				return err
+			}, wantFormattedError: `fourth layer also failed:
+  third layer also failed:
+    the description
+    the internal debug info`,
+		},
+		{
+			name: "Multiple wrapped errors in the same level, debug info hidden from stack trace",
+			error: func() error {
+				err := NewInternalDebugError(errors.New("the internal debug info"))
+				err2 := fmt.Errorf("the description")
+				err = fmt.Errorf("third layer also failed: %w %w", err, err2)
+				err = fmt.Errorf("fourth layer also failed: %w", err)
+				return err
+			}, wantFormattedError: `fourth layer also failed:
+  third layer also failed:
+    the description`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			formatted := FormattedError(tt.error())
 
+			// require.Equal(t, tt.wantFormattedError, formatted)
 			if formatted != tt.wantFormattedError {
-				t.Errorf("got formatted error = %s, want %s", formatted, tt.wantFormattedError)
+				t.Errorf("got formatted error = \n%s\n, want \n%s", formatted, tt.wantFormattedError)
 			}
 		})
 	}

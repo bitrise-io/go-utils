@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/env"
-	"github.com/bitrise-io/go-utils/v2/errorutil"
 )
 
 // ErrorFinder ...
@@ -74,6 +73,23 @@ type Command interface {
 	RunAndReturnTrimmedCombinedOutput() (string, error)
 	Start() error
 	Wait() error
+}
+
+// FormattedError ...
+type FormattedError struct {
+	formattedErr       error
+	originalCommandErr error
+}
+
+// Error returns the formatted error message. Does not include the original error message (`exit status 1`).
+func (c *FormattedError) Error() string {
+	return c.formattedErr.Error()
+}
+
+// Unwrap is needed for errors.Is and errors.As to work correctly.
+// It does not change errorutil.FormattedError's behavior, as it uses Unwrap() error (not []error).
+func (c *FormattedError) Unwrap() []error {
+	return []error{c.originalCommandErr}
 }
 
 type command struct {
@@ -169,11 +185,12 @@ func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 func (c command) wrapError(err error) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		origErr := errorutil.NewHiddenOriginalError(err)
 		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
-			return fmt.Errorf("[%w] command failed with exit status %d (%s): %w", origErr, exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
+			formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
+			return &FormattedError{formattedErr: formattedErr, originalCommandErr: err}
 		}
-		return fmt.Errorf("[%w] command failed with exit status %d (%s): %w", origErr, exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
+		formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
+		return &FormattedError{formattedErr: formattedErr, originalCommandErr: err}
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

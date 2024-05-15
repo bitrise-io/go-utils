@@ -2,12 +2,14 @@ package command
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/v2/env"
+	"github.com/bitrise-io/go-utils/v2/errorutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +22,7 @@ func TestRunErrors(t *testing.T) {
 		{
 			name:    "command without stdout set",
 			cmd:     command{cmd: exec.Command("bash", "testdata/exit_with_message.sh")},
-			wantErr: `[*exec.ExitError reworded] command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
 		},
 		{
 			name: "command with stdout set",
@@ -30,7 +32,7 @@ func TestRunErrors(t *testing.T) {
 				c.Stdout = &out
 				return command{cmd: c}
 			}(),
-			wantErr: `[*exec.ExitError reworded] command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): check the command's output for details`,
 		},
 		{
 			name: "command with error finder",
@@ -51,7 +53,7 @@ func TestRunErrors(t *testing.T) {
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `[*exec.ExitError reworded] command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
 Error: second error
 Error: third error
 Error: fourth error`,
@@ -65,8 +67,13 @@ Error: fourth error`,
 				gotErrMsg = err.Error()
 			}
 			if gotErrMsg != tt.wantErr {
-				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
+				t.Errorf("command.Run() error = \n%v\n, wantErr \n%v\n", gotErrMsg, tt.wantErr)
 				return
+			}
+
+			gotFormattedMsg := errorutil.FormattedError(err)
+			if gotFormattedMsg != tt.wantErr {
+				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
 	}
@@ -123,6 +130,18 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 				t.Errorf("command.RunAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if tt.wantErr && tt.wantExitCode > 0 {
+				var exitErr *exec.ExitError
+
+				if ok := errors.As(err, &exitErr); !ok {
+					t.Errorf("command.RunAndReturnExitCode() did nor return ExitError type: %s", err)
+					return
+				}
+
+				if exitErr.ExitCode() != tt.wantExitCode {
+					t.Errorf("command.RunAndReturnExitCode() exit code = %v, want %v", exitErr.ExitCode(), tt.wantExitCode)
+				}
+			}
 			if gotExitCode != tt.wantExitCode {
 				t.Errorf("command.RunAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)
 			}
@@ -144,7 +163,7 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: "[*exec.ExitError reworded] command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
 		},
 		{
 			name: "command with error finder",
@@ -165,7 +184,7 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `[*exec.ExitError reworded] command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
 Error: second error`,
 		},
 	}
@@ -179,6 +198,10 @@ Error: second error`,
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return
+			}
+			gotFormattedMsg := errorutil.FormattedError(err)
+			if gotFormattedMsg != tt.wantErr {
+				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
 	}
@@ -198,7 +221,7 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: "[*exec.ExitError reworded] command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
+			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
 		},
 		{
 			name: "command with error finder",
@@ -219,7 +242,7 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `[*exec.ExitError reworded] command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
 Error: second error
 Error: third error
 Error: fourth error`,
@@ -235,6 +258,10 @@ Error: fourth error`,
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return
+			}
+			gotFormattedMsg := errorutil.FormattedError(err)
+			if gotFormattedMsg != tt.wantErr {
+				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
 	}

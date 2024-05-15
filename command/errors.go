@@ -18,16 +18,16 @@ func NewExitStatusError(reasonErr error, originalExitErr *exec.ExitError) error 
 }
 
 // Error returns the formatted error message. Does not include the original error message (`exit status 1`).
-func (c *ExitStatusError) Error() string {
-	return c.readableReason.Error()
+func (e *ExitStatusError) Error() string {
+	return e.readableReason.Error()
 }
 
 // Unwrap is needed for errors.Is and errors.As to work correctly.
-func (c *ExitStatusError) Unwrap() error {
-	return c.originalCommandErr
+func (e *ExitStatusError) Unwrap() error {
+	return e.originalCommandErr
 }
 
 // Reason returns the user-friendly error, to be used by errorutil.ErrorFormatter.
-func (c *ExitStatusError) Reason() error {
-	return c.readableReason
+func (e *ExitStatusError) Reason() error {
+	return e.readableReason
 }

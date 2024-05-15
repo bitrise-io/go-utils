@@ -23,8 +23,8 @@ func (c *ExitStatusError) Error() string {
 }
 
 // Unwrap is needed for errors.Is and errors.As to work correctly.
-func (c *ExitStatusError) Unwrap() []error {
-	return []error{c.readableReason, c.originalCommandErr}
+func (c *ExitStatusError) Unwrap() error {
+	return c.originalCommandErr
 }
 
 // Reason returns the user-friendly error, to be used by errorutil.ErrorFormatter.

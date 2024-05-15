@@ -75,6 +75,22 @@ type Command interface {
 	Wait() error
 }
 
+// CommandError ...
+type CommandError struct {
+	formattedErr       error
+	originalCommandErr error
+}
+
+// Error ...
+func (c *CommandError) Error() string {
+	return c.formattedErr.Error()
+}
+
+// Unwrap ...
+func (c *CommandError) Unwrap() []error {
+	return []error{c.originalCommandErr}
+}
+
 type command struct {
 	cmd            *exec.Cmd
 	errorCollector *errorCollector
@@ -169,9 +185,11 @@ func (c command) wrapError(err error) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
-			return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
+			formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
+			return &CommandError{formattedErr: formattedErr, originalCommandErr: err}
 		}
-		return fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
+		formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
+		return &CommandError{formattedErr: formattedErr, originalCommandErr: err}
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

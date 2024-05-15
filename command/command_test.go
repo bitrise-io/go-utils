@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/v2/env"
-	"github.com/bitrise-io/go-utils/v2/errorutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,11 +68,6 @@ Error: fourth error`,
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = \n%v\n, wantErr \n%v\n", gotErrMsg, tt.wantErr)
 				return
-			}
-
-			gotFormattedMsg := errorutil.FormattedError(err)
-			if gotFormattedMsg != tt.wantErr {
-				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
 	}
@@ -199,10 +193,6 @@ Error: second error`,
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return
 			}
-			gotFormattedMsg := errorutil.FormattedError(err)
-			if gotFormattedMsg != tt.wantErr {
-				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
-			}
 		})
 	}
 }
@@ -258,10 +248,6 @@ Error: fourth error`,
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return
-			}
-			gotFormattedMsg := errorutil.FormattedError(err)
-			if gotFormattedMsg != tt.wantErr {
-				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
 	}

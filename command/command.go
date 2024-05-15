@@ -75,23 +75,6 @@ type Command interface {
 	Wait() error
 }
 
-// FormattedError ...
-type FormattedError struct {
-	formattedErr       error
-	originalCommandErr error
-}
-
-// Error returns the formatted error message. Does not include the original error message (`exit status 1`).
-func (c *FormattedError) Error() string {
-	return c.formattedErr.Error()
-}
-
-// Unwrap is needed for errors.Is and errors.As to work correctly.
-// It does not change errorutil.FormattedError's behavior, as it uses Unwrap() error (not []error).
-func (c *FormattedError) Unwrap() []error {
-	return []error{c.originalCommandErr}
-}
-
 type command struct {
 	cmd            *exec.Cmd
 	errorCollector *errorCollector
@@ -186,11 +169,12 @@ func (c command) wrapError(err error) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
-			formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
-			return &FormattedError{formattedErr: formattedErr, originalCommandErr: err}
+			reason := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
+			return NewExitStatusError(reason, exitErr)
 		}
-		formattedErr := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
-		return &FormattedError{formattedErr: formattedErr, originalCommandErr: err}
+
+		reason := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
+		return NewExitStatusError(reason, exitErr)
 	}
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }

@@ -3,6 +3,8 @@ package errorutil
 import (
 	"errors"
 	"strings"
+
+	"github.com/bitrise-io/go-utils/v2/command"
 )
 
 // FormattedError ...
@@ -13,8 +15,13 @@ func FormattedError(err error) string {
 	for {
 		i++
 
-		reason := err.Error()
+		// Use the user-friendly error message, ignore the original exec.ExitError.
+		var commandExitStatusError *command.ExitStatusError
+		if errors.As(err, &commandExitStatusError) {
+			err = commandExitStatusError.Reason()
+		}
 
+		reason := err.Error()
 		if err = errors.Unwrap(err); err == nil {
 			formatted = appendError(formatted, reason, i, true)
 			return formatted

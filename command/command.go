@@ -168,14 +168,14 @@ func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 func (c command) wrapError(err error) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		if c.errorCollector != nil && len(c.errorCollector.errorLines) > 0 {
-			reason := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New(strings.Join(c.errorCollector.errorLines, "\n")))
-			return NewExitStatusError(reason, exitErr)
+		errorLines := []string{}
+		if c.errorCollector != nil {
+			errorLines = c.errorCollector.errorLines
 		}
 
-		reason := fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), c.PrintableCommandArgs(), errors.New("check the command's output for details"))
-		return NewExitStatusError(reason, exitErr)
+		return NewExitStatusError(c.PrintableCommandArgs(), exitErr, errorLines)
 	}
+
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }
 

@@ -1,6 +1,11 @@
 package command
 
-import "os/exec"
+import (
+	"errors"
+	"fmt"
+	"os/exec"
+	"strings"
+)
 
 // ExitStatusError ...
 type ExitStatusError struct {
@@ -9,12 +14,15 @@ type ExitStatusError struct {
 }
 
 // NewExitStatusError ...
-func NewExitStatusError(reasonErr error, originalExitErr *exec.ExitError) error {
-	if reasonErr.Error() == "" {
-		panic("reason must not be empty")
+func NewExitStatusError(printableCmdArgs string, exitErr *exec.ExitError, errorLines []string) error {
+	reasonMsg := fmt.Sprintf("command failed with exit status %d (%s)", exitErr.ExitCode(), printableCmdArgs)
+	if len(errorLines) == 0 {
+		reasonErr := fmt.Errorf("%s: %w", reasonMsg, errors.New("check the command's output for details"))
+		return &ExitStatusError{readableReason: reasonErr, originalCommandErr: exitErr}
 	}
 
-	return &ExitStatusError{readableReason: reasonErr, originalCommandErr: originalExitErr}
+	reasonErr := fmt.Errorf("%s: %w", reasonMsg, errors.New(strings.Join(errorLines, "\n")))
+	return &ExitStatusError{readableReason: reasonErr, originalCommandErr: exitErr}
 }
 
 // Error returns the formatted error message. Does not include the original error message (`exit status 1`).

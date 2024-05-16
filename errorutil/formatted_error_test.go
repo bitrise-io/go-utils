@@ -76,7 +76,7 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 		wantMsg string
 	}{
 		{
-			name: "command error",
+			name: "command exit status error",
 			cmdFn: func() error {
 				cmd := commandFactory.Create("bash", []string{"../command/testdata/exit_with_message.sh"}, nil)
 				return cmd.Run()
@@ -84,6 +84,21 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): check the command's output for details`,
 			wantMsg: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
   check the command's output for details`,
+		},
+		{
+			name: "command execution failed, wrapped",
+			cmdFn: func() error {
+				cmd := commandFactory.Create("__notfoundinpath", []string{}, nil)
+				if err := cmd.Run(); err != nil {
+					return fmt.Errorf("wrapped: %w", err)
+				}
+				return nil
+			},
+			wantErr: `wrapped: executing command failed (__notfoundinpath): exec: "__notfoundinpath": executable file not found in $PATH`,
+			wantMsg: `wrapped:
+  executing command failed (__notfoundinpath):
+    exec: "__notfoundinpath":
+      executable file not found in $PATH`,
 		},
 		{
 			name: "command error, wrapped",

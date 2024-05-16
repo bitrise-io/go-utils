@@ -2,6 +2,7 @@ package command
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -65,7 +66,7 @@ Error: fourth error`,
 				gotErrMsg = err.Error()
 			}
 			if gotErrMsg != tt.wantErr {
-				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
+				t.Errorf("command.Run() error = \n%v\n, wantErr \n%v\n", gotErrMsg, tt.wantErr)
 				return
 			}
 		})
@@ -122,6 +123,18 @@ func TestRunCmdAndReturnExitCode(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("command.RunAndReturnExitCode() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.wantErr && tt.wantExitCode > 0 {
+				var exitErr *exec.ExitError
+
+				if ok := errors.As(err, &exitErr); !ok {
+					t.Errorf("command.RunAndReturnExitCode() did nor return ExitError type: %s", err)
+					return
+				}
+
+				if exitErr.ExitCode() != tt.wantExitCode {
+					t.Errorf("command.RunAndReturnExitCode() exit code = %v, want %v", exitErr.ExitCode(), tt.wantExitCode)
+				}
 			}
 			if gotExitCode != tt.wantExitCode {
 				t.Errorf("command.RunAndReturnExitCode() = %v, want %v", gotExitCode, tt.wantExitCode)

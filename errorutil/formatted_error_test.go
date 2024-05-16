@@ -76,7 +76,7 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 		wantMsg string
 	}{
 		{
-			name: "command without stdout set",
+			name: "command error",
 			cmdFn: func() error {
 				cmd := commandFactory.Create("bash", []string{"../command/testdata/exit_with_message.sh"}, nil)
 				return cmd.Run()
@@ -84,6 +84,20 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): check the command's output for details`,
 			wantMsg: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
   check the command's output for details`,
+		},
+		{
+			name: "command error, wrapped",
+			cmdFn: func() error {
+				cmd := commandFactory.Create("bash", []string{"../command/testdata/exit_with_message.sh"}, nil)
+				if err := cmd.Run(); err != nil {
+					return fmt.Errorf("wrapped: %w", err)
+				}
+				return nil
+			},
+			wantErr: `wrapped: command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): check the command's output for details`,
+			wantMsg: `wrapped:
+  command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
+    check the command's output for details`,
 		},
 		{
 			name: "command with error finder",

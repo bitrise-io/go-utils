@@ -16,8 +16,7 @@ func FormattedError(err error) string {
 		i++
 
 		// Use the user-friendly error message, ignore the original exec.ExitError.
-		var commandExitStatusError *command.ExitStatusError
-		if errors.As(err, &commandExitStatusError) {
+		if commandExitStatusError, ok := err.(*command.ExitStatusError); ok {
 			err = commandExitStatusError.Reason()
 		}
 

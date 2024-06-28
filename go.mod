@@ -4,10 +4,10 @@ go 1.17
 
 require (
 	github.com/gofrs/uuid v4.3.1+incompatible
-	github.com/hashicorp/go-retryablehttp v0.7.1
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/sys v0.2.0
+	golang.org/x/sys v0.20.0
 )
 
 require (

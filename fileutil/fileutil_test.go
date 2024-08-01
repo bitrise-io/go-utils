@@ -5,9 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWrite(t *testing.T) {

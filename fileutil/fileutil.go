@@ -17,7 +17,7 @@ type FileManager interface {
 	RemoveAll(path string) error
 	Write(path string, value string, perm os.FileMode) error
 	WriteBytes(path string, value []byte) error
-	FileSizeInBytes(pth string) (float64, error)
+	FileSizeInBytes(pth string) (int64, error)
 }
 
 type fileManager struct {
@@ -92,14 +92,14 @@ func (f fileManager) WriteBytes(path string, value []byte) error {
 }
 
 // FileSizeInBytes checks if the provided path exists and return with the file size (bytes) using os.Lstat.
-func (fileManager) FileSizeInBytes(pth string) (float64, error) {
+func (fileManager) FileSizeInBytes(pth string) (int64, error) {
 	if pth == "" {
 		return 0, errors.New("No path provided")
 	}
-	fileInf, err := os.Lstat(pth)
+	fileInf, err := os.Stat(pth)
 	if err != nil {
 		return 0, err
 	}
 
-	return float64(fileInf.Size()), nil
+	return fileInf.Size(), nil
 }

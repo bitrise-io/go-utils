@@ -67,14 +67,14 @@ func TestFileSizeInBytes(t *testing.T) {
 
 			fileSize, err := manager.FileSizeInBytes(tmpFilePath)
 			require.NoError(t, err)
-			require.Equal(t, float64(len([]byte(content))), fileSize)
+			require.Equal(t, int64(len([]byte(content))), fileSize)
 		}
 	})
 
 	t.Run("Failure when non-existing path", func(t *testing.T) {
 		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist-2", "FileSizeInBytes-error.txt")
 		_, err := manager.FileSizeInBytes(tmpFilePath)
-		require.EqualError(t, err, "lstat "+tmpFilePath+": no such file or directory")
+		require.EqualError(t, err, "stat "+tmpFilePath+": no such file or directory")
 	})
 
 	t.Run("Failure when path is empty string", func(t *testing.T) {

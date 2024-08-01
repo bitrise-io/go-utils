@@ -91,6 +91,7 @@ func (f fileManager) WriteBytes(path string, value []byte) error {
 	return os.WriteFile(path, value, 0600)
 }
 
+// FileSizeInBytes checks if the provided path exists and return with the file size (bytes) using os.Lstat.
 func (fileManager) FileSizeInBytes(pth string) (float64, error) {
 	if pth == "" {
 		return 0, errors.New("No path provided")

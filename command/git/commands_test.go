@@ -53,6 +53,15 @@ func TestGitCommands(t *testing.T) {
 			command: (&Git{}).CloneTagOrBranch("https://github.com/bitrise-io/go-utils.git", "v1", "--depth=1"),
 			want:    `git "clone" "--recursive" "--branch" "v1" "--depth=1" "https://github.com/bitrise-io/go-utils.git" "."`,
 		},
+		// Checkout
+		{
+			command: (&Git{}).Checkout("main"),
+			want:   `git "checkout" "main"`,
+		},
+		{
+			command: (&Git{}).Checkout("-B", "origin/main"),
+			want:   `git "checkout" "-B" "origin/main"`,
+		},
 	}
 
 	for _, testCase := range testCases {

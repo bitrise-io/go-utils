@@ -48,9 +48,10 @@ func (g *Git) Fetch(opts ...string) *command.Model {
 }
 
 // Checkout switches branches or restore working tree files.
-// Arg can be a commit hash, a branch or a tag.
-func (g *Git) Checkout(arg string) *command.Model {
-	return g.command("checkout", arg)
+func (g *Git) Checkout(args ...string) *command.Model {
+	a := []string{"checkout"}
+	a = append(a, args...)
+	return g.command(a...)
 }
 
 // Merge joins two or more development histories together.

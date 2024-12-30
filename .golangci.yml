@@ -1,0 +1,27 @@
+issues:
+  # Last commit on v1 branch before switching from go-lint to golangci-lint
+  new-from-rev: a262e052c5940739f52ba764a39bb46ad8275b4e
+
+  # https://github.com/golangci/golangci-lint/issues/2439
+  exclude-use-default: false
+  exclude-dirs:
+  - .*/mocks
+
+linters:
+  enable:
+  - errcheck
+  - gosimple
+  - govet
+  - ineffassign
+  - staticcheck
+  - typecheck
+  - unused
+  - revive
+
+linters-settings:
+  revive:
+    severity: error
+    rules:
+    - name: exported
+      arguments:
+      - checkPrivateReceivers

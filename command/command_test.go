@@ -10,6 +10,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunErrors(t *testing.T) {
@@ -150,14 +151,16 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "command without error finder",
+			name: "command without error finder (falling back to exec.ExitError error output)",
 			cmd: func() command {
 				c := exec.Command("bash", "testdata/exit_with_message.sh")
 				return command{
 					cmd: c,
 				}
 			}(),
-			wantErr: "command failed with exit status 1 (bash \"testdata/exit_with_message.sh\"): check the command's output for details",
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: third error
+Error: fourth error
+`,
 		},
 		{
 			name: "command with error finder",
@@ -189,6 +192,7 @@ Error: second error`,
 			if err != nil {
 				gotErrMsg = err.Error()
 			}
+			require.Equal(t, tt.wantErr, gotErrMsg)
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return

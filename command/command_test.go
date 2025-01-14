@@ -10,7 +10,6 @@ import (
 
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRunErrors(t *testing.T) {
@@ -192,7 +191,6 @@ Error: second error`,
 			if err != nil {
 				gotErrMsg = err.Error()
 			}
-			require.Equal(t, tt.wantErr, gotErrMsg)
 			if gotErrMsg != tt.wantErr {
 				t.Errorf("command.Run() error = %v, wantErr %v", gotErrMsg, tt.wantErr)
 				return

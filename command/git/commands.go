@@ -30,6 +30,11 @@ func (g *Git) CloneTagOrBranch(repo, tagOrBranch string, opts ...string) *comman
 	return g.command(args...)
 }
 
+// RemoteBranches lists all the remote branches.
+func (g *Git) RemoteBranches() *command.Model {
+	return g.command("ls-remote", "-b")
+}
+
 // RemoteList shows a list of existing remote urls with remote names.
 func (g *Git) RemoteList() *command.Model {
 	return g.command("remote", "-v")

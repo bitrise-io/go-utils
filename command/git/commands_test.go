@@ -56,11 +56,15 @@ func TestGitCommands(t *testing.T) {
 		// Checkout
 		{
 			command: (&Git{}).Checkout("main"),
-			want:   `git "checkout" "main"`,
+			want:    `git "checkout" "main"`,
 		},
 		{
 			command: (&Git{}).Checkout("-B", "origin/main"),
-			want:   `git "checkout" "-B" "origin/main"`,
+			want:    `git "checkout" "-B" "origin/main"`,
+		},
+		{
+			command: (&Git{}).RemoteBranches(),
+			want:    `git "ls-remote" "-b"`,
 		},
 	}
 

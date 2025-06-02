@@ -3,7 +3,6 @@ package analytics
 import (
 	"bytes"
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 

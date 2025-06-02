@@ -2,6 +2,8 @@ package analytics
 
 import (
 	"bytes"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,8 +14,8 @@ const poolSize = 10
 const bufferSize = 100
 const timeout = 30 * time.Second
 const asyncClientTimeout = 30 * time.Second
+const analyticsDisabledEnv = "ANALYTICS_DISABLED"
 
-// Tracker ...
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)
 	Wait()
@@ -27,19 +29,25 @@ type tracker struct {
 	waitTimeout time.Duration
 }
 
-// NewDefaultTracker ...
+type noopTracker struct{}
+
+func (t noopTracker) Enqueue(eventName string, properties ...Properties) {}
+
+func (t noopTracker) Wait() {}
+
 func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
+	if disabled, err := strconv.ParseBool(os.Getenv(analyticsDisabledEnv)); err == nil && disabled {
+		return noopTracker{}
+	}
 	return NewTracker(NewDefaultClient(logger, asyncClientTimeout), timeout, properties...)
 }
 
-// NewTracker ...
 func NewTracker(client Client, waitTimeout time.Duration, properties ...Properties) Tracker {
 	t := tracker{client: client, jobs: make(chan *bytes.Buffer, bufferSize), waitGroup: &sync.WaitGroup{}, properties: properties, waitTimeout: waitTimeout}
 	t.init(poolSize)
 	return &t
 }
 
-// Enqueue ...
 func (t tracker) Enqueue(eventName string, properties ...Properties) {
 	var b bytes.Buffer
 	newEvent(eventName, append(t.properties, properties...)).toJSON(&b)
@@ -47,7 +55,6 @@ func (t tracker) Enqueue(eventName string, properties ...Properties) {
 	t.jobs <- &b
 }
 
-// Wait ...
 func (t tracker) Wait() {
 	close(t.jobs)
 	c := make(chan struct{})

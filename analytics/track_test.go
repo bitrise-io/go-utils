@@ -3,6 +3,7 @@ package analytics
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -126,5 +127,15 @@ func Test_tracker_WaitTimesOutOnBlockingClient(t *testing.T) {
 	case <-timeout:
 		t.Fatal("Test didn't finish in time")
 	case <-done:
+	}
+}
+
+func Test_NewDefaultTracker_Disabled(t *testing.T) {
+	t.Setenv(analyticsDisabledEnv, "true")
+
+	tracker := NewDefaultTracker(new(mocks.Logger))
+
+	if _, ok := tracker.(noopTracker); !ok {
+		t.Fatalf("expected noopTracker when %s is set", analyticsDisabledEnv)
 	}
 }

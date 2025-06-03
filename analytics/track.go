@@ -40,7 +40,7 @@ func (t noopTracker) Wait() {}
 
 // NewDefaultTracker ...
 func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
-	if disabled, err := strconv.ParseBool(os.Getenv(analyticsDisabledEnv)); err == nil && disabled {
+	if os.Getenv(analyticsDisabledEnv) == "true" {
 		return noopTracker{}
 	}
 	return NewTracker(NewDefaultClient(logger, asyncClientTimeout), timeout, properties...)

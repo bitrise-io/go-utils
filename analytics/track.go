@@ -2,10 +2,10 @@ package analytics
 
 import (
 	"bytes"
-	"os"
 	"sync"
 	"time"
 
+	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 
@@ -38,8 +38,8 @@ func (t noopTracker) Enqueue(eventName string, properties ...Properties) {}
 func (t noopTracker) Wait() {}
 
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
-	if os.Getenv(analyticsDisabledEnv) == "true" {
+func NewDefaultTracker(logger log.Logger, envRepo env.Repository, properties ...Properties) Tracker {
+	if envRepo.Get(analyticsDisabledEnv) == "true" {
 		return noopTracker{}
 	}
 	return NewTracker(NewDefaultClient(logger, asyncClientTimeout), timeout, properties...)

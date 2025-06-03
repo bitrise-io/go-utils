@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/mocks"
 
 	"github.com/stretchr/testify/mock"
@@ -132,7 +133,7 @@ func Test_tracker_WaitTimesOutOnBlockingClient(t *testing.T) {
 func Test_NewDefaultTracker_Disabled(t *testing.T) {
 	t.Setenv(analyticsDisabledEnv, "true")
 
-	tracker := NewDefaultTracker(new(mocks.Logger))
+	tracker := NewDefaultTracker(new(mocks.Logger), env.NewRepository())
 
 	if _, ok := tracker.(noopTracker); !ok {
 		t.Fatalf("expected noopTracker when %s is set", analyticsDisabledEnv)

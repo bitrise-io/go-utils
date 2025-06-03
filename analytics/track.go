@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 
@@ -12,6 +13,7 @@ const poolSize = 10
 const bufferSize = 100
 const timeout = 30 * time.Second
 const asyncClientTimeout = 30 * time.Second
+const analyticsDisabledEnv = "ANALYTICS_DISABLED"
 
 // Tracker ...
 type Tracker interface {
@@ -27,8 +29,19 @@ type tracker struct {
 	waitTimeout time.Duration
 }
 
+type noopTracker struct{}
+
+// Enqueue ...
+func (t noopTracker) Enqueue(eventName string, properties ...Properties) {}
+
+// Wait ...
+func (t noopTracker) Wait() {}
+
 // NewDefaultTracker ...
-func NewDefaultTracker(logger log.Logger, properties ...Properties) Tracker {
+func NewDefaultTracker(logger log.Logger, envRepo env.Repository, properties ...Properties) Tracker {
+	if envRepo.Get(analyticsDisabledEnv) == "true" {
+		return noopTracker{}
+	}
 	return NewTracker(NewDefaultClient(logger, asyncClientTimeout), timeout, properties...)
 }
 

@@ -3,7 +3,6 @@ package analytics
 import (
 	"bytes"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 

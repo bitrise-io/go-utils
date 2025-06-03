@@ -19,6 +19,7 @@ const analyticsDisabledEnv = "ANALYTICS_DISABLED"
 type Tracker interface {
 	Enqueue(eventName string, properties ...Properties)
 	Wait()
+	IsTracking() bool
 }
 
 type tracker struct {
@@ -36,6 +37,11 @@ func (t noopTracker) Enqueue(eventName string, properties ...Properties) {}
 
 // Wait ...
 func (t noopTracker) Wait() {}
+
+// IsTracking ...
+func (t noopTracker) IsTracking() bool {
+	return false
+}
 
 // NewDefaultTracker ...
 func NewDefaultTracker(logger log.Logger, envRepo env.Repository, properties ...Properties) Tracker {
@@ -72,6 +78,11 @@ func (t tracker) Wait() {
 	case <-c:
 	case <-time.After(t.waitTimeout):
 	}
+}
+
+// IsTracking ...
+func (t tracker) IsTracking() bool {
+	return true
 }
 
 func (t tracker) init(size int) {

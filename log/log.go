@@ -27,6 +27,7 @@ type Logger interface {
 
 const defaultTimeStampLayout = "15:04:05"
 
+// LoggerOptions ...
 type LoggerOptions func(*logger)
 
 type logger struct {

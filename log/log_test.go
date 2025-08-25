@@ -17,6 +17,28 @@ func TestSetOutWriter(t *testing.T) {
 	require.Equal(t, "test log\n", b.String())
 }
 
+func TestLogger_Options(t *testing.T) {
+	t.Run("With debug log enabled", func(t *testing.T) {
+		var b bytes.Buffer
+		logger := NewLogger(WithDebugLog(true), WithOutput(&b))
+		logger.Debugf("test %s", "log")
+		require.Equal(t, "\x1b[35;1mtest log\x1b[0m\n", b.String())
+	})
+	t.Run("With debug log disabled", func(t *testing.T) {
+		var b bytes.Buffer
+		logger := NewLogger(WithDebugLog(false), WithOutput(&b))
+		logger.Debugf("test %s", "log")
+		require.Equal(t, "", b.String())
+	})
+	t.Run("With timestamp layout", func(t *testing.T) {
+		var b bytes.Buffer
+		logger := NewLogger(WithTimestampLayout("15-04-05"), WithOutput(&b))
+		logger.TPrintf("test %s", "log")
+		re := regexp.MustCompile(`\[.+-.+-.+] test log`)
+		require.True(t, re.MatchString(b.String()), b.String())
+	})
+}
+
 func TestSetEnableDebugLog(t *testing.T) {
 	t.Log("enable debug log")
 	{

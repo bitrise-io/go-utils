@@ -27,6 +27,9 @@ type Logger interface {
 
 const defaultTimeStampLayout = "15:04:05"
 
+// LoggerOptions ...
+type LoggerOptions func(*logger)
+
 type logger struct {
 	enableDebugLog  bool
 	timestampLayout string
@@ -34,8 +37,38 @@ type logger struct {
 }
 
 // NewLogger ...
-func NewLogger() Logger {
-	return &logger{enableDebugLog: false, timestampLayout: defaultTimeStampLayout, stdout: os.Stdout}
+func NewLogger(options ...LoggerOptions) Logger {
+	l := &logger{
+		enableDebugLog:  false,
+		timestampLayout: defaultTimeStampLayout,
+		stdout:          os.Stdout,
+	}
+
+	for _, option := range options {
+		option(l)
+	}
+	return l
+}
+
+// WithDebugLog ...
+func WithDebugLog(enable bool) LoggerOptions {
+	return func(l *logger) {
+		l.enableDebugLog = enable
+	}
+}
+
+// WithTimestampLayout ...
+func WithTimestampLayout(layout string) LoggerOptions {
+	return func(l *logger) {
+		l.timestampLayout = layout
+	}
+}
+
+// WithOutput ...
+func WithOutput(w io.Writer) LoggerOptions {
+	return func(l *logger) {
+		l.stdout = w
+	}
 }
 
 // EnableDebugLog ...

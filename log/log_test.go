@@ -37,6 +37,13 @@ func TestLogger_Options(t *testing.T) {
 		re := regexp.MustCompile(`\[.+-.+-.+] test log`)
 		require.True(t, re.MatchString(b.String()), b.String())
 	})
+	t.Run("With prefix", func(t *testing.T) {
+		var b bytes.Buffer
+		logger := NewLogger(WithOutput(&b), WithTimestampLayout("15-04-05"), WithPrefix("PREFIX"))
+		logger.TPrintf("test %s", "log")
+		re := regexp.MustCompile(`PREFIX\[.+-.+-.+] test log`)
+		require.True(t, re.MatchString(b.String()), b.String())
+	})
 }
 
 func TestSetEnableDebugLog(t *testing.T) {

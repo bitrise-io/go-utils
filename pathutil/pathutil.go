@@ -75,6 +75,7 @@ func (pathChecker) genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 // PathModifier ...
 type PathModifier interface {
 	AbsPath(pth string) (string, error)
+	EscapeGlobPath(path string) string
 }
 
 type pathModifier struct{}

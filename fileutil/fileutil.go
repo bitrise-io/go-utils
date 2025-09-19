@@ -29,19 +29,6 @@ func NewFileManager() FileManager {
 	return fileManager{}
 }
 
-// ReadDirEntryNames reads the named directory using os.ReadDir and returns the dir entries' names.
-func (fileManager) ReadDirEntryNames(path string) ([]string, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-	var names []string
-	for _, entry := range entries {
-		names = append(names, entry.Name())
-	}
-	return names, nil
-}
-
 // Open ...
 func (fileManager) Open(path string) (*os.File, error) {
 	return os.Open(path)
@@ -59,6 +46,19 @@ func (fileManager) OpenReaderIfExists(path string) (io.Reader, error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+// ReadDirEntryNames reads the named directory using os.ReadDir and returns the dir entries' names.
+func (fileManager) ReadDirEntryNames(path string) ([]string, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	return names, nil
 }
 
 // Remove ...
@@ -82,11 +82,6 @@ func (f fileManager) Write(path string, value string, mode os.FileMode) error {
 	return os.Chmod(path, mode)
 }
 
-func (fileManager) ensureSavePath(savePath string) error {
-	dirPath := filepath.Dir(savePath)
-	return os.MkdirAll(dirPath, 0700)
-}
-
 // WriteBytes ...
 func (f fileManager) WriteBytes(path string, value []byte) error {
 	return os.WriteFile(path, value, 0600)
@@ -107,4 +102,9 @@ func (fileManager) FileSizeInBytes(pth string) (int64, error) {
 
 func (fileManager) ReadFile(name string) ([]byte, error) {
 	return os.ReadFile(name)
+}
+
+func (fileManager) ensureSavePath(savePath string) error {
+	dirPath := filepath.Dir(savePath)
+	return os.MkdirAll(dirPath, 0700)
 }

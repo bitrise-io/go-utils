@@ -18,6 +18,7 @@ type FileManager interface {
 	Write(path string, value string, perm os.FileMode) error
 	WriteBytes(path string, value []byte) error
 	FileSizeInBytes(pth string) (int64, error)
+	ReadFile(name string) ([]byte, error)
 }
 
 type fileManager struct {
@@ -102,4 +103,8 @@ func (fileManager) FileSizeInBytes(pth string) (int64, error) {
 	}
 
 	return fileInf.Size(), nil
+}
+
+func (fileManager) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }

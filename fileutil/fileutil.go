@@ -12,13 +12,13 @@ import (
 type FileManager interface {
 	Open(path string) (*os.File, error)
 	OpenReaderIfExists(path string) (io.Reader, error)
+	ReadFile(name string) ([]byte, error)
 	ReadDirEntryNames(path string) ([]string, error)
 	Remove(path string) error
 	RemoveAll(path string) error
 	Write(path string, value string, perm os.FileMode) error
 	WriteBytes(path string, value []byte) error
 	FileSizeInBytes(pth string) (int64, error)
-	ReadFile(name string) ([]byte, error)
 }
 
 type fileManager struct {
@@ -46,6 +46,11 @@ func (fileManager) OpenReaderIfExists(path string) (io.Reader, error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+// ReadFile ...
+func (fileManager) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }
 
 // ReadDirEntryNames reads the named directory using os.ReadDir and returns the dir entries' names.
@@ -98,10 +103,6 @@ func (fileManager) FileSizeInBytes(pth string) (int64, error) {
 	}
 
 	return fileInf.Size(), nil
-}
-
-func (fileManager) ReadFile(name string) ([]byte, error) {
-	return os.ReadFile(name)
 }
 
 func (fileManager) ensureSavePath(savePath string) error {

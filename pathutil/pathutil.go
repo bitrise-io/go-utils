@@ -75,6 +75,7 @@ func (pathChecker) genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 // PathModifier ...
 type PathModifier interface {
 	AbsPath(pth string) (string, error)
+	EscapeGlobPath(path string) string
 }
 
 type pathModifier struct{}
@@ -96,6 +97,18 @@ func (p pathModifier) AbsPath(pth string) (string, error) {
 	}
 
 	return filepath.Abs(os.ExpandEnv(pth))
+}
+
+// EscapeGlobPath escapes a partial path, determined at runtime, used as a parameter for filepath.Glob
+func (pathModifier) EscapeGlobPath(path string) string {
+	var escaped string
+	for _, ch := range path {
+		if ch == '[' || ch == ']' || ch == '-' || ch == '*' || ch == '?' || ch == '\\' {
+			escaped += "\\"
+		}
+		escaped += string(ch)
+	}
+	return escaped
 }
 
 func (pathModifier) expandTilde(pth string) (string, error) {

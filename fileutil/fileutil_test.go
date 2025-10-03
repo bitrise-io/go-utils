@@ -1,7 +1,6 @@
 package fileutil
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -21,7 +20,7 @@ func TestWrite(t *testing.T) {
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteStringToFile-success.txt")
 		require.NoError(t, manager.Write(tmpFilePath, content, 0600))
 
-		fileContent, err := os.ReadFile(tmpFilePath)
+		fileContent, err := manager.ReadFile(tmpFilePath)
 		require.NoError(t, err)
 		require.Equal(t, content, string(fileContent))
 	}
@@ -31,7 +30,7 @@ func TestWrite(t *testing.T) {
 		tmpFilePath := filepath.Join(tmpDirPath, "dir-does-not-exist", "WriteStringToFile-success.txt")
 		require.NoError(t, manager.Write(tmpFilePath, content, 0600))
 
-		fileContent, err := os.ReadFile(tmpFilePath)
+		fileContent, err := manager.ReadFile(tmpFilePath)
 		require.NoError(t, err)
 		require.Equal(t, content, string(fileContent))
 	}
@@ -41,7 +40,7 @@ func TestWrite(t *testing.T) {
 		tmpFilePath := filepath.Join(tmpDirPath, "WriteBytesToFile-success.txt")
 		require.NoError(t, manager.WriteBytes(tmpFilePath, []byte("test string")))
 
-		fileContent, err := os.ReadFile(tmpFilePath)
+		fileContent, err := manager.ReadFile(tmpFilePath)
 		require.NoError(t, err)
 		require.Equal(t, "test string", string(fileContent))
 	}

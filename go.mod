@@ -3,6 +3,7 @@ module github.com/bitrise-io/go-utils/v2
 go 1.17
 
 require (
+	github.com/bitrise-io/go-utils v1.0.15
 	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/mitchellh/mapstructure v1.5.0

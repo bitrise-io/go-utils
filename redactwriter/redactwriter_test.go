@@ -558,3 +558,82 @@ line 2`)
 		require.Equal(t, []byte(nil), chunk)
 	}
 }
+
+func TestNew_EmptyOrWhitespaceSecrets(t *testing.T) {
+	t.Log("empty string secret triggers warning")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return()
+
+		New([]string{""}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+
+	t.Log("single space secret triggers warning")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return()
+
+		New([]string{" "}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+
+	t.Log("multiple spaces secret triggers warning")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return()
+
+		New([]string{"   "}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+
+	t.Log("tab and newline characters secret triggers warning")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return()
+
+		New([]string{"\t\n  "}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+
+	t.Log("multiple empty/whitespace secrets trigger multiple warnings")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return().Times(3)
+
+		New([]string{"", " ", "  "}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+
+	t.Log("normal secret does not trigger warning")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		// No Warnf expectation set - test will fail if Warnf is called
+
+		New([]string{"valid_secret"}, &buff, mockLogger)
+
+		mockLogger.AssertNotCalled(t, "Warnf")
+	}
+
+	t.Log("mixed valid and invalid secrets trigger warning only for invalid ones")
+	{
+		var buff bytes.Buffer
+		mockLogger := new(mocks.Logger)
+		mockLogger.On("Warnf", "Secret value is empty or contains only whitespaces, resulting in unintended redaction!").Return().Times(2)
+
+		New([]string{"valid_secret", "", "another_valid", "  "}, &buff, mockLogger)
+
+		mockLogger.AssertExpectations(t)
+	}
+}

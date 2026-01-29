@@ -44,17 +44,18 @@ type FilterFuncV2 func(string, fs.DirEntry) (bool, error)
 type AllowFilterFuncV2 func(string, fs.DirEntry) (bool, error)
 type DenyFilterFuncV2 func(string, fs.DirEntry) (bool, error)
 
-// NOTE: NEW Completely skip the directory if matched
-func SkipDirectoryFilterV2(dir string) FilterFuncV2 {
+// NOTE: NEW Completely skip the directory if matched, including sub-items
+func SkipDirectoryNameFilterV2(dirName string) FilterFuncV2 {
 	return func(pth string, d fs.DirEntry) (bool, error) {
 		if !d.IsDir() {
 			return true, nil
 		}
 
-		dirPath := filepath.Dir(pth)
-		isPathMatch := strings.EqualFold(dir, dirPath)
-		if isPathMatch {
-			return false, fs.SkipDir
+		components := filepath.SplitList(pth)
+		for _, c := range components {
+			if strings.EqualFold(c, dirName) {
+				return false, fs.SkipDir
+			}
 		}
 
 		return true, nil

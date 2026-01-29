@@ -1,6 +1,6 @@
 module github.com/bitrise-io/go-utils/v2
 
-go 1.17
+go 1.21
 
 require (
 	github.com/gofrs/uuid/v5 v5.2.0

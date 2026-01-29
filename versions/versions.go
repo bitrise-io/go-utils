@@ -9,7 +9,7 @@ import (
 // CompareVersions ...
 // semantic version (X.Y.Z)
 // 1 if version 2 is greater then version 1, -1 if not
-// -2 & error if can't compare (if not supported component found)
+// -2 & error if can't compare (if not supported component found).
 func CompareVersions(version1, version2 string) (int, error) {
 	version1Slice := strings.Split(version1, ".")
 	version2Slice := strings.Split(version2, ".")
@@ -17,7 +17,7 @@ func CompareVersions(version1, version2 string) (int, error) {
 	lenDiff := len(version1Slice) - len(version2Slice)
 	if lenDiff != 0 {
 		makeDefVerComps := func(compLen int) []string {
-			comps := make([]string, compLen, compLen)
+			comps := make([]string, compLen)
 			for idx := len(comps) - 1; idx >= 0; idx-- {
 				comps[idx] = "0"
 			}
@@ -61,8 +61,9 @@ func CompareVersions(version1, version2 string) (int, error) {
 }
 
 // IsVersionBetween ...
-//  returns true if it's between the lower and upper limit
-//  or in case it matches the lower or the upper limit
+//
+//	returns true if it's between the lower and upper limit
+//	or in case it matches the lower or the upper limit.
 func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
 	r1, err := CompareVersions(verBase, verLower)
 	if err != nil {
@@ -84,7 +85,8 @@ func IsVersionBetween(verBase, verLower, verUpper string) (bool, error) {
 }
 
 // IsVersionGreaterOrEqual ...
-//  returns true if verBase is greater or equal to verLower
+//
+//	returns true if verBase is greater or equal to verLower.
 func IsVersionGreaterOrEqual(verBase, verLower string) (bool, error) {
 	r1, err := CompareVersions(verBase, verLower)
 	if err != nil {

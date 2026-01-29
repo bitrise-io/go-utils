@@ -11,6 +11,7 @@ import (
 // PathProvider ...
 type PathProvider interface {
 	CreateTempDir(prefix string) (string, error)
+	Glob(pattern string) (matches []string, err error)
 }
 
 type pathProvider struct{}
@@ -80,6 +81,7 @@ func (pathChecker) genericIsPathExists(pth string) (os.FileInfo, bool, error) {
 // PathModifier ...
 type PathModifier interface {
 	AbsPath(pth string) (string, error)
+	EscapeGlobPath(path string) string
 }
 
 type pathModifier struct{}
@@ -104,6 +106,7 @@ func (p pathModifier) AbsPath(pth string) (string, error) {
 }
 
 // EscapeGlobPath escapes glob special characters in the provided path string.
+// Can be used to construct glob patterns that include literal paths.
 func (p pathModifier) EscapeGlobPath(path string) string {
 	var escaped string
 	for _, ch := range path {

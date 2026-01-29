@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-func Examplev2() {
+func Example_FilterPathsV2() {
 	// root := "/usr/local/go/bin"
 	// fileSystem := os.DirFS(root)
 
@@ -22,7 +22,7 @@ func Examplev2() {
 
 	pths, err := pathutil.FilterPathsV2(
 		fsys,
-		pathutil.ExtensionFilter(".apk", true),
+		pathutil.ExtensionFilterV2(".apk", true),
 	)
 	if err != nil {
 		panic(err)

@@ -30,6 +30,11 @@ func (pathProvider) CreateTempDir(prefix string) (dir string, err error) {
 	return
 }
 
+// Glob wraps filepath.Glob.
+func (pathProvider) Glob(pattern string) (matches []string, err error) {
+	return filepath.Glob(pattern)
+}
+
 // PathChecker ...
 type PathChecker interface {
 	IsPathExists(pth string) (bool, error)
@@ -96,6 +101,18 @@ func (p pathModifier) AbsPath(pth string) (string, error) {
 	}
 
 	return filepath.Abs(os.ExpandEnv(pth))
+}
+
+// EscapeGlobPath escapes glob special characters in the provided path string.
+func (p pathModifier) EscapeGlobPath(path string) string {
+	var escaped string
+	for _, ch := range path {
+		if ch == '[' || ch == ']' || ch == '-' || ch == '*' || ch == '?' || ch == '\\' {
+			escaped += "\\"
+		}
+		escaped += string(ch)
+	}
+	return escaped
 }
 
 func (pathModifier) expandTilde(pth string) (string, error) {

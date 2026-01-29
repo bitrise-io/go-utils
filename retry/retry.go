@@ -103,6 +103,7 @@ func (m *Model) TryWithAbort(action AbortableAction) error {
 // defaultSleeper is the default implementation using time.Sleep.
 type defaultSleeper struct{}
 
+// Sleep pauses the current goroutine for at least the duration d.
 func (s *defaultSleeper) Sleep(d time.Duration) {
 	time.Sleep(d)
 }

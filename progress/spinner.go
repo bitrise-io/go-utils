@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -29,6 +30,7 @@ type Spinner struct {
 	writer  io.Writer
 	sleeper Sleeper
 
+	mu         sync.Mutex
 	active     bool
 	lastOutput string
 	stopChan   chan bool
@@ -67,10 +69,13 @@ func NewDefaultSpinnerWithOutput(message string, output io.Writer) Spinner {
 
 // Start begins the spinner animation in a background goroutine.
 func (s *Spinner) Start() {
+	s.mu.Lock()
 	if s.active {
+		s.mu.Unlock()
 		return
 	}
 	s.active = true
+	s.mu.Unlock()
 
 	go func() {
 		for {
@@ -79,6 +84,7 @@ func (s *Spinner) Start() {
 				case <-s.stopChan:
 					return
 				default:
+					s.mu.Lock()
 					s.erase()
 
 					out := fmt.Sprintf("%s %s", s.message, s.chars[i])
@@ -86,6 +92,7 @@ func (s *Spinner) Start() {
 						fmt.Printf("failed to update progress, error: %s\n", err)
 					}
 					s.lastOutput = out
+					s.mu.Unlock()
 
 					s.sleeper.Sleep(s.delay)
 				}
@@ -96,10 +103,14 @@ func (s *Spinner) Start() {
 
 // Stop terminates the spinner animation and clears the output.
 func (s *Spinner) Stop() {
+	s.mu.Lock()
 	if s.active {
 		s.active = false
 		s.erase()
+		s.mu.Unlock()
 		s.stopChan <- true
+	} else {
+		s.mu.Unlock()
 	}
 }
 

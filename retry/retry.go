@@ -23,9 +23,15 @@ type Model struct {
 	sleeper  Sleeper
 }
 
-// New creates a Model with the specified retry count, wait time, and sleeper.
+// New creates a Model with the specified retry count and wait time.
+// Uses the default time.Sleep implementation for sleeping between retries.
+func New(retry uint, waitTime time.Duration) *Model {
+	return NewWithSleeper(retry, waitTime, nil)
+}
+
+// NewWithSleeper creates a Model with the specified retry count, wait time, and sleeper.
 // If sleeper is nil, the default time.Sleep implementation is used.
-func New(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
+func NewWithSleeper(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
 	if sleeper == nil {
 		sleeper = &defaultSleeper{}
 	}
@@ -38,12 +44,12 @@ func New(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
 
 // Times creates a Model with the specified number of retries.
 func Times(retry uint) *Model {
-	return New(retry, 0, nil)
+	return NewWithSleeper(retry, 0, nil)
 }
 
 // Wait creates a Model with the specified wait time between retries.
 func Wait(waitTime time.Duration) *Model {
-	return New(0, waitTime, nil)
+	return NewWithSleeper(0, waitTime, nil)
 }
 
 // Times sets the number of retries on an existing Model.

@@ -37,13 +37,13 @@ type Spinner struct {
 }
 
 // NewSpinner creates a new Spinner with the given parameters.
-func NewSpinner(message string, chars []string, delay time.Duration, writer io.Writer) Spinner {
+func NewSpinner(message string, chars []string, delay time.Duration, writer io.Writer) *Spinner {
 	return NewSpinnerWithSleeper(message, chars, delay, writer, DefaultSleeper{})
 }
 
 // NewSpinnerWithSleeper creates a new Spinner with a custom Sleeper for testing.
-func NewSpinnerWithSleeper(message string, chars []string, delay time.Duration, writer io.Writer, sleeper Sleeper) Spinner {
-	return Spinner{
+func NewSpinnerWithSleeper(message string, chars []string, delay time.Duration, writer io.Writer, sleeper Sleeper) *Spinner {
+	return &Spinner{
 		message: message,
 		chars:   chars,
 		delay:   delay,
@@ -56,12 +56,12 @@ func NewSpinnerWithSleeper(message string, chars []string, delay time.Duration, 
 }
 
 // NewDefaultSpinner creates a Spinner with default animation characters and timing, writing to stdout.
-func NewDefaultSpinner(message string) Spinner {
+func NewDefaultSpinner(message string) *Spinner {
 	return NewDefaultSpinnerWithOutput(message, os.Stdout)
 }
 
 // NewDefaultSpinnerWithOutput creates a Spinner with default animation characters and timing.
-func NewDefaultSpinnerWithOutput(message string, output io.Writer) Spinner {
+func NewDefaultSpinnerWithOutput(message string, output io.Writer) *Spinner {
 	chars := []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}
 	delay := 100 * time.Millisecond
 	return NewSpinner(message, chars, delay, output)

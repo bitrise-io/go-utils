@@ -11,12 +11,12 @@ import (
 
 // Wrapper wraps an action with progress indication.
 type Wrapper struct {
-	spinner         Spinner
+	spinner         *Spinner
 	interactiveMode bool
 }
 
 // NewWrapper creates a Wrapper with the given spinner and interactive mode setting.
-func NewWrapper(spinner Spinner, interactiveMode bool) Wrapper {
+func NewWrapper(spinner *Spinner, interactiveMode bool) Wrapper {
 	return Wrapper{
 		spinner:         spinner,
 		interactiveMode: interactiveMode,

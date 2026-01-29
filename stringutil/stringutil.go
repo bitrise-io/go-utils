@@ -34,37 +34,6 @@ func MaxFirstCharsWithDots(inStr string, maxCharCount int) string {
 	return genericTrim(inStr, maxCharCount, false, true)
 }
 
-func genericTrim(inStr string, maxCharCount int, trimmAtStart, appendDots bool) string {
-	strLen := len(inStr)
-
-	if maxCharCount >= strLen {
-		return inStr
-	}
-
-	if appendDots && maxCharCount < 4 {
-		return ""
-	}
-
-	var retStr string
-	if trimmAtStart {
-		if appendDots {
-			retStr = inStr[strLen-(maxCharCount-3):]
-			retStr = "..." + retStr
-		} else {
-			retStr = inStr[strLen-maxCharCount:]
-		}
-	} else {
-		if appendDots {
-			retStr = inStr[:maxCharCount-3]
-			retStr = retStr + "..."
-		} else {
-			retStr = inStr[:maxCharCount]
-		}
-	}
-
-	return retStr
-}
-
 // LastNLines returns the last n lines from the input string.
 // It trims leading and trailing newlines before splitting.
 // If the string has fewer than n lines, returns all lines.
@@ -121,4 +90,35 @@ func IndentTextWithMaxLength(text, indent string, maxTextLineCharWidth int, isIn
 	}
 
 	return formattedText
+}
+
+func genericTrim(inStr string, maxCharCount int, trimmAtStart, appendDots bool) string {
+	strLen := len(inStr)
+
+	if maxCharCount >= strLen {
+		return inStr
+	}
+
+	if appendDots && maxCharCount < 4 {
+		return ""
+	}
+
+	var retStr string
+	if trimmAtStart {
+		if appendDots {
+			retStr = inStr[strLen-(maxCharCount-3):]
+			retStr = "..." + retStr
+		} else {
+			retStr = inStr[strLen-maxCharCount:]
+		}
+	} else {
+		if appendDots {
+			retStr = inStr[:maxCharCount-3]
+			retStr = retStr + "..."
+		} else {
+			retStr = inStr[:maxCharCount]
+		}
+	}
+
+	return retStr
 }

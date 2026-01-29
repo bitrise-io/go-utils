@@ -235,3 +235,80 @@ func Test_pathModifier_AbsPath(t *testing.T) {
 		})
 	}
 }
+
+func Test_pathModifier_EscapeGlobPath(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "Empty string",
+			input: "",
+			want:  "",
+		},
+		{
+			name:  "No special characters",
+			input: "/path/to/file.txt",
+			want:  "/path/to/file.txt",
+		},
+		{
+			name:  "Asterisk character",
+			input: "file*.txt",
+			want:  "file\\*.txt",
+		},
+		{
+			name:  "Question mark character",
+			input: "file?.txt",
+			want:  "file\\?.txt",
+		},
+		{
+			name:  "Square brackets",
+			input: "file[123].txt",
+			want:  "file\\[123\\].txt",
+		},
+		{
+			name:  "Dash character",
+			input: "my-file.txt",
+			want:  "my\\-file.txt",
+		},
+		{
+			name:  "Backslash character",
+			input: "path\\to\\file",
+			want:  "path\\\\to\\\\file",
+		},
+		{
+			name:  "Multiple special characters",
+			input: "file*[?]-test.txt",
+			want:  "file\\*\\[\\?\\]\\-test.txt",
+		},
+		{
+			name:  "All special characters",
+			input: "[]*?-\\",
+			want:  "\\[\\]\\*\\?\\-\\\\",
+		},
+		{
+			name:  "Realistic path with brackets",
+			input: "/Users/test/Documents/[Important]/file.txt",
+			want:  "/Users/test/Documents/\\[Important\\]/file.txt",
+		},
+		{
+			name:  "Path with wildcard",
+			input: "/tmp/*.log",
+			want:  "/tmp/\\*.log",
+		},
+		{
+			name:  "Complex path with multiple special chars",
+			input: "/path/with-dash/and[bracket]/*.txt",
+			want:  "/path/with\\-dash/and\\[bracket\\]/\\*.txt",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := pathModifier{}
+			got := p.EscapeGlobPath(tt.input)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+

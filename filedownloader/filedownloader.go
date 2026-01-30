@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"os"
 
 	"github.com/bitrise-io/go-utils/v2/log"
@@ -50,6 +51,7 @@ func NewDownloaderWithClient(client *http.Client, logger log.Logger) Downloader 
 }
 
 // Download fetches a remote file and writes it to the specified destination path.
+// Provided destination should not be an existing file.
 func (d *downloader) Download(ctx context.Context, destination, source string) error {
 	reader, err := d.Get(ctx, source)
 	if err != nil {
@@ -109,8 +111,12 @@ func (d *downloader) Get(ctx context.Context, source string) (io.ReadCloser, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		_ = resp.Body.Close()
-		return nil, fmt.Errorf("download from %s: status code %d", source, resp.StatusCode)
+		err := resp.Body.Close()
+		if err != nil {
+			d.logger.Warnf("Failed to close response body: %s", err)
+		}
+		bodyBytes, _ := httputil.DumpResponse(resp, true)
+		return nil, fmt.Errorf("download from %s: status code %d, response: %s", source, resp.StatusCode, string(bodyBytes))
 	}
 
 	return resp.Body, nil

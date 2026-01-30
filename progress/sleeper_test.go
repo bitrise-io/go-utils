@@ -1,6 +1,7 @@
 package progress
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -9,11 +10,14 @@ import (
 
 // MockSleeper is a mock implementation of Sleeper for testing.
 type MockSleeper struct {
+	mu         sync.Mutex
 	sleepCalls []time.Duration
 }
 
 // Sleep records the duration and doesn't actually sleep.
 func (m *MockSleeper) Sleep(d time.Duration) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.sleepCalls = append(m.sleepCalls, d)
 }
 

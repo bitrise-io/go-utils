@@ -1,61 +1,46 @@
 package progress
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strings"
-
-	"golang.org/x/crypto/ssh/terminal" //nolint:staticcheck // Keep using this for Go 1.21 compatibility
 )
 
 // Wrapper wraps an action with progress indication.
 type Wrapper struct {
-	spinner         *Spinner
-	interactiveMode bool
+	ticker *Ticker
 }
 
-// NewWrapper creates a Wrapper with the given spinner and interactive mode setting.
-func NewWrapper(spinner *Spinner, interactiveMode bool) Wrapper {
+// NewWrapper creates a Wrapper with the given ticker.
+func NewWrapper(ticker *Ticker) Wrapper {
 	return Wrapper{
-		spinner:         spinner,
-		interactiveMode: interactiveMode,
+		ticker: ticker,
 	}
 }
 
-// NewDefaultWrapper creates a Wrapper with default spinner configuration.
+// NewDefaultWrapper creates a Wrapper with default ticker configuration.
 func NewDefaultWrapper(message string) Wrapper {
-	spinner := NewDefaultSpinner(message)
-	interactiveMode := OutputDeviceIsTerminal()
-	return NewWrapper(spinner, interactiveMode)
+	// Add "..." suffix if not present
+	if !strings.HasSuffix(message, ".") {
+		message = message + "..."
+	}
+	ticker := NewDefaultTicker(message, os.Stdout)
+	return NewWrapper(ticker)
 }
 
-// NewDefaultWrapperWithOutput creates a Wrapper with default spinner configuration.
+// NewDefaultWrapperWithOutput creates a Wrapper with default ticker configuration using custom output.
 func NewDefaultWrapperWithOutput(message string, output io.Writer) Wrapper {
-	spinner := NewDefaultSpinnerWithOutput(message, output)
-	interactiveMode := OutputDeviceIsTerminal()
-	return NewWrapper(spinner, interactiveMode)
+	// Add "..." suffix if not present
+	if !strings.HasSuffix(message, ".") {
+		message = message + "..."
+	}
+	ticker := NewDefaultTicker(message, output)
+	return NewWrapper(ticker)
 }
 
 // WrapAction executes the given action with progress indication.
 func (w Wrapper) WrapAction(action func()) {
-	if w.interactiveMode {
-		w.spinner.Start()
-		action()
-		w.spinner.Stop()
-	} else {
-		message := w.spinner.message
-		if !strings.HasSuffix(message, ".") {
-			message = message + "..."
-		}
-		if _, err := fmt.Fprintln(w.spinner.writer, message); err != nil {
-			fmt.Printf("failed to print message: %s, error: %s", message, err)
-		}
-		action()
-	}
-}
-
-// OutputDeviceIsTerminal returns true if stdout is connected to a terminal.
-func OutputDeviceIsTerminal() bool {
-	return terminal.IsTerminal(int(os.Stdout.Fd()))
+	w.ticker.Start()
+	action()
+	w.ticker.Stop()
 }

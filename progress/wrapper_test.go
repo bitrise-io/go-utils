@@ -4,38 +4,34 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewWrapper(t *testing.T) {
 	var buf bytes.Buffer
-	spinner := NewDefaultSpinnerWithOutput("Test", &buf)
+	ticker := NewDefaultTicker("Test", &buf)
+	wrapper := NewWrapper(ticker)
 
-	tests := []struct {
-		name            string
-		interactiveMode bool
-	}{
-		{"interactive mode", true},
-		{"non-interactive mode", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wrapper := NewWrapper(spinner, tt.interactiveMode)
-			assert.Equal(t, tt.interactiveMode, wrapper.interactiveMode)
-			assert.Equal(t, spinner.message, wrapper.spinner.message)
-		})
-	}
+	assert.Equal(t, ticker, wrapper.ticker)
 }
 
 func TestNewDefaultWrapper(t *testing.T) {
 	message := "Loading"
 	wrapper := NewDefaultWrapper(message)
 
-	assert.Equal(t, message, wrapper.spinner.message)
-	assert.Len(t, wrapper.spinner.chars, 8)
-	// interactiveMode will be based on actual terminal status
+	// Message should have "..." appended
+	assert.Equal(t, "Loading...", wrapper.ticker.message)
+	assert.Equal(t, 5*time.Second, wrapper.ticker.interval)
+}
+
+func TestNewDefaultWrapper_MessageWithPeriod(t *testing.T) {
+	message := "Loading."
+	wrapper := NewDefaultWrapper(message)
+
+	// Should not add ellipsis if message already ends with period
+	assert.Equal(t, "Loading.", wrapper.ticker.message)
 }
 
 func TestNewDefaultWrapperWithOutput(t *testing.T) {
@@ -43,74 +39,59 @@ func TestNewDefaultWrapperWithOutput(t *testing.T) {
 	message := "Processing"
 	wrapper := NewDefaultWrapperWithOutput(message, &buf)
 
-	assert.Equal(t, message, wrapper.spinner.message)
-	assert.Equal(t, &buf, wrapper.spinner.writer)
-	assert.Len(t, wrapper.spinner.chars, 8)
+	assert.Equal(t, "Processing...", wrapper.ticker.message)
+	assert.Equal(t, &buf, wrapper.ticker.writer)
 }
 
-func TestWrapper_WrapAction_Interactive(t *testing.T) {
+func TestWrapper_WrapAction(t *testing.T) {
 	var buf bytes.Buffer
 	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Test", []string{"a", "b"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, true)
+	ticker := NewTickerWithSleeper("Working", 50*time.Millisecond, &buf, mockSleeper)
+	wrapper := NewWrapper(ticker)
 
 	actionCalled := false
 	wrapper.WrapAction(func() {
-		// Give spinner time to animate
-		for len(mockSleeper.sleepCalls) < 3 {
-			mockSleeper.Sleep(1)
+		// Simulate some work
+		for i := 0; i < 3; i++ {
+			mockSleeper.Sleep(50 * time.Millisecond)
 		}
 		actionCalled = true
 	})
 
 	assert.True(t, actionCalled, "action should have been called")
-	assert.False(t, wrapper.spinner.active, "spinner should be stopped after action completes")
-	
-	// In interactive mode, sleeper should have been called
-	assert.NotEmpty(t, mockSleeper.sleepCalls, "spinner should have animated in interactive mode")
+	assert.False(t, wrapper.ticker.active, "ticker should be stopped after action completes")
+
+	output := buf.String()
+	assert.True(t, strings.HasPrefix(output, "Working"), "should start with message")
+	assert.True(t, strings.HasSuffix(output, "\n"), "should end with newline")
 }
 
-func TestWrapper_WrapAction_NonInteractive(t *testing.T) {
+func TestWrapper_WrapAction_WithPeriodicDots(t *testing.T) {
 	var buf bytes.Buffer
 	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Loading", []string{"a"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, false)
+	ticker := NewTickerWithSleeper("Progress...", 25*time.Millisecond, &buf, mockSleeper)
+	wrapper := NewWrapper(ticker)
 
-	actionCalled := false
 	wrapper.WrapAction(func() {
-		actionCalled = true
+		// Simulate work with periodic sleeps
+		for i := 0; i < 5; i++ {
+			mockSleeper.Sleep(25 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond) // Give goroutine time to print
+		}
 	})
 
-	assert.True(t, actionCalled, "action should have been called")
-	assert.False(t, wrapper.spinner.active, "spinner should not be active in non-interactive mode")
-
-	// In non-interactive mode, sleeper should NOT have been called
-	assert.Empty(t, mockSleeper.sleepCalls, "spinner should not animate in non-interactive mode")
-
 	output := buf.String()
-	assert.Contains(t, output, "Loading...", "should print message with ellipsis")
-	assert.True(t, strings.HasSuffix(strings.TrimSpace(output), "..."), "message should end with ...")
+	assert.True(t, strings.HasPrefix(output, "Progress..."), "should start with message")
+	dotCount := strings.Count(output, ".")
+	// Should have dots from message (3) plus periodic dots
+	assert.Greater(t, dotCount, 3, "should have periodic dots in addition to message")
+	assert.True(t, strings.HasSuffix(output, "\n"), "should end with newline")
 }
 
-func TestWrapper_WrapAction_NonInteractive_MessageWithPeriod(t *testing.T) {
+func TestWrapper_WrapAction_ActionPanics(t *testing.T) {
 	var buf bytes.Buffer
-	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Loading.", []string{"a"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, false)
-
-	wrapper.WrapAction(func() {})
-
-	output := buf.String()
-	// Should not add extra dots if message already ends with period
-	assert.Contains(t, output, "Loading.", "message with period should be preserved")
-	assert.NotContains(t, output, "Loading....", "should not add ellipsis to message ending with period")
-}
-
-func TestWrapper_WrapAction_ActionPanics_Interactive(t *testing.T) {
-	var buf bytes.Buffer
-	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Test", []string{"a"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, true)
+	ticker := NewDefaultTicker("Test", &buf)
+	wrapper := NewWrapper(ticker)
 
 	assert.Panics(t, func() {
 		wrapper.WrapAction(func() {
@@ -119,67 +100,37 @@ func TestWrapper_WrapAction_ActionPanics_Interactive(t *testing.T) {
 	}, "should propagate panic from action")
 }
 
-func TestWrapper_WrapAction_ActionPanics_NonInteractive(t *testing.T) {
+func TestWrapper_WrapAction_EmptyMessage(t *testing.T) {
 	var buf bytes.Buffer
-	spinner := NewDefaultSpinnerWithOutput("Test", &buf)
-	wrapper := NewWrapper(spinner, false)
+	wrapper := NewDefaultWrapperWithOutput("", &buf)
 
-	assert.Panics(t, func() {
-		wrapper.WrapAction(func() {
-			panic("test panic")
-		})
-	}, "should propagate panic from action")
-}
-
-func TestWrapper_WrapAction_LongRunningAction_Interactive(t *testing.T) {
-	var buf bytes.Buffer
-	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Processing", []string{"1", "2", "3"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, true)
-
-	actionCompleted := false
 	wrapper.WrapAction(func() {
-		// Simulate work
-		for i := 0; i < 10; i++ {
-			mockSleeper.Sleep(1)
-		}
-		actionCompleted = true
+		time.Sleep(10 * time.Millisecond)
 	})
 
-	assert.True(t, actionCompleted, "long-running action should complete")
-	assert.False(t, wrapper.spinner.active, "spinner should stop after action completes")
-}
-
-func TestWrapper_WrapAction_EmptyMessage_NonInteractive(t *testing.T) {
-	var buf bytes.Buffer
-	spinner := NewDefaultSpinnerWithOutput("", &buf)
-	wrapper := NewWrapper(spinner, false)
-
-	wrapper.WrapAction(func() {})
-
 	output := buf.String()
-	assert.Equal(t, "...\n", output, "empty message should just print ellipsis")
+	// Empty message gets "..." appended, then newline
+	assert.Equal(t, "...\n", output)
 }
 
 func TestWrapper_WrapAction_MultipleActions_Sequential(t *testing.T) {
 	var buf bytes.Buffer
-	mockSleeper := &MockSleeper{}
-	spinner := NewSpinnerWithSleeper("Task", []string{"a", "b"}, 5, &buf, mockSleeper)
-	wrapper := NewWrapper(spinner, true)
+	ticker := NewDefaultTicker("Task...", &buf)
+	wrapper := NewWrapper(ticker)
 
 	count := 0
 	for i := 0; i < 3; i++ {
 		wrapper.WrapAction(func() {
 			count++
+			time.Sleep(5 * time.Millisecond)
 		})
 	}
 
 	assert.Equal(t, 3, count, "should execute all actions")
-	assert.False(t, wrapper.spinner.active, "spinner should be stopped after last action")
-}
+	assert.False(t, wrapper.ticker.active, "ticker should be stopped after last action")
 
-func TestOutputDeviceIsTerminal(t *testing.T) {
-	// This test just ensures the function doesn't panic
-	result := OutputDeviceIsTerminal()
-	assert.IsType(t, true, result, "should return a boolean")
+	// Should have 3 separate ticker outputs (3 messages + 3 newlines)
+	output := buf.String()
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	assert.GreaterOrEqual(t, len(lines), 3, "should have output from all actions")
 }

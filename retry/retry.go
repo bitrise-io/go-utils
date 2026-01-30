@@ -11,8 +11,8 @@ type Action func(attempt uint) error
 // AbortableAction ...
 type AbortableAction func(attempt uint) (error, bool)
 
-// Sleeper is an interface for sleeping.
-type Sleeper interface {
+// SleeperInterface is an interface for sleeping.
+type SleeperInterface interface {
 	Sleep(d time.Duration)
 }
 
@@ -20,7 +20,7 @@ type Sleeper interface {
 type Model struct {
 	retry    uint
 	waitTime time.Duration
-	sleeper  Sleeper
+	sleeper  SleeperInterface
 }
 
 // New creates a Model with the specified retry count and wait time.
@@ -31,15 +31,20 @@ func New(retry uint, waitTime time.Duration) *Model {
 
 // NewWithSleeper creates a Model with the specified retry count, wait time, and sleeper.
 // If sleeper is nil, the default time.Sleep implementation is used.
-func NewWithSleeper(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
+func NewWithSleeper(retry uint, waitTime time.Duration, sleeper SleeperInterface) *Model {
 	if sleeper == nil {
-		sleeper = &defaultSleeper{}
+		sleeper = DefaultSleeper{}
 	}
 	return &Model{
 		retry:    retry,
 		waitTime: waitTime,
 		sleeper:  sleeper,
 	}
+}
+
+// Sleeper creates a Model with only a custom sleeper.
+func Sleeper(sleeper SleeperInterface) *Model {
+	return NewWithSleeper(0, 0, sleeper)
 }
 
 // Times creates a Model with the specified number of retries.
@@ -65,7 +70,7 @@ func (m *Model) Wait(waitTime time.Duration) *Model {
 }
 
 // WithSleeper sets a custom Sleeper implementation for testing purposes.
-func (m *Model) WithSleeper(sleeper Sleeper) *Model {
+func (m *Model) WithSleeper(sleeper SleeperInterface) *Model {
 	m.sleeper = sleeper
 	return m
 }
@@ -106,10 +111,10 @@ func (m *Model) TryWithAbort(action AbortableAction) error {
 	return err
 }
 
-// defaultSleeper is the default implementation using time.Sleep.
-type defaultSleeper struct{}
+// DefaultSleeper is the default implementation using time.Sleep.
+type DefaultSleeper struct{}
 
 // Sleep pauses the current goroutine for at least the duration d.
-func (s *defaultSleeper) Sleep(d time.Duration) {
+func (s DefaultSleeper) Sleep(d time.Duration) {
 	time.Sleep(d)
 }

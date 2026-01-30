@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MockSleeperInterface struct {
+type MockSleeper struct {
 	CallCount    int
 	LastDuration time.Duration
 	Durations    []time.Duration
 }
 
-func (m *MockSleeperInterface) Sleep(d time.Duration) {
+func (m *MockSleeper) Sleep(d time.Duration) {
 	m.CallCount++
 	m.LastDuration = d
 	m.Durations = append(m.Durations, d)
@@ -91,10 +91,10 @@ func TestRetry(t *testing.T) {
 
 	t.Log("it does not wait before first execution")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(1, 3*time.Second, mockSleeper).Try(func(attempt uint) error {
+		err := New(1, 3*time.Second, mockSleeper).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -108,10 +108,10 @@ func TestRetry(t *testing.T) {
 
 	t.Log("it waits before second execution with correct duration")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(1, 4*time.Second, mockSleeper).Try(func(attempt uint) error {
+		err := New(1, 4*time.Second, mockSleeper).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -181,12 +181,12 @@ func TestTimes(t *testing.T) {
 	}
 }
 
-func TestMockSleeperInterface(t *testing.T) {
+func TestMockSleeper(t *testing.T) {
 	t.Log("it calls sleeper with correct duration and count")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
 			return errors.New("error")
 		})
 
@@ -197,9 +197,9 @@ func TestMockSleeperInterface(t *testing.T) {
 
 	t.Log("it does not call sleeper if no error")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
 			return nil
 		})
 
@@ -209,9 +209,9 @@ func TestMockSleeperInterface(t *testing.T) {
 
 	t.Log("it does not call sleeper if wait time is zero")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 0, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 0, mockSleeper).Try(func(attempt uint) error {
 			return errors.New("error")
 		})
 
@@ -221,10 +221,10 @@ func TestMockSleeperInterface(t *testing.T) {
 
 	t.Log("it respects abort and does not call sleeper after abort")
 	{
-		mockSleeper := &MockSleeperInterface{}
+		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(5, 100*time.Millisecond, mockSleeper).TryWithAbort(func(attempt uint) (error, bool) {
+		err := New(5, 100*time.Millisecond, mockSleeper).TryWithAbort(func(attempt uint) (error, bool) {
 			attemptCnt++
 			if attempt == 1 {
 				return errors.New("abort-error"), true

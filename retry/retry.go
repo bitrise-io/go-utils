@@ -11,8 +11,8 @@ type Action func(attempt uint) error
 // AbortableAction ...
 type AbortableAction func(attempt uint) (error, bool)
 
-// SleeperInterface is an interface for sleeping.
-type SleeperInterface interface {
+// Sleeper is an interface for sleeping.
+type Sleeper interface {
 	Sleep(d time.Duration)
 }
 
@@ -20,18 +20,12 @@ type SleeperInterface interface {
 type Model struct {
 	retry    uint
 	waitTime time.Duration
-	sleeper  SleeperInterface
+	sleeper  Sleeper
 }
 
-// New creates a Model with the specified retry count and wait time.
-// Uses the default time.Sleep implementation for sleeping between retries.
-func New(retry uint, waitTime time.Duration) *Model {
-	return NewWithSleeper(retry, waitTime, nil)
-}
-
-// NewWithSleeper creates a Model with the specified retry count, wait time, and sleeper.
+// New creates a Model with the specified retry count, wait time, and sleeper.
 // If sleeper is nil, the default time.Sleep implementation is used.
-func NewWithSleeper(retry uint, waitTime time.Duration, sleeper SleeperInterface) *Model {
+func New(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
 	if sleeper == nil {
 		sleeper = DefaultSleeper{}
 	}
@@ -42,19 +36,19 @@ func NewWithSleeper(retry uint, waitTime time.Duration, sleeper SleeperInterface
 	}
 }
 
-// Sleeper creates a Model with only a custom sleeper.
-func Sleeper(sleeper SleeperInterface) *Model {
-	return NewWithSleeper(0, 0, sleeper)
-}
-
 // Times creates a Model with the specified number of retries.
 func Times(retry uint) *Model {
-	return NewWithSleeper(retry, 0, nil)
+	return New(retry, 0, nil)
 }
 
 // Wait creates a Model with the specified wait time between retries.
 func Wait(waitTime time.Duration) *Model {
-	return NewWithSleeper(0, waitTime, nil)
+	return New(0, waitTime, nil)
+}
+
+// WithSleeper creates a Model with only a custom sleeper.
+func WithSleeper(sleeper Sleeper) *Model {
+	return New(0, 0, sleeper)
 }
 
 // Times sets the number of retries on an existing Model.
@@ -70,7 +64,7 @@ func (m *Model) Wait(waitTime time.Duration) *Model {
 }
 
 // WithSleeper sets a custom Sleeper implementation for testing purposes.
-func (m *Model) WithSleeper(sleeper SleeperInterface) *Model {
+func (m *Model) WithSleeper(sleeper Sleeper) *Model {
 	m.sleeper = sleeper
 	return m
 }

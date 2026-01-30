@@ -94,7 +94,7 @@ func TestRetry(t *testing.T) {
 		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(1, 3*time.Second, mockSleeper).Try(func(attempt uint) error {
+		err := New(1, 3*time.Second, mockSleeper).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -111,7 +111,7 @@ func TestRetry(t *testing.T) {
 		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(1, 4*time.Second, mockSleeper).Try(func(attempt uint) error {
+		err := New(1, 4*time.Second, mockSleeper).Try(func(attempt uint) error {
 			attemptCnt++
 			return errors.New("error")
 		})
@@ -186,7 +186,7 @@ func TestMockSleeper(t *testing.T) {
 	{
 		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
 			return errors.New("error")
 		})
 
@@ -199,7 +199,7 @@ func TestMockSleeper(t *testing.T) {
 	{
 		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 100*time.Millisecond, mockSleeper).Try(func(attempt uint) error {
 			return nil
 		})
 
@@ -211,7 +211,7 @@ func TestMockSleeper(t *testing.T) {
 	{
 		mockSleeper := &MockSleeper{}
 
-		err := NewWithSleeper(2, 0, mockSleeper).Try(func(attempt uint) error {
+		err := New(2, 0, mockSleeper).Try(func(attempt uint) error {
 			return errors.New("error")
 		})
 
@@ -224,7 +224,7 @@ func TestMockSleeper(t *testing.T) {
 		mockSleeper := &MockSleeper{}
 		attemptCnt := 0
 
-		err := NewWithSleeper(5, 100*time.Millisecond, mockSleeper).TryWithAbort(func(attempt uint) (error, bool) {
+		err := New(5, 100*time.Millisecond, mockSleeper).TryWithAbort(func(attempt uint) (error, bool) {
 			attemptCnt++
 			if attempt == 1 {
 				return errors.New("abort-error"), true

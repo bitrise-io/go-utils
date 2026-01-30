@@ -55,13 +55,21 @@ func (d *downloader) Download(ctx context.Context, destination, source string) e
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer func() {
+		if closeErr := reader.Close(); closeErr != nil {
+			d.logger.Warnf("Failed to close reader: %s", closeErr)
+		}
+	}()
 
 	f, err := os.Create(destination)
 	if err != nil {
 		return fmt.Errorf("create destination file %s: %w", destination, err)
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			d.logger.Warnf("Failed to close file %s: %s", destination, closeErr)
+		}
+	}()
 
 	if _, err := io.Copy(f, reader); err != nil {
 		return fmt.Errorf("write to destination file %s: %w", destination, err)
@@ -101,7 +109,7 @@ func (d *downloader) Get(ctx context.Context, source string) (io.ReadCloser, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("download from %s: status code %d", source, resp.StatusCode)
 	}
 

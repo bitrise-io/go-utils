@@ -85,7 +85,7 @@ func TestDownloader_Get_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, reader)
-	defer reader.Close()
+	defer func() { require.NoError(t, reader.Close()) }()
 
 	content, err := io.ReadAll(reader)
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestDownloader_Get_DoesNotBufferEntireResponse(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, reader)
-	defer reader.Close()
+	defer func() { require.NoError(t, reader.Close()) }()
 
 	buf := make([]byte, 1024)
 	n, err := reader.Read(buf)

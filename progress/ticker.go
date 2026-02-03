@@ -65,7 +65,7 @@ func (t *Ticker) Start() {
 				return
 			default:
 				t.sleeper.Sleep(t.interval)
-				
+
 				t.mu.Lock()
 				if !t.active {
 					t.mu.Unlock()

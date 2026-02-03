@@ -12,7 +12,7 @@ import (
 func TestNewWrapper(t *testing.T) {
 	var buf bytes.Buffer
 	ticker := NewDefaultTicker("Test", &buf)
-	wrapper := NewWrapper(ticker)
+	wrapper := newWrapper(ticker)
 
 	assert.Equal(t, ticker, wrapper.ticker)
 }
@@ -47,7 +47,7 @@ func TestWrapper_WrapAction(t *testing.T) {
 	var buf bytes.Buffer
 	mockSleeper := &MockSleeper{}
 	ticker := NewTickerWithSleeper("Working", 50*time.Millisecond, &buf, mockSleeper)
-	wrapper := NewWrapper(ticker)
+	wrapper := newWrapper(ticker)
 
 	actionCalled := false
 	wrapper.WrapAction(func() {
@@ -70,7 +70,7 @@ func TestWrapper_WrapAction_WithPeriodicDots(t *testing.T) {
 	var buf bytes.Buffer
 	mockSleeper := &MockSleeper{}
 	ticker := NewTickerWithSleeper("Progress...", 25*time.Millisecond, &buf, mockSleeper)
-	wrapper := NewWrapper(ticker)
+	wrapper := newWrapper(ticker)
 
 	wrapper.WrapAction(func() {
 		// Simulate work with periodic sleeps
@@ -91,7 +91,7 @@ func TestWrapper_WrapAction_WithPeriodicDots(t *testing.T) {
 func TestWrapper_WrapAction_ActionPanics(t *testing.T) {
 	var buf bytes.Buffer
 	ticker := NewDefaultTicker("Test", &buf)
-	wrapper := NewWrapper(ticker)
+	wrapper := newWrapper(ticker)
 
 	assert.Panics(t, func() {
 		wrapper.WrapAction(func() {
@@ -116,7 +116,7 @@ func TestWrapper_WrapAction_EmptyMessage(t *testing.T) {
 func TestWrapper_WrapAction_MultipleActions_Sequential(t *testing.T) {
 	var buf bytes.Buffer
 	ticker := NewDefaultTicker("Task...", &buf)
-	wrapper := NewWrapper(ticker)
+	wrapper := newWrapper(ticker)
 
 	count := 0
 	for i := 0; i < 3; i++ {

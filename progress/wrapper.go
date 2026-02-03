@@ -11,8 +11,8 @@ type Wrapper struct {
 	ticker *Ticker
 }
 
-// NewWrapper creates a Wrapper with the given ticker.
-func NewWrapper(ticker *Ticker) Wrapper {
+// newWrapper creates a Wrapper with the given ticker.
+func newWrapper(ticker *Ticker) Wrapper {
 	return Wrapper{
 		ticker: ticker,
 	}
@@ -20,12 +20,7 @@ func NewWrapper(ticker *Ticker) Wrapper {
 
 // NewDefaultWrapper creates a Wrapper with default ticker configuration.
 func NewDefaultWrapper(message string) Wrapper {
-	// Add "..." suffix if not present
-	if !strings.HasSuffix(message, ".") {
-		message = message + "..."
-	}
-	ticker := NewDefaultTicker(message, os.Stdout)
-	return NewWrapper(ticker)
+	return NewDefaultWrapperWithOutput(message, os.Stdout)
 }
 
 // NewDefaultWrapperWithOutput creates a Wrapper with default ticker configuration using custom output.
@@ -35,7 +30,7 @@ func NewDefaultWrapperWithOutput(message string, output io.Writer) Wrapper {
 		message = message + "..."
 	}
 	ticker := NewDefaultTicker(message, output)
-	return NewWrapper(ticker)
+	return newWrapper(ticker)
 }
 
 // WrapAction executes the given action with progress indication.

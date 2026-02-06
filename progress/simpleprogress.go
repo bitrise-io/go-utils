@@ -20,7 +20,7 @@ func NewDefaultSimpleDots(writer io.Writer) *SimpleDots {
 	return NewSimpleDotsWithInterval(5*time.Second, writer)
 }
 
-// NewSimpleDots creates a new SimpleDots with the given parameters.
+// NewSimpleDotsWithInterval creates a new SimpleDots with the given interval.
 func NewSimpleDotsWithInterval(interval time.Duration, writer io.Writer) *SimpleDots {
 	return NewSimpleDotsWithTicker(writer, NewTicker(interval))
 }
@@ -33,7 +33,7 @@ func NewSimpleDotsWithTicker(writer io.Writer, ticker Ticker) *SimpleDots {
 	}
 }
 
-// Stop stops the ticker and prints a newline.
+// Run starts the progress dots and executes the given action.
 func (t *SimpleDots) Run(action func() error) error {
 	if t.stopChan != nil {
 		return fmt.Errorf("progress can only be run once")

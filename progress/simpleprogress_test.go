@@ -40,12 +40,13 @@ func TestSimpleDots_RunTwice(t *testing.T) {
 	var buf bytes.Buffer
 	ticker := NewDefaultSimpleDots(&buf)
 
-	ticker.Run(func() error {
+	err := ticker.Run(func() error {
 		return nil
 	})
+	require.NoError(t, err)
 
 	// Running again should return an error
-	err := ticker.Run(func() error {
+	err = ticker.Run(func() error {
 		return nil
 	})
 	require.Error(t, err)
@@ -67,8 +68,9 @@ func TestSimpleDots_RunPanic(t *testing.T) {
 	ticker := NewDefaultSimpleDots(&buf)
 
 	require.Panics(t, func() {
-		ticker.Run(func() error {
+		err := ticker.Run(func() error {
 			panic("something went wrong")
 		})
+		_ = err
 	})
 }

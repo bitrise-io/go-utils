@@ -12,6 +12,7 @@ type ticker struct {
 	wrappedTicker *time.Ticker
 }
 
+// NewTicker creates a new Ticker with the given duration
 func NewTicker(d time.Duration) Ticker {
 	return &ticker{
 		wrappedTicker: time.NewTicker(d),

@@ -60,7 +60,7 @@ func TestSimpleDots_RunError(t *testing.T) {
 	err := ticker.Run(func() error {
 		return fmt.Errorf("an error occurred")
 	})
-	require.Equal(t, fmt.Errorf("an error occurred"), err)
+	require.EqualError(t, err, "an error occurred")
 }
 
 func TestSimpleDots_RunPanic(t *testing.T) {

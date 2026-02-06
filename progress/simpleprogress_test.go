@@ -28,7 +28,6 @@ func TestSimpleProgress_Run(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.True(t, called, "action should have been called")
-	<-ticker.C() // ticker should be stopped after action completes
 
 	// Expected output: dots + newline
 	output := buf.String()

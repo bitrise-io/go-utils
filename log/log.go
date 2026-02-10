@@ -22,6 +22,7 @@ type Logger interface {
 	TDebugf(format string, v ...interface{})
 	TErrorf(format string, v ...interface{})
 	Println()
+	PrintWithoutNewline(msg string)
 	EnableDebugLog(enable bool)
 }
 
@@ -153,6 +154,13 @@ func (l *logger) TErrorf(format string, v ...interface{}) {
 // Println ...
 func (l *logger) Println() {
 	fmt.Println()
+}
+
+// PrintWithoutNewline ...
+func (l *logger) PrintWithoutNewline(msg string) {
+	if _, err := fmt.Fprint(l.stdout, msg); err != nil {
+		fmt.Printf("failed to print message: %s: %s\n", msg, err)
+	}
 }
 
 func (l *logger) timestampField() string {

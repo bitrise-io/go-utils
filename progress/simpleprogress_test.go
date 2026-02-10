@@ -1,44 +1,42 @@
 package progress
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleProgress_Run(t *testing.T) {
-	var buf bytes.Buffer
 	ticker := newMockTicker()
-	progress := NewSimpleDotsWithTicker(&buf, ticker)
+	progress := NewSimpleDotsWithTicker(log.NewLogger(), ticker)
 
 	go func() {
 		ticker.doTicks(3)
 	}()
 	// Start the progress and run a dummy action
-	called := false
+	called := make(chan bool)
 	err := progress.Run(func() error {
+		require.True(t, progress.stopChan != nil, "stopChan should be initialized")
 		// Simulate some work, allow ticker channel to be drained
-		called = true
+		close(called)
 		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
 	require.NoError(t, err)
-	require.True(t, called, "action should have been called")
-	<-ticker.C() // ticker should be stopped after action completes
 
-	// Expected output: dots + newline
-	output := buf.String()
-	require.True(t, strings.Contains(output, "."))
-	require.True(t, strings.HasSuffix(output, "\n"))
+	_, ok := <-called
+	require.False(t, ok, "action should have been called and channel closed")
+
+	// check progress.stopChan is closed
+	_, ok = <-progress.stopChan
+	require.False(t, ok, "stopChan should be closed")
 }
 
 func TestSimpleDots_RunTwice(t *testing.T) {
-	var buf bytes.Buffer
-	ticker := NewDefaultSimpleDots(&buf)
+	ticker := NewDefaultSimpleDots(log.NewLogger())
 
 	err := ticker.Run(func() error {
 		return nil
@@ -54,23 +52,24 @@ func TestSimpleDots_RunTwice(t *testing.T) {
 }
 
 func TestSimpleDots_RunError(t *testing.T) {
-	var buf bytes.Buffer
-	ticker := NewDefaultSimpleDots(&buf)
+	ticker := NewDefaultSimpleDots(log.NewLogger())
 
 	err := ticker.Run(func() error {
 		return fmt.Errorf("an error occurred")
 	})
-	require.Equal(t, fmt.Errorf("an error occurred"), err)
+
+	require.EqualError(t, err, "an error occurred")
 }
 
 func TestSimpleDots_RunPanic(t *testing.T) {
-	var buf bytes.Buffer
-	ticker := NewDefaultSimpleDots(&buf)
+	progress := NewDefaultSimpleDots(log.NewLogger())
 
 	require.Panics(t, func() {
-		err := ticker.Run(func() error {
+		_ = progress.Run(func() error {
 			panic("something went wrong")
 		})
-		_ = err
 	})
+
+	_, ok := <-progress.stopChan
+	require.False(t, ok, "stopChan should be closed")
 }

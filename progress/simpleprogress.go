@@ -13,7 +13,7 @@ type SimpleDots struct {
 	logger log.Logger
 	ticker Ticker
 
-	stopChan chan bool
+	stopChan chan struct{}
 }
 
 // NewDefaultSimpleDots creates a SimpleDots with a default 5-second interval.
@@ -40,7 +40,7 @@ func (t *SimpleDots) Run(action func() error) error {
 		return errors.New("progress can only be run once")
 	}
 
-	t.stopChan = make(chan bool)
+	t.stopChan = make(chan struct{})
 	defer func() {
 		t.ticker.Stop()
 		close(t.stopChan)  // Signal the ticker goroutine to stop

@@ -36,15 +36,15 @@ func TestSimpleProgress_Run(t *testing.T) {
 }
 
 func TestSimpleDots_RunTwice(t *testing.T) {
-	ticker := NewDefaultSimpleDots(log.NewLogger())
+	progress := NewDefaultSimpleDots(log.NewLogger())
 
-	err := ticker.Run(func() error {
+	err := progress.Run(func() error {
 		return nil
 	})
 	require.NoError(t, err)
 
 	// Running again should return an error
-	err = ticker.Run(func() error {
+	err = progress.Run(func() error {
 		return nil
 	})
 	require.Error(t, err)
@@ -52,9 +52,9 @@ func TestSimpleDots_RunTwice(t *testing.T) {
 }
 
 func TestSimpleDots_RunError(t *testing.T) {
-	ticker := NewDefaultSimpleDots(log.NewLogger())
+	progress := NewDefaultSimpleDots(log.NewLogger())
 
-	err := ticker.Run(func() error {
+	err := progress.Run(func() error {
 		return fmt.Errorf("an error occurred")
 	})
 

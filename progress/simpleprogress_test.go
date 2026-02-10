@@ -17,9 +17,7 @@ func TestSimpleProgress_Run(t *testing.T) {
 	called := make(chan bool)
 	err := progress.Run(func() error {
 		require.True(t, progress.stopChan != nil, "stopChan should be initialized")
-		// Generate a few ticks while progress is running; this call may block
-		// until the progress goroutine consumes from the ticker channel.
-		ticker.DoTicks(3)
+		ticker.DoTicks(10)
 		close(called)
 		return nil
 	})

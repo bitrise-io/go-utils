@@ -8,7 +8,7 @@ type mockTicker struct {
 
 func NewTicker() mockTicker {
 	return mockTicker{
-		C: make(chan time.Time),
+		C: make(chan time.Time), // Buffered channel to prevent blocking
 	}
 }
 

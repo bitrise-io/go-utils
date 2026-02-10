@@ -67,6 +67,7 @@ func (m *mockLogger) TDonef(format string, v ...interface{})  {}
 func (m *mockLogger) TDebugf(format string, v ...interface{}) {}
 func (m *mockLogger) TErrorf(format string, v ...interface{}) {}
 func (m *mockLogger) Println()                                {}
+func (m *mockLogger) PrintWithoutNewline(msg string)          {}
 func (m *mockLogger) EnableDebugLog(enable bool)              {}
 
 func TestDownloader_Get_Success(t *testing.T) {

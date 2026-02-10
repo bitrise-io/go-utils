@@ -57,7 +57,7 @@ func (t *SimpleDots) Run(action func() error) error {
 			select {
 			case <-t.stopChan:
 				return
-			case <-t.ticker.C():
+			case <-t.ticker.Chan():
 				t.logger.PrintWithoutNewline(".")
 			}
 		}

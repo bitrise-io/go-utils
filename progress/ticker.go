@@ -4,7 +4,7 @@ import "time"
 
 // Ticker helps with mocking time.Ticker by hiding exported struct fields
 type Ticker interface {
-	C() <-chan time.Time
+	Chan() <-chan time.Time
 	Stop()
 }
 
@@ -19,8 +19,8 @@ func NewTicker(d time.Duration) Ticker {
 	}
 }
 
-// C returns the underlying ticker channel
-func (t *ticker) C() <-chan time.Time {
+// Chan returns the underlying ticker channel
+func (t *ticker) Chan() <-chan time.Time {
 	return t.wrappedTicker.C
 }
 

@@ -158,7 +158,7 @@ func (l *logger) Println() {
 	}
 }
 
-// PrintWithoutNewline ...
+// PrintWithoutNewline is similar to Printf but does not add a newline at the end of the message. It is useful for printing progress indicators, such as dots, on the same line.
 func (l *logger) PrintWithoutNewline(msg string) {
 	if _, err := fmt.Fprint(l.stdout, msg); err != nil {
 		fmt.Printf("failed to print message: %s: %s\n", msg, err)

@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/progress/mocks"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleProgress_Run(t *testing.T) {
-	ticker := newMockTicker()
+	ticker := mocks.NewTicker()
 	progress := NewSimpleDotsWithTicker(log.NewLogger(), ticker)
 
 	// Start the progress and run a dummy action
@@ -18,7 +19,7 @@ func TestSimpleProgress_Run(t *testing.T) {
 		require.True(t, progress.stopChan != nil, "stopChan should be initialized")
 		// Generate a few ticks while progress is running; this call may block
 		// until the progress goroutine consumes from the ticker channel.
-		ticker.doTicks(3)
+		ticker.DoTicks(3)
 		close(called)
 		return nil
 	})

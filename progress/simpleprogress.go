@@ -2,6 +2,7 @@ package progress
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/bitrise-io/go-utils/v2/log"
@@ -40,14 +41,16 @@ func (t *SimpleDots) Run(action func() error) error {
 		return errors.New("progress can only be run once")
 	}
 
+	tickerGroup := sync.WaitGroup{}
 	t.stopChan = make(chan struct{})
 	defer func() {
 		t.ticker.Stop()
 		close(t.stopChan)  // Signal the ticker goroutine to stop
+		tickerGroup.Wait() // Wait for the ticker goroutine to finish, prevent logger race
 		t.logger.Println() // Print a newline after the dots
 	}()
 
-	go func() {
+	tickerGroup.Go(func() {
 		for {
 			select {
 			case <-t.stopChan:
@@ -56,7 +59,7 @@ func (t *SimpleDots) Run(action func() error) error {
 				t.logger.PrintWithoutNewline(".")
 			}
 		}
-	}()
+	})
 
 	return action()
 }

@@ -3,7 +3,6 @@ package progress
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/stretchr/testify/require"
@@ -13,16 +12,14 @@ func TestSimpleProgress_Run(t *testing.T) {
 	ticker := newMockTicker()
 	progress := NewSimpleDotsWithTicker(log.NewLogger(), ticker)
 
-	go func() {
-		ticker.doTicks(3)
-	}()
 	// Start the progress and run a dummy action
 	called := make(chan bool)
 	err := progress.Run(func() error {
 		require.True(t, progress.stopChan != nil, "stopChan should be initialized")
-		// Simulate some work, allow ticker channel to be drained
+		// Generate a few ticks while progress is running; this call may block
+		// until the progress goroutine consumes from the ticker channel.
+		ticker.doTicks(3)
 		close(called)
-		time.Sleep(10 * time.Millisecond)
 		return nil
 	})
 	require.NoError(t, err)

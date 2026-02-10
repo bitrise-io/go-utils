@@ -50,7 +50,9 @@ func (t *SimpleDots) Run(action func() error) error {
 		t.logger.Println() // Print a newline after the dots
 	}()
 
-	tickerGroup.Go(func() {
+	tickerGroup.Add(1)
+	go func() {
+		defer tickerGroup.Done()
 		for {
 			select {
 			case <-t.stopChan:
@@ -59,7 +61,7 @@ func (t *SimpleDots) Run(action func() error) error {
 				t.logger.PrintWithoutNewline(".")
 			}
 		}
-	})
+	}()
 
 	return action()
 }

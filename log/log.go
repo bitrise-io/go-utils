@@ -22,6 +22,7 @@ type Logger interface {
 	TDebugf(format string, v ...interface{})
 	TErrorf(format string, v ...interface{})
 	Println()
+	PrintWithoutNewline(msg string)
 	EnableDebugLog(enable bool)
 }
 
@@ -152,7 +153,16 @@ func (l *logger) TErrorf(format string, v ...interface{}) {
 
 // Println ...
 func (l *logger) Println() {
-	fmt.Println()
+	if _, err := fmt.Fprintln(l.stdout); err != nil {
+		fmt.Printf("failed to print newline: %s\n", err)
+	}
+}
+
+// PrintWithoutNewline is similar to Printf but does not add a newline at the end of the message. It is useful for printing progress indicators, such as dots, on the same line.
+func (l *logger) PrintWithoutNewline(msg string) {
+	if _, err := fmt.Fprint(l.stdout, msg); err != nil {
+		fmt.Printf("failed to print message: %s: %s\n", msg, err)
+	}
 }
 
 func (l *logger) timestampField() string {
@@ -180,6 +190,6 @@ func (l *logger) createLogMsg(severity Severity, withTime bool, format string, v
 func (l *logger) printf(severity Severity, withTime bool, format string, v ...interface{}) {
 	message := l.createLogMsg(severity, withTime, format, v...)
 	if _, err := fmt.Fprintln(l.stdout, message); err != nil {
-		fmt.Printf("failed to print message: %s, error: %s\n", message, err)
+		fmt.Printf("failed to print message: %s: %s\n", message, err)
 	}
 }

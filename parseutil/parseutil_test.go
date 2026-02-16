@@ -73,3 +73,79 @@ func TestParseBool(t *testing.T) {
 		})
 	}
 }
+
+func TestStringFrom(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected string
+	}{
+		// String input (fast path)
+		{"string", "hello", "hello"},
+		{"empty string", "", ""},
+		{"string with spaces", "  hello  ", "  hello  "},
+
+		// Integer types
+		{"int", 42, "42"},
+		{"int zero", 0, "0"},
+		{"int negative", -123, "-123"},
+		{"int8", int8(127), "127"},
+		{"int16", int16(32767), "32767"},
+		{"int32", int32(2147483647), "2147483647"},
+		{"int64", int64(9223372036854775807), "9223372036854775807"},
+
+		// Unsigned integer types
+		{"uint", uint(42), "42"},
+		{"uint8", uint8(255), "255"},
+		{"uint16", uint16(65535), "65535"},
+		{"uint32", uint32(4294967295), "4294967295"},
+		{"uint64", uint64(18446744073709551615), "18446744073709551615"},
+
+		// Float types
+		{"float32", float32(3.14), "3.14"},
+		{"float64", 3.14159, "3.14159"},
+		{"float64 zero", 0.0, "0"},
+		{"float64 negative", -2.5, "-2.5"},
+
+		// Boolean types
+		{"bool true", true, "true"},
+		{"bool false", false, "false"},
+
+		// Nil
+		{"nil", nil, "<nil>"},
+
+		// Pointer
+		{"string pointer", stringPtr("test"), "test"},
+
+		// Struct
+		{"struct", struct{ Name string }{Name: "test"}, "{test}"},
+
+		// Slice
+		{"slice", []int{1, 2, 3}, "[1 2 3]"},
+		{"empty slice", []int{}, "[]"},
+
+		// Map
+		{"map", map[string]int{"a": 1}, "map[a:1]"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := StringFrom(tt.input)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestStringFrom_ExplicitInterface(t *testing.T) {
+
+	t.Run("interface containing map", func(t *testing.T) {
+		var v interface{} = map[string]string{"key": "value"}
+		result := StringFrom(v)
+		require.Equal(t, "map[key:value]", result)
+	})
+}
+
+// Helper function for tests
+func stringPtr(s string) *string {
+	return &s
+}

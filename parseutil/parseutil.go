@@ -2,6 +2,7 @@ package parseutil
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -32,4 +33,24 @@ func ParseBool(input string) (bool, error) {
 
 	// Delegate to stdlib
 	return strconv.ParseBool(normalized)
+}
+
+// StringFrom converts any value to its string representation.
+//
+// If the value is already a string, it returns it directly for efficiency.
+// Otherwise, it uses fmt.Sprintf with the %v verb to convert the value.
+//
+// This function always returns a string and never returns an error.
+//
+// Example:
+//
+//	StringFrom("hello")    // "hello"
+//	StringFrom(42)         // "42"
+//	StringFrom(true)       // "true"
+//	StringFrom(3.14)       // "3.14"
+func StringFrom(value interface{}) string {
+	if str, ok := value.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", value)
 }

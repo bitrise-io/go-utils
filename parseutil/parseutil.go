@@ -54,3 +54,57 @@ func StringFrom(value interface{}) string {
 	}
 	return fmt.Sprintf("%v", value)
 }
+
+// StringPtrFrom converts any value to its string representation and returns a pointer.
+//
+// This is a convenience function that calls StringFrom and returns a pointer to the result.
+//
+// Example:
+//
+//	StringPtrFrom(42)      // pointer to "42"
+//	StringPtrFrom("test")  // pointer to "test"
+func StringPtrFrom(value interface{}) *string {
+	result := StringFrom(value)
+	return &result
+}
+
+// BoolFrom attempts to convert a value to a boolean.
+//
+// It returns (result, true) on success, or (false, false) if it fails.
+//
+// Conversion rules:
+//   - If the value is already a bool, it returns it directly
+//   - If the value can be converted to a string and parsed by ParseBool, the parsed result is returned
+//   - Otherwise, it returns (false, false)
+func BoolFrom(value interface{}) (bool, bool) {
+	// Fast path: if already a bool, return it directly
+	if b, ok := value.(bool); ok {
+		return b, true
+	}
+
+	// Try to convert to string and parse
+	str := StringFrom(value)
+	result, err := ParseBool(str)
+	if err != nil {
+		return false, false
+	}
+	return result, true
+}
+
+// BoolPtrFrom attempts to convert a value to a boolean pointer.
+//
+// It returns (pointer, true) on success, or (nil, false) if it fails.
+// This is a convenience function wrapping BoolFrom.
+//
+// Example:
+//
+//	BoolPtrFrom(true)      // (pointer to true, true)
+//	BoolPtrFrom("yes")     // (pointer to true, true)
+//	BoolPtrFrom("invalid") // (nil, false)
+func BoolPtrFrom(value interface{}) (*bool, bool) {
+	result, ok := BoolFrom(value)
+	if !ok {
+		return nil, false
+	}
+	return &result, true
+}

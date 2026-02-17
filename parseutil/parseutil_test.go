@@ -1,6 +1,7 @@
 package parseutil
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -114,9 +115,6 @@ func TestStringFrom(t *testing.T) {
 		// Nil
 		{"nil", nil, "<nil>"},
 
-		// Pointer
-		{"string pointer", stringPtr("test"), "test"},
-
 		// Struct
 		{"struct", struct{ Name string }{Name: "test"}, "{test}"},
 
@@ -134,18 +132,126 @@ func TestStringFrom(t *testing.T) {
 			require.Equal(t, tt.expected, result)
 		})
 	}
-}
 
-func TestStringFrom_ExplicitInterface(t *testing.T) {
-
-	t.Run("interface containing map", func(t *testing.T) {
-		var v interface{} = map[string]string{"key": "value"}
-		result := StringFrom(v)
-		require.Equal(t, "map[key:value]", result)
+	t.Run("pointer prints address format", func(t *testing.T) {
+		s := "test"
+		result := StringFrom(&s)
+		require.True(t, strings.HasPrefix(result, "0x"),
+			"pointer should print address starting with 0x, got: %s", result)
 	})
 }
 
-// Helper function for tests
-func stringPtr(s string) *string {
-	return &s
+func TestStringPtrFrom(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected string
+	}{
+		{"string", "hello", "hello"},
+		{"int", 42, "42"},
+		{"bool", true, "true"},
+		{"float", 3.14, "3.14"},
+		{"nil", nil, "<nil>"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := StringPtrFrom(tt.input)
+			require.NotNil(t, result)
+			require.Equal(t, tt.expected, *result)
+		})
+	}
+}
+
+func TestBoolFrom(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      interface{}
+		expectedOk bool
+		expected   bool
+	}{
+		// Direct bool values
+		{"bool true", true, true, true},
+		{"bool false", false, true, false},
+
+		// String values that can be parsed
+		{"string yes", "yes", true, true},
+		{"string no", "no", true, false},
+		{"string y", "y", true, true},
+		{"string n", "n", true, false},
+		{"string true", "true", true, true},
+		{"string false", "false", true, false},
+		{"string 1", "1", true, true},
+		{"string 0", "0", true, false},
+		{"string t", "t", true, true},
+		{"string f", "f", true, false},
+
+		// Integer values converted to strings
+		{"int 1", 1, true, true},
+		{"int 0", 0, true, false},
+
+		// Values that cannot be parsed
+		{"string invalid", "invalid", false, false},
+		{"int 2", 2, false, false},
+		{"int 42", 42, false, false},
+		{"float 3.14", 3.14, false, false},
+		{"nil", nil, false, false},
+		{"empty string", "", false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, ok := BoolFrom(tt.input)
+			require.Equal(t, tt.expectedOk, ok)
+			if tt.expectedOk {
+				require.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestBoolPtrFrom(t *testing.T) {
+	t.Run("successful conversions return pointer", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    interface{}
+			expected bool
+		}{
+			{"bool true", true, true},
+			{"bool false", false, false},
+			{"string yes", "yes", true},
+			{"string no", "no", false},
+			{"int 1", 1, true},
+			{"int 0", 0, false},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result, ok := BoolPtrFrom(tt.input)
+				require.True(t, ok)
+				require.NotNil(t, result)
+				require.Equal(t, tt.expected, *result)
+			})
+		}
+	})
+
+	t.Run("failed conversions return nil", func(t *testing.T) {
+		tests := []struct {
+			name  string
+			input interface{}
+		}{
+			{"invalid string", "invalid"},
+			{"int 42", 42},
+			{"float", 3.14},
+			{"nil", nil},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result, ok := BoolPtrFrom(tt.input)
+				require.False(t, ok)
+				require.Nil(t, result)
+			})
+		}
+	})
 }

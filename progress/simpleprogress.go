@@ -4,34 +4,32 @@ import (
 	"errors"
 	"sync"
 	"time"
-
-	"github.com/bitrise-io/go-utils/v2/log"
 )
 
 // SimpleDots provides periodic output for long-running operations in CI environments.
 // It prints dots at regular intervals to show that work is progressing.
 type SimpleDots struct {
-	logger log.Logger
-	ticker Ticker
+	printer Printer
+	ticker  Ticker
 
 	stopChan chan struct{}
 }
 
 // NewDefaultSimpleDots creates a SimpleDots with a default 5-second interval.
-func NewDefaultSimpleDots(logger log.Logger) *SimpleDots {
-	return NewSimpleDotsWithInterval(5*time.Second, logger)
+func NewDefaultSimpleDots(printer Printer) *SimpleDots {
+	return NewSimpleDotsWithInterval(5*time.Second, printer)
 }
 
 // NewSimpleDotsWithInterval creates a new SimpleDots with the given interval.
-func NewSimpleDotsWithInterval(interval time.Duration, logger log.Logger) *SimpleDots {
-	return NewSimpleDotsWithTicker(logger, NewTicker(interval))
+func NewSimpleDotsWithInterval(interval time.Duration, printer Printer) *SimpleDots {
+	return NewSimpleDotsWithTicker(printer, NewTicker(interval))
 }
 
 // NewSimpleDotsWithTicker creates a new SimpleDots with a custom Ticker for testing.
-func NewSimpleDotsWithTicker(logger log.Logger, ticker Ticker) *SimpleDots {
+func NewSimpleDotsWithTicker(printer Printer, ticker Ticker) *SimpleDots {
 	return &SimpleDots{
-		logger: logger,
-		ticker: ticker,
+		printer: printer,
+		ticker:  ticker,
 	}
 }
 
@@ -45,9 +43,9 @@ func (t *SimpleDots) Run(action func() error) error {
 	t.stopChan = make(chan struct{})
 	defer func() {
 		t.ticker.Stop()
-		close(t.stopChan)  // Signal the ticker goroutine to stop
-		tickerGroup.Wait() // Wait for the ticker goroutine to finish, prevent logger race
-		t.logger.Println() // Print a newline after the dots
+		close(t.stopChan)   // Signal the ticker goroutine to stop
+		tickerGroup.Wait()  // Wait for the ticker goroutine to finish, prevent logger race
+		t.printer.Println() // Print a newline after the dots
 	}()
 
 	tickerGroup.Add(1)
@@ -58,7 +56,7 @@ func (t *SimpleDots) Run(action func() error) error {
 			case <-t.stopChan:
 				return
 			case <-t.ticker.Chan():
-				t.logger.PrintWithoutNewline(".")
+				t.printer.PrintWithoutNewline(".")
 			}
 		}
 	}()

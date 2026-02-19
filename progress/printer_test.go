@@ -19,11 +19,11 @@ func TestFmtPrinter(t *testing.T) {
 		printer := NewFmtPrinter()
 		printer.PrintWithoutNewline("test")
 
-		w.Close()
+		_ = w.Close() // err here might break the test, that should be fine though.
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r) // err here might break the test, that should be fine though.
 
 		require.Equal(t, "test", buf.String())
 	})
@@ -37,11 +37,11 @@ func TestFmtPrinter(t *testing.T) {
 		printer := NewFmtPrinter()
 		printer.Println()
 
-		w.Close()
+		_ = w.Close() // err here might break the test, that should be fine though.
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r) // err here might break the test, that should be fine though.
 
 		require.Equal(t, "\n", buf.String())
 	})
@@ -58,11 +58,11 @@ func TestFmtPrinter(t *testing.T) {
 		printer.PrintWithoutNewline(".")
 		printer.Println()
 
-		w.Close()
+		_ = w.Close() // err here might break the test, that should be fine though.
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r) // err here might break the test, that should be fine though.
 
 		require.Equal(t, "...\n", buf.String())
 	})

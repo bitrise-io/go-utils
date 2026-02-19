@@ -46,11 +46,6 @@ func (_m *Logger) Infof(format string, v ...interface{}) {
 	_m.Called(_ca...)
 }
 
-// PrintWithoutNewline provides a mock function with given fields: msg
-func (_m *Logger) PrintWithoutNewline(msg string) {
-	_m.Called(msg)
-}
-
 // Printf provides a mock function with given fields: format, v
 func (_m *Logger) Printf(format string, v ...interface{}) {
 	var _ca []interface{}

@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/progress/mocks"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleProgress_Run(t *testing.T) {
 	ticker := mocks.NewTicker()
-	progress := NewSimpleDotsWithTicker(log.NewLogger(), ticker)
+	progress := NewSimpleDotsWithTicker(NewFmtPrinter(), ticker)
 
 	// Start the progress and run a dummy action
 	called := make(chan bool)
@@ -32,7 +31,7 @@ func TestSimpleProgress_Run(t *testing.T) {
 }
 
 func TestSimpleDots_RunTwice(t *testing.T) {
-	progress := NewDefaultSimpleDots(log.NewLogger())
+	progress := NewDefaultSimpleDots(NewFmtPrinter())
 
 	err := progress.Run(func() error {
 		return nil
@@ -48,7 +47,7 @@ func TestSimpleDots_RunTwice(t *testing.T) {
 }
 
 func TestSimpleDots_RunError(t *testing.T) {
-	progress := NewDefaultSimpleDots(log.NewLogger())
+	progress := NewDefaultSimpleDots(NewFmtPrinter())
 
 	err := progress.Run(func() error {
 		return fmt.Errorf("an error occurred")
@@ -58,7 +57,7 @@ func TestSimpleDots_RunError(t *testing.T) {
 }
 
 func TestSimpleDots_RunPanic(t *testing.T) {
-	progress := NewDefaultSimpleDots(log.NewLogger())
+	progress := NewDefaultSimpleDots(NewFmtPrinter())
 
 	require.Panics(t, func() {
 		_ = progress.Run(func() error {

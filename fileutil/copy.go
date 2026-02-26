@@ -166,7 +166,7 @@ func (fm fileManager) copyTimes(srcInfo os.FileInfo, dstPath string) error {
 		if stat, ok := srcInfo.Sys().(*syscall.Stat_t); ok {
 			// set times (for non-symlink paths we use os.chtimes)
 			if srcInfo.Mode()&os.ModeSymlink == 0 {
-				atime := time.Unix(stat.Atimespec.Sec, stat.Atimespec.Nsec)
+				atime := atimeFromStat(stat)
 				mtime := srcInfo.ModTime()
 				if err := fm.chtimes(dstPath, atime, mtime); err != nil {
 					return fmt.Errorf("chtimes %s: %w", dstPath, err)

@@ -85,14 +85,14 @@ func (fm fileManager) CopyDir(src, dst string) error {
 
 		newPath := filepath.Join(dst, path)
 		info, err := d.Info()
+		if err != nil {
+			return err
+		}
 
 		// This is not exhausetive in the original implementation either.
 		// nolint:exhaustive
 		switch d.Type() {
 		case os.ModeDir:
-			if err != nil {
-				return err
-			}
 			if err := fm.osProxy.MkdirAll(newPath, 0777); err != nil {
 				return err
 			}
@@ -118,6 +118,7 @@ func (fm fileManager) CopyDir(src, dst string) error {
 			}
 			return fm.copyTimes(info, newPath)
 
+		// "normal" file
 		case 0:
 			return fm.copyFileFS(fsys, path, newPath)
 

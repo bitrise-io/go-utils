@@ -5,13 +5,13 @@ package sliceutil
 // Does NOT guarantee any ordering, the result can
 // be in any order!
 func Unique[T comparable](slice []T) []T {
-	setMap := map[T]interface{}{}
-	for _, item := range slice {
-		setMap[item] = 1
-	}
-	uniqueItems := []T{}
-	for k := range setMap {
-		uniqueItems = append(uniqueItems, k)
+	seen := make(map[T]bool, len(slice))
+	uniqueItems := make([]T, 0, len(slice))
+	for _, k := range slice {
+		if !seen[k] {
+			uniqueItems = append(uniqueItems, k)
+			seen[k] = true
+		}
 	}
 	return uniqueItems
 }
@@ -19,7 +19,7 @@ func Unique[T comparable](slice []T) []T {
 // Filter - returns a slice containing only the elements
 // that satisfy the predicate function filterFunc.
 func Filter[T any](slice []T, filterFunc func(T) bool) []T {
-	var filtered []T
+	filtered := make([]T, 0, len(slice))
 	for _, item := range slice {
 		if filterFunc(item) {
 			filtered = append(filtered, item)

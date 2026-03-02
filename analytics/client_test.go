@@ -17,7 +17,7 @@ import (
 const cientTimeout = 10 * time.Second
 
 func Test_trackerClient_send_success(t *testing.T) {
-	mockLogger := new(mocks.Logger)
+	mockLogger := mocks.NewLogger(t)
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		b, err := io.ReadAll(req.Body)
 		assert.NoError(t, err)
@@ -35,7 +35,7 @@ func Test_trackerClient_send_success(t *testing.T) {
 }
 
 func Test_trackerClient_send_failure(t *testing.T) {
-	mockLogger := new(mocks.Logger)
+	mockLogger := mocks.NewLogger(t)
 	mockLogger.On("Debugf", mock.Anything, mock.Anything).Return()
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		b, err := io.ReadAll(req.Body)

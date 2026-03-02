@@ -133,7 +133,7 @@ func Test_tracker_WaitTimesOutOnBlockingClient(t *testing.T) {
 func Test_NewDefaultTracker_Disabled(t *testing.T) {
 	t.Setenv(analyticsDisabledEnv, "true")
 
-	tracker := NewDefaultTracker(new(mocks.Logger), env.NewRepository())
+	tracker := NewDefaultTracker(mocks.NewLogger(t), env.NewRepository())
 
 	if _, ok := tracker.(noopTracker); !ok {
 		t.Fatalf("expected noopTracker when %s is set", analyticsDisabledEnv)

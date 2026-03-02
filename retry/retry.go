@@ -23,17 +23,11 @@ type Model struct {
 	sleeper  Sleeper
 }
 
-// New creates a Model with the specified retry count and wait time.
-// Uses the default time.Sleep implementation for sleeping between retries.
-func New(retry uint, waitTime time.Duration) *Model {
-	return NewWithSleeper(retry, waitTime, nil)
-}
-
-// NewWithSleeper creates a Model with the specified retry count, wait time, and sleeper.
+// New creates a Model with the specified retry count, wait time, and sleeper.
 // If sleeper is nil, the default time.Sleep implementation is used.
-func NewWithSleeper(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
+func New(retry uint, waitTime time.Duration, sleeper Sleeper) *Model {
 	if sleeper == nil {
-		sleeper = &defaultSleeper{}
+		sleeper = DefaultSleeper{}
 	}
 	return &Model{
 		retry:    retry,
@@ -44,12 +38,17 @@ func NewWithSleeper(retry uint, waitTime time.Duration, sleeper Sleeper) *Model 
 
 // Times creates a Model with the specified number of retries.
 func Times(retry uint) *Model {
-	return NewWithSleeper(retry, 0, nil)
+	return New(retry, 0, nil)
 }
 
 // Wait creates a Model with the specified wait time between retries.
 func Wait(waitTime time.Duration) *Model {
-	return NewWithSleeper(0, waitTime, nil)
+	return New(0, waitTime, nil)
+}
+
+// WithSleeper creates a Model with only a custom sleeper.
+func WithSleeper(sleeper Sleeper) *Model {
+	return New(0, 0, sleeper)
 }
 
 // Times sets the number of retries on an existing Model.
@@ -106,10 +105,10 @@ func (m *Model) TryWithAbort(action AbortableAction) error {
 	return err
 }
 
-// defaultSleeper is the default implementation using time.Sleep.
-type defaultSleeper struct{}
+// DefaultSleeper is the default implementation using time.Sleep.
+type DefaultSleeper struct{}
 
 // Sleep pauses the current goroutine for at least the duration d.
-func (s *defaultSleeper) Sleep(d time.Duration) {
+func (s DefaultSleeper) Sleep(d time.Duration) {
 	time.Sleep(d)
 }

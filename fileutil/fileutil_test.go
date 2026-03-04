@@ -53,6 +53,103 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+func TestLastNLines(t *testing.T) {
+	manager := NewFileManager()
+
+	tests := []struct {
+		name string
+		s    string
+		n    int
+		want string
+	}{
+		{
+			name: "n=0 returns empty string",
+			s:    "line1\nline2\nline3",
+			n:    0,
+			want: "",
+		},
+		{
+			name: "negative n returns empty string",
+			s:    "line1\nline2\nline3",
+			n:    -1,
+			want: "",
+		},
+		{
+			name: "empty string returns empty string",
+			s:    "",
+			n:    3,
+			want: "",
+		},
+		{
+			name: "all-newlines string returns empty string",
+			s:    "\n\n\n",
+			n:    2,
+			want: "",
+		},
+		{
+			name: "last 1 line",
+			s:    "line1\nline2\nline3",
+			n:    1,
+			want: "line3",
+		},
+		{
+			name: "last 2 lines",
+			s:    "line1\nline2\nline3",
+			n:    2,
+			want: "line2\nline3",
+		},
+		{
+			name: "n equals total number of lines",
+			s:    "line1\nline2\nline3",
+			n:    3,
+			want: "line1\nline2\nline3",
+		},
+		{
+			name: "n greater than total lines returns full string",
+			s:    "line1\nline2\nline3",
+			n:    10,
+			want: "line1\nline2\nline3",
+		},
+		{
+			name: "trailing newline is ignored",
+			s:    "line1\nline2\nline3\n",
+			n:    2,
+			want: "line2\nline3",
+		},
+		{
+			name: "multiple trailing newlines are ignored",
+			s:    "line1\nline2\nline3\n\n\n",
+			n:    2,
+			want: "line2\nline3",
+		},
+		{
+			name: "CRLF line endings are normalized",
+			s:    "line1\r\nline2\r\nline3\r\n",
+			n:    2,
+			want: "line2\nline3",
+		},
+		{
+			name: "single line no newline",
+			s:    "only line",
+			n:    1,
+			want: "only line",
+		},
+		{
+			name: "single line with trailing spaces trimmed",
+			s:    "line1\nline2   ",
+			n:    1,
+			want: "line2",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := manager.LastNLines(tt.s, tt.n)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestFileSizeInBytes(t *testing.T) {
 	provider := pathutil.NewPathProvider()
 	tmpDirPath, err := provider.CreateTempDir("go-utils-test-")

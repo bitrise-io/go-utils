@@ -12,15 +12,21 @@ import (
 )
 
 // CopyFile copies a single file from src to dst.
-func (fm fileManager) CopyFile(src, dst string) error {
+// Pass [CopyOptions] to modify default behavior as required, nil otherwise.
+//
+// Attention: the default behavior is different from the v1 implementation of `command.CopyFile`,
+// v1 function replaces the existing file.
+// By default, if the target file exists, this call will fail with an error.
+func (fm fileManager) CopyFile(src, dst string, opts *CopyOptions) error {
 	srcDir := filepath.Dir(src)
 	fsys := fm.osProxy.DirFS(srcDir)
 
-	return fm.copyFileFS(fsys, filepath.Base(src), dst)
+	return fm.copyFileFS(fsys, filepath.Base(src), dst, opts)
 }
 
-// CopyFileFS is the excerpt from fs.CopyFS that copies a single file from fs.FS to dst path.
-func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string) error {
+// copyFileFS is the excerpt from fs.CopyFS that copies a single file from fs.FS to dst path.
+// The [CopyOptions] parameter is used to modify default behavior as required or keep the default when nil is provided.
+func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string, opts *CopyOptions) error {
 	r, err := fsys.Open(src)
 	if err != nil {
 		return err
@@ -30,7 +36,11 @@ func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string) error {
 	if err != nil {
 		return err
 	}
-	w, err := fm.osProxy.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0777)
+	flags := os.O_CREATE | os.O_EXCL | os.O_WRONLY
+	if opts != nil && opts.Overwrite {
+		flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+	}
+	w, err := fm.osProxy.OpenFile(dst, flags, 0777)
 	if err != nil {
 		return err
 	}
@@ -65,9 +75,11 @@ func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string) error {
 //
 // Preserves permissions and ownership when possible.
 //
-// CopyFS will not overwrite existing files. If a file name in fsys
+// By default, CopyFS will not overwrite existing files. If a file name in fsys
 // already exists in the destination, CopyFS will return an error
 // such that errors.Is(err, fs.ErrExist) will be true.
+// Attention: the default behavior is different from the v1 implementation of `command.CopyFile`,
+// v1 function replaces the existing files.
 //
 // Symbolic links in dir are followed.
 //
@@ -76,7 +88,7 @@ func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string) error {
 //
 // Copying stops at and returns the first error encountered.
 // Note: symlinks are preserved during the copy operation
-func (fm fileManager) CopyDir(src, dst string) error {
+func (fm fileManager) CopyDir(src, dst string, opts *CopyOptions) error {
 	fsys := fm.osProxy.DirFS(src)
 	return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -120,7 +132,7 @@ func (fm fileManager) CopyDir(src, dst string) error {
 
 		// "normal" file
 		case 0:
-			return fm.copyFileFS(fsys, path, newPath)
+			return fm.copyFileFS(fsys, path, newPath, opts)
 
 		default:
 			return &os.PathError{Op: "CopyFS", Path: path, Err: os.ErrInvalid}

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/v2/fileutil/mocks"
+	"github.com/bitrise-io/go-utils/v2/fileutil/mocks/osproxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -17,7 +17,7 @@ func TestCopyFile(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -35,7 +35,36 @@ func TestCopyFile(t *testing.T) {
 	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
 	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
 
-	assert.NoError(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1"))
+	assert.NoError(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil))
+}
+
+func TestCopyFile_WithOverwrite(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+	// Pre-create the destination file so overwrite is exercised
+	require.NoError(t, os.WriteFile(filepath.Join(dstDir, "file1"), []byte("old"), 0644))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// Expect srcDir check
+	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
+
+	// Expect dst file open for writing with TRUNC flag (overwrite)
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+
+	// Expect dst file ownership, permissions and times to be set
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	assert.NoError(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", &CopyOptions{Overwrite: true}))
 }
 
 func TestCopyFile_GivenDstFileOpenFailure_WillFail(t *testing.T) {
@@ -44,7 +73,7 @@ func TestCopyFile_GivenDstFileOpenFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -57,7 +86,7 @@ func TestCopyFile_GivenDstFileOpenFailure_WillFail(t *testing.T) {
 		Return(nil, os.ErrPermission).
 		Once()
 
-	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1"), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
 }
 
 func TestCopyFile_GivenDstFileOwnershipChangeFailure_WillFail(t *testing.T) {
@@ -66,7 +95,7 @@ func TestCopyFile_GivenDstFileOwnershipChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -82,7 +111,7 @@ func TestCopyFile_GivenDstFileOwnershipChangeFailure_WillFail(t *testing.T) {
 	// Expect dst file ownership, permissions and times to be set
 	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1"), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
 }
 
 func TestCopyFile_GivenDstFileModeChangeFailure_WillFail(t *testing.T) {
@@ -91,7 +120,7 @@ func TestCopyFile_GivenDstFileModeChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -108,7 +137,7 @@ func TestCopyFile_GivenDstFileModeChangeFailure_WillFail(t *testing.T) {
 	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
 	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1"), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
 }
 
 func TestCopyFile_GivenDstFileTimesChangeFailure_WillFail(t *testing.T) {
@@ -117,7 +146,7 @@ func TestCopyFile_GivenDstFileTimesChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -135,7 +164,7 @@ func TestCopyFile_GivenDstFileTimesChangeFailure_WillFail(t *testing.T) {
 	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
 	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1"), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir(t *testing.T) {
@@ -146,7 +175,7 @@ func TestCopyDir(t *testing.T) {
 	linkTarget := filepath.Join(srcDir, "file1")
 	assert.NoError(t, os.Symlink(linkTarget, filepath.Join(srcDir, "link")))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -171,7 +200,38 @@ func TestCopyDir(t *testing.T) {
 	osProxy.EXPECT().Symlink(linkTarget, filepath.Join(dstDir, "link")).Return(nil).Once()
 	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "link"), mock.Anything, mock.Anything).Return(nil).Once()
 
-	assert.NoError(t, sut.CopyDir(srcDir, dstDir))
+	assert.NoError(t, sut.CopyDir(srcDir, dstDir, nil))
+}
+
+func TestCopyDir_WithOverwrite(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+	// Pre-create the destination file so overwrite is exercised
+	require.NoError(t, os.WriteFile(filepath.Join(dstDir, "file1"), []byte("old"), 0644))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// Expect changes for dstDir
+	osProxy.EXPECT().MkdirAll(dstDir, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Lchown(dstDir, mock.Anything, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chmod(dstDir, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(dstDir, mock.Anything, mock.Anything).Return(nil).Once()
+
+	// Expect file copy with TRUNC flag (overwrite)
+	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	assert.NoError(t, sut.CopyDir(srcDir, dstDir, &CopyOptions{Overwrite: true}))
 }
 
 func TestCopyDir_GivenDstDirCreationFailure_WillFail(t *testing.T) {
@@ -180,7 +240,7 @@ func TestCopyDir_GivenDstDirCreationFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -190,7 +250,7 @@ func TestCopyDir_GivenDstDirCreationFailure_WillFail(t *testing.T) {
 	// Expect file copy expectations for file1
 	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_GivenDstOwnershipChangeFailure_WillFail(t *testing.T) {
@@ -199,7 +259,7 @@ func TestCopyDir_GivenDstOwnershipChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -210,7 +270,7 @@ func TestCopyDir_GivenDstOwnershipChangeFailure_WillFail(t *testing.T) {
 	// Expect file copy expectations for file1
 	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_GivenDstModeChangeFailure_WillFail(t *testing.T) {
@@ -219,7 +279,7 @@ func TestCopyDir_GivenDstModeChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -231,7 +291,7 @@ func TestCopyDir_GivenDstModeChangeFailure_WillFail(t *testing.T) {
 	// Expect file copy expectations for file1
 	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_GivenDstTimesChangeFailure_WillFail(t *testing.T) {
@@ -240,7 +300,7 @@ func TestCopyDir_GivenDstTimesChangeFailure_WillFail(t *testing.T) {
 	dstDir := filepath.Join(tmpDir, "dst-dir")
 	assert.NoError(t, os.MkdirAll(dstDir, 0755))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -253,7 +313,7 @@ func TestCopyDir_GivenDstTimesChangeFailure_WillFail(t *testing.T) {
 	// Expect file copy expectations for file1
 	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_GivenReadLinkFailure_WillFail(t *testing.T) {
@@ -264,7 +324,7 @@ func TestCopyDir_GivenReadLinkFailure_WillFail(t *testing.T) {
 	linkTarget := filepath.Join(srcDir, "file1")
 	assert.NoError(t, os.Symlink(linkTarget, filepath.Join(srcDir, "link")))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -287,7 +347,7 @@ func TestCopyDir_GivenReadLinkFailure_WillFail(t *testing.T) {
 	// Expect symlink copy expectations for link
 	osProxy.EXPECT().Readlink(filepath.Join(srcDir, "link")).Return("", os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_SymlinkFailure_WillFail(t *testing.T) {
@@ -298,7 +358,7 @@ func TestCopyDir_SymlinkFailure_WillFail(t *testing.T) {
 	linkTarget := filepath.Join(srcDir, "file1")
 	assert.NoError(t, os.Symlink(linkTarget, filepath.Join(srcDir, "link")))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -322,7 +382,7 @@ func TestCopyDir_SymlinkFailure_WillFail(t *testing.T) {
 	osProxy.EXPECT().Readlink(filepath.Join(srcDir, "link")).Return(linkTarget, nil).Once()
 	osProxy.EXPECT().Symlink(linkTarget, filepath.Join(dstDir, "link")).Return(os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 func TestCopyDir_SymlinkLChownFailure_WillFail(t *testing.T) {
@@ -333,7 +393,7 @@ func TestCopyDir_SymlinkLChownFailure_WillFail(t *testing.T) {
 	linkTarget := filepath.Join(srcDir, "file1")
 	assert.NoError(t, os.Symlink(linkTarget, filepath.Join(srcDir, "link")))
 
-	osProxy := mocks.NewOsProxy(t)
+	osProxy := osproxy.NewOsProxy(t)
 
 	sut := fileManager{osProxy: osProxy}
 
@@ -358,7 +418,7 @@ func TestCopyDir_SymlinkLChownFailure_WillFail(t *testing.T) {
 	osProxy.EXPECT().Symlink(linkTarget, filepath.Join(dstDir, "link")).Return(nil).Once()
 	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "link"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
 }
 
 // ---------------------------

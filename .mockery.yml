@@ -16,3 +16,6 @@ packages:
     interfaces:
       FileManager:
       OsProxy:
+        config:
+          dir: "{{.InterfaceDir}}/mocks/osproxy"
+          pkgname: osproxy

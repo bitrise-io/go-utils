@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+// CopyOptions configures a [FileManager.CopyFile] operation.
+// A nil pointer means default behavior.
+type CopyOptions struct {
+	Overwrite bool // Overwrite replaces the destination file if it already exists.
+}
+
 // FileManager ...
 type FileManager interface {
 	Open(path string) (*os.File, error)
@@ -19,8 +25,8 @@ type FileManager interface {
 	Write(path string, value string, perm os.FileMode) error
 	WriteBytes(path string, value []byte) error
 	FileSizeInBytes(pth string) (int64, error)
-	CopyFile(src, dst string) error
-	CopyDir(src, dst string) error
+	CopyFile(src, dst string, opts *CopyOptions) error
+	CopyDir(src, dst string, opts *CopyOptions) error
 	Lstat(path string) (os.FileInfo, error)
 	LastNLines(s string, n int) string
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 
+	fileutil "github.com/bitrise-io/go-utils/v2/fileutil"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -39,16 +40,16 @@ func (_m *FileManager) EXPECT() *FileManager_Expecter {
 }
 
 // CopyDir provides a mock function for the type FileManager
-func (_mock *FileManager) CopyDir(src string, dst string) error {
-	ret := _mock.Called(src, dst)
+func (_mock *FileManager) CopyDir(src string, dst string, opts *fileutil.CopyOptions) error {
+	ret := _mock.Called(src, dst, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CopyDir")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = returnFunc(src, dst)
+	if returnFunc, ok := ret.Get(0).(func(string, string, *fileutil.CopyOptions) error); ok {
+		r0 = returnFunc(src, dst, opts)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -63,11 +64,12 @@ type FileManager_CopyDir_Call struct {
 // CopyDir is a helper method to define mock.On call
 //   - src string
 //   - dst string
-func (_e *FileManager_Expecter) CopyDir(src interface{}, dst interface{}) *FileManager_CopyDir_Call {
-	return &FileManager_CopyDir_Call{Call: _e.mock.On("CopyDir", src, dst)}
+//   - opts *fileutil.CopyOptions
+func (_e *FileManager_Expecter) CopyDir(src interface{}, dst interface{}, opts interface{}) *FileManager_CopyDir_Call {
+	return &FileManager_CopyDir_Call{Call: _e.mock.On("CopyDir", src, dst, opts)}
 }
 
-func (_c *FileManager_CopyDir_Call) Run(run func(src string, dst string)) *FileManager_CopyDir_Call {
+func (_c *FileManager_CopyDir_Call) Run(run func(src string, dst string, opts *fileutil.CopyOptions)) *FileManager_CopyDir_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -77,9 +79,14 @@ func (_c *FileManager_CopyDir_Call) Run(run func(src string, dst string)) *FileM
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
+		var arg2 *fileutil.CopyOptions
+		if args[2] != nil {
+			arg2 = args[2].(*fileutil.CopyOptions)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -90,22 +97,22 @@ func (_c *FileManager_CopyDir_Call) Return(err error) *FileManager_CopyDir_Call 
 	return _c
 }
 
-func (_c *FileManager_CopyDir_Call) RunAndReturn(run func(src string, dst string) error) *FileManager_CopyDir_Call {
+func (_c *FileManager_CopyDir_Call) RunAndReturn(run func(src string, dst string, opts *fileutil.CopyOptions) error) *FileManager_CopyDir_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CopyFile provides a mock function for the type FileManager
-func (_mock *FileManager) CopyFile(src string, dst string) error {
-	ret := _mock.Called(src, dst)
+func (_mock *FileManager) CopyFile(src string, dst string, opts *fileutil.CopyOptions) error {
+	ret := _mock.Called(src, dst, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CopyFile")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = returnFunc(src, dst)
+	if returnFunc, ok := ret.Get(0).(func(string, string, *fileutil.CopyOptions) error); ok {
+		r0 = returnFunc(src, dst, opts)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -120,11 +127,12 @@ type FileManager_CopyFile_Call struct {
 // CopyFile is a helper method to define mock.On call
 //   - src string
 //   - dst string
-func (_e *FileManager_Expecter) CopyFile(src interface{}, dst interface{}) *FileManager_CopyFile_Call {
-	return &FileManager_CopyFile_Call{Call: _e.mock.On("CopyFile", src, dst)}
+//   - opts *fileutil.CopyOptions
+func (_e *FileManager_Expecter) CopyFile(src interface{}, dst interface{}, opts interface{}) *FileManager_CopyFile_Call {
+	return &FileManager_CopyFile_Call{Call: _e.mock.On("CopyFile", src, dst, opts)}
 }
 
-func (_c *FileManager_CopyFile_Call) Run(run func(src string, dst string)) *FileManager_CopyFile_Call {
+func (_c *FileManager_CopyFile_Call) Run(run func(src string, dst string, opts *fileutil.CopyOptions)) *FileManager_CopyFile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 string
 		if args[0] != nil {
@@ -134,9 +142,14 @@ func (_c *FileManager_CopyFile_Call) Run(run func(src string, dst string)) *File
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
+		var arg2 *fileutil.CopyOptions
+		if args[2] != nil {
+			arg2 = args[2].(*fileutil.CopyOptions)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -147,7 +160,7 @@ func (_c *FileManager_CopyFile_Call) Return(err error) *FileManager_CopyFile_Cal
 	return _c
 }
 
-func (_c *FileManager_CopyFile_Call) RunAndReturn(run func(src string, dst string) error) *FileManager_CopyFile_Call {
+func (_c *FileManager_CopyFile_Call) RunAndReturn(run func(src string, dst string, opts *fileutil.CopyOptions) error) *FileManager_CopyFile_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -12,7 +12,27 @@ require-template-schema-exists: true
 template: testify
 template-schema: "{{.Template}}.schema.json"
 packages:
+  github.com/bitrise-io/go-utils/v2/analytics:
+    interfaces:
+      Client:
+  github.com/bitrise-io/go-utils/v2/env:
+    interfaces:
+      CommandLocator:
+      Repository:
+  github.com/bitrise-io/go-utils/v2/command:
+    interfaces:
+      Factory:
+      Command:
   github.com/bitrise-io/go-utils/v2/fileutil:
     interfaces:
       FileManager:
       OsProxy:
+  github.com/bitrise-io/go-utils/v2/log:
+    interfaces:
+      Logger:
+  github.com/bitrise-io/go-utils/v2/pathutil:
+    interfaces:
+      PathProvider:
+      PathChecker:
+      PathModifier:
+  

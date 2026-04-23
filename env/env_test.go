@@ -129,7 +129,7 @@ func TestRepository_Scoped_restoresOnPanic(t *testing.T) {
 	t.Setenv("SC_P", "orig")
 
 	defer func() {
-		recover()
+		_ = recover()
 		require.Equal(t, "orig", repo.Get("SC_P"))
 	}()
 

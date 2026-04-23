@@ -9,19 +9,27 @@ import (
 
 // FilterPaths applies filters to an explicit list of OS paths and returns
 // the ones that pass every filter, preserving input order. Each path is
-// stat-ed to build an fs.DirEntry for the filter callbacks; a missing path
-// surfaces the stat error.
+// stat-ed opportunistically so filters that consult fs.DirEntry (e.g.
+// IsDirectoryFilter) work; paths that do not exist on disk are still fed
+// to the filters with a nil DirEntry, matching v1's purely lexical
+// behavior for path-only filters. Stat errors other than "not exist"
+// surface to the caller.
 //
 // This adapter preserves the v1 go-utils pathutil.FilterPaths signature so
 // callers can migrate by import-path rename only. Prefer FilterFS in new code.
 func FilterPaths(paths []string, filters ...FilterFunc) ([]string, error) {
 	var filtered []string
 	for _, pth := range paths {
+		var d fs.DirEntry
 		info, err := os.Lstat(pth)
-		if err != nil {
+		switch {
+		case err == nil:
+			d = fs.FileInfoToDirEntry(info)
+		case errors.Is(err, fs.ErrNotExist):
+			// Leave d nil; path-only filters still work.
+		default:
 			return nil, err
 		}
-		d := fs.FileInfoToDirEntry(info)
 
 		keep, err := runFilters(pth, d, filters)
 		if err != nil {

@@ -36,30 +36,6 @@ type Repository interface {
 	Get(key string) string
 	// Set assigns value to key.
 	Set(key, value string) error
-
-	// GetOrDefault returns the value of key or def when the key is unset
-	// or empty.
-	GetOrDefault(key, def string) string
-	// Required returns the value of key or an error when it is unset or
-	// empty.
-	Required(key string) (string, error)
-	// FlagOrEnv returns *flag when it points to a non-empty string, else
-	// the value of key. A nil pointer is treated as unset.
-	FlagOrEnv(flag *string, key string) string
-
-	// Revokable sets key to value and returns a function that restores
-	// the previous value when invoked.
-	Revokable(key, value string) (revoke func() error, err error)
-	// RevokableMany applies every entry in envs and returns a single
-	// function that restores all previous values. If any Set fails,
-	// the returned revoke still restores entries already applied.
-	RevokableMany(envs map[string]string) (revoke func() error, err error)
-	// Scoped sets key to value, invokes fn, and then restores the
-	// previous value. The restore runs even if fn panics.
-	Scoped(key, value string, fn func()) error
-	// ScopedMany applies every entry in envs, invokes fn, and restores
-	// all previous values. Restore runs even if fn panics.
-	ScopedMany(envs map[string]string, fn func()) error
 }
 
 // NewRepository ...
@@ -89,46 +65,63 @@ func (d repository) List() []string {
 	return os.Environ()
 }
 
-// GetOrDefault ...
-func (d repository) GetOrDefault(key, def string) string {
-	if v := d.Get(key); v != "" {
+// Getter is the minimal interface required to read an environment variable.
+// Callers should prefer defining their own local interface at the use site;
+// this type exists so the helpers in this package can stay small.
+type Getter interface {
+	Get(key string) string
+}
+
+// GetSetter is the minimal interface required to read and write environment
+// variables. Callers should prefer defining their own local interface at the
+// use site; this type exists so the helpers in this package can stay small.
+type GetSetter interface {
+	Get(key string) string
+	Set(key, value string) error
+}
+
+// GetOrDefault returns r.Get(key) when non-empty, else def.
+func GetOrDefault(r Getter, key, def string) string {
+	if v := r.Get(key); v != "" {
 		return v
 	}
 	return def
 }
 
-// Required ...
-func (d repository) Required(key string) (string, error) {
-	if v := d.Get(key); v != "" {
+// Required returns r.Get(key) or an error when it is unset or empty.
+func Required(r Getter, key string) (string, error) {
+	if v := r.Get(key); v != "" {
 		return v, nil
 	}
 	return "", fmt.Errorf("required environment variable (%s) not provided", key)
 }
 
-// FlagOrEnv ...
-func (d repository) FlagOrEnv(flag *string, key string) string {
+// FlagOrEnv returns *flag when it points to a non-empty string, else r.Get(key).
+// A nil pointer is treated as unset.
+func FlagOrEnv(r Getter, flag *string, key string) string {
 	if flag != nil && *flag != "" {
 		return *flag
 	}
-	return d.Get(key)
+	return r.Get(key)
 }
 
-// Revokable ...
-func (d repository) Revokable(key, value string) (func() error, error) {
-	orig := d.Get(key)
-	revoke := func() error { return d.Set(key, orig) }
-	return revoke, d.Set(key, value)
+// Revokable sets key to value on r and returns a function that restores the
+// previous value when invoked.
+func Revokable(r GetSetter, key, value string) (func() error, error) {
+	orig := r.Get(key)
+	revoke := func() error { return r.Set(key, orig) }
+	return revoke, r.Set(key, value)
 }
 
-// RevokableMany sets every key in envs and returns a revoke function that restores
-// the previous values. If any Set fails, every key already written is restored
-// before returning; the returned error wraps both the Set failure and any
-// restore failure, and the returned revoke is a no-op.
-func (d repository) RevokableMany(envs map[string]string) (func() error, error) {
+// RevokableMany sets every key in envs on r and returns a revoke function that
+// restores the previous values. If any Set fails, every key already written is
+// restored before returning; the returned error wraps both the Set failure and
+// any restore failure, and the returned revoke is a no-op.
+func RevokableMany(r GetSetter, envs map[string]string) (func() error, error) {
 	originals := make(map[string]string, len(envs))
 	revoke := func() error {
 		for k, v := range originals {
-			if err := d.Set(k, v); err != nil {
+			if err := r.Set(k, v); err != nil {
 				return err
 			}
 		}
@@ -136,8 +129,8 @@ func (d repository) RevokableMany(envs map[string]string) (func() error, error) 
 	}
 
 	for k, v := range envs {
-		originals[k] = d.Get(k)
-		if err := d.Set(k, v); err != nil {
+		originals[k] = r.Get(k)
+		if err := r.Set(k, v); err != nil {
 			if rerr := revoke(); rerr != nil {
 				return func() error { return nil }, fmt.Errorf("set %q: %w (restore failed: %v)", k, err, rerr)
 			}
@@ -147,9 +140,10 @@ func (d repository) RevokableMany(envs map[string]string) (func() error, error) 
 	return revoke, nil
 }
 
-// Scoped ...
-func (d repository) Scoped(key, value string, fn func()) (err error) {
-	revoke, setErr := d.Revokable(key, value)
+// Scoped sets key to value on r, invokes fn, then restores the previous value.
+// The restore runs even if fn panics.
+func Scoped(r GetSetter, key, value string, fn func()) (err error) {
+	revoke, setErr := Revokable(r, key, value)
 	if setErr != nil {
 		return setErr
 	}
@@ -162,9 +156,10 @@ func (d repository) Scoped(key, value string, fn func()) (err error) {
 	return nil
 }
 
-// ScopedMany ...
-func (d repository) ScopedMany(envs map[string]string, fn func()) (err error) {
-	revoke, setErr := d.RevokableMany(envs)
+// ScopedMany applies every entry in envs on r, invokes fn, then restores all
+// previous values. Restore runs even if fn panics.
+func ScopedMany(r GetSetter, envs map[string]string, fn func()) (err error) {
+	revoke, setErr := RevokableMany(r, envs)
 	if setErr != nil {
 		return setErr
 	}

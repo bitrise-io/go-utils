@@ -141,33 +141,36 @@ func RevokableMany(r GetSetter, envs map[string]string) (func() error, error) {
 }
 
 // Scoped sets key to value on r, invokes fn, then restores the previous value.
-// The restore runs even if fn panics.
+// The restore runs even if fn panics, and even when the initial Set reports
+// an error (a GetSetter may leave state written and still return an error).
 func Scoped(r GetSetter, key, value string, fn func()) (err error) {
 	revoke, setErr := Revokable(r, key, value)
-	if setErr != nil {
-		return setErr
-	}
 	defer func() {
 		if rerr := revoke(); err == nil {
 			err = rerr
 		}
 	}()
+	if setErr != nil {
+		return setErr
+	}
 	fn()
 	return nil
 }
 
 // ScopedMany applies every entry in envs on r, invokes fn, then restores all
-// previous values. Restore runs even if fn panics.
+// previous values. Restore runs even if fn panics. On setup failure
+// RevokableMany has already restored every key it touched and returns a
+// no-op revoke, so the deferred call is a safe cleanup either way.
 func ScopedMany(r GetSetter, envs map[string]string, fn func()) (err error) {
 	revoke, setErr := RevokableMany(r, envs)
-	if setErr != nil {
-		return setErr
-	}
 	defer func() {
 		if rerr := revoke(); err == nil {
 			err = rerr
 		}
 	}()
+	if setErr != nil {
+		return setErr
+	}
 	fn()
 	return nil
 }

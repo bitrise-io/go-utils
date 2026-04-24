@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -144,6 +145,46 @@ func TestScopedMany(t *testing.T) {
 	require.Equal(t, "tempB", seen["SC_M_B"])
 	require.Equal(t, "origA", repo.Get("SC_M_A"))
 	require.Equal(t, "origB", repo.Get("SC_M_B"))
+}
+
+// dirtySetter writes the value internally but always returns an error from
+// Set. It mirrors a GetSetter implementation that partially applies state
+// even on failure, so the Scoped/ScopedMany deferred revoke must still run.
+type dirtySetter struct {
+	store map[string]string
+	fail  bool
+}
+
+func (d *dirtySetter) Get(key string) string { return d.store[key] }
+func (d *dirtySetter) Set(key, value string) error {
+	d.store[key] = value
+	if d.fail {
+		return fmt.Errorf("set %q: simulated failure", key)
+	}
+	return nil
+}
+
+func TestScoped_restoresWhenSetReportsError(t *testing.T) {
+	r := &dirtySetter{store: map[string]string{"K": "orig"}, fail: true}
+
+	err := Scoped(r, "K", "temp", func() {
+		t.Fatal("fn must not run when setup fails")
+	})
+	require.Error(t, err)
+	require.Equal(t, "orig", r.store["K"])
+}
+
+func TestScopedMany_restoresWhenSetReportsError(t *testing.T) {
+	// RevokableMany does its own cleanup on error and returns a no-op
+	// revoke; the ScopedMany defer must be compatible with that.
+	r := &dirtySetter{store: map[string]string{"K1": "o1", "K2": "o2"}, fail: true}
+
+	err := ScopedMany(r, map[string]string{"K1": "n1", "K2": "n2"}, func() {
+		t.Fatal("fn must not run when setup fails")
+	})
+	require.Error(t, err)
+	require.Equal(t, "o1", r.store["K1"])
+	require.Equal(t, "o2", r.store["K2"])
 }
 
 func TestScoped_restoresOnPanic(t *testing.T) {

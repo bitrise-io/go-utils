@@ -91,6 +91,28 @@ func TestRepository_RevokableMany(t *testing.T) {
 	require.Equal(t, "origB", repo.Get("REV_M_B"))
 }
 
+func TestRepository_RevokableMany_atomicOnError(t *testing.T) {
+	repo := NewRepository()
+	t.Setenv("REV_M_ATOMIC_A", "origA")
+	t.Setenv("REV_M_ATOMIC_B", "origB")
+
+	// Empty key forces os.Setenv to fail ("setenv: invalid argument").
+	// Whatever the map-iteration order, every valid key must end at its
+	// original value and the returned revoke must be a no-op.
+	revoke, err := repo.RevokableMany(map[string]string{
+		"REV_M_ATOMIC_A": "newA",
+		"REV_M_ATOMIC_B": "newB",
+		"":               "boom",
+	})
+	require.Error(t, err)
+	require.Equal(t, "origA", repo.Get("REV_M_ATOMIC_A"))
+	require.Equal(t, "origB", repo.Get("REV_M_ATOMIC_B"))
+
+	require.NoError(t, revoke())
+	require.Equal(t, "origA", repo.Get("REV_M_ATOMIC_A"))
+	require.Equal(t, "origB", repo.Get("REV_M_ATOMIC_B"))
+}
+
 func TestRepository_Scoped(t *testing.T) {
 	repo := NewRepository()
 	t.Setenv("SC_A", "orig")

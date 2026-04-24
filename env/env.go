@@ -120,7 +120,10 @@ func (d repository) Revokable(key, value string) (func() error, error) {
 	return revoke, d.Set(key, value)
 }
 
-// RevokableMany ...
+// RevokableMany sets every key in envs and returns a revoke function that restores
+// the previous values. If any Set fails, every key already written is restored
+// before returning; the returned error wraps both the Set failure and any
+// restore failure, and the returned revoke is a no-op.
 func (d repository) RevokableMany(envs map[string]string) (func() error, error) {
 	originals := make(map[string]string, len(envs))
 	revoke := func() error {
@@ -135,7 +138,10 @@ func (d repository) RevokableMany(envs map[string]string) (func() error, error) 
 	for k, v := range envs {
 		originals[k] = d.Get(k)
 		if err := d.Set(k, v); err != nil {
-			return revoke, err
+			if rerr := revoke(); rerr != nil {
+				return func() error { return nil }, fmt.Errorf("set %q: %w (restore failed: %v)", k, err, rerr)
+			}
+			return func() error { return nil }, fmt.Errorf("set %q: %w", k, err)
 		}
 	}
 	return revoke, nil

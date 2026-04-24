@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -115,24 +116,26 @@ func Revokable(r GetSetter, key, value string) (func() error, error) {
 
 // RevokableMany sets every key in envs on r and returns a revoke function that
 // restores the previous values. If any Set fails, every key already written is
-// restored before returning; the returned error wraps both the Set failure and
-// any restore failure, and the returned revoke is a no-op.
+// restored before returning on a best-effort basis; the returned error wraps
+// both the Set failure and any restore failures, and the returned revoke is
+// a no-op.
 func RevokableMany(r GetSetter, envs map[string]string) (func() error, error) {
 	originals := make(map[string]string, len(envs))
 	revoke := func() error {
+		var errs []error
 		for k, v := range originals {
 			if err := r.Set(k, v); err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("restore %q: %w", k, err))
 			}
 		}
-		return nil
+		return errors.Join(errs...)
 	}
 
 	for k, v := range envs {
 		originals[k] = r.Get(k)
 		if err := r.Set(k, v); err != nil {
 			if rerr := revoke(); rerr != nil {
-				return func() error { return nil }, fmt.Errorf("set %q: %w (restore failed: %v)", k, err, rerr)
+				return func() error { return nil }, fmt.Errorf("set %q: %w (restore failed: %w)", k, err, rerr)
 			}
 			return func() error { return nil }, fmt.Errorf("set %q: %w", k, err)
 		}

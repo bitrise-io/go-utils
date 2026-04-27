@@ -31,7 +31,7 @@ func FilterPaths(paths []string, filters ...FilterFunc) ([]string, error) {
 			return nil, err
 		}
 
-		keep, err := runFilters(pth, d, filters)
+		keep, err := runFilters(filepath.ToSlash(pth), d, filters)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func ListEntries(dir string, filters ...FilterFunc) ([]string, error) {
 	var filtered []string
 	for _, entry := range entries {
 		pth := filepath.Join(absDir, entry.Name())
-		keep, err := runFilters(pth, entry, filters)
+		keep, err := runFilters(filepath.ToSlash(pth), entry, filters)
 		if err != nil {
 			return nil, err
 		}

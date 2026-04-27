@@ -3,12 +3,26 @@ package pathutil
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
+// These tests assume POSIX-style absolute paths (no drive letter, "/" as
+// separator). filepath.Abs and component splitting differ on Windows, so
+// the bare-string assertions would not hold there. CI for go-utils runs on
+// Linux and macOS only; skip on Windows to keep the test honest.
+func skipOnWindows(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX-only: filepath.Abs and component split differ on Windows")
+	}
+}
+
 func TestNewSortablePath(t *testing.T) {
+	skipOnWindows(t)
+
 	sp, err := NewSortablePath("/a/b/c.txt")
 	require.NoError(t, err)
 	require.Equal(t, "/a/b/c.txt", sp.Pth)
@@ -17,6 +31,8 @@ func TestNewSortablePath(t *testing.T) {
 }
 
 func TestSortPathsByComponents(t *testing.T) {
+	skipOnWindows(t)
+
 	input := []string{
 		"/a/b/c/deep.txt",
 		"/x.txt",
@@ -35,11 +51,25 @@ func TestSortPathsByComponents(t *testing.T) {
 }
 
 func TestSortPathsByComponents_tiebreakAlphabetic(t *testing.T) {
+	skipOnWindows(t)
+
 	input := []string{"/a/zeta.txt", "/a/alpha.txt", "/a/mu.txt"}
 
 	got, err := SortPathsByComponents(input)
 	require.NoError(t, err)
 	require.Equal(t, []string{"/a/alpha.txt", "/a/mu.txt", "/a/zeta.txt"}, got)
+}
+
+func TestSortPathsByComponents_tiebreakSameBaseDifferentDir(t *testing.T) {
+	skipOnWindows(t)
+
+	// Same depth, same base name — without the AbsPth tie-breaker the
+	// resulting order would be nondeterministic (sort.Sort is not stable).
+	input := []string{"/b/x.txt", "/a/x.txt"}
+
+	got, err := SortPathsByComponents(input)
+	require.NoError(t, err)
+	require.Equal(t, []string{"/a/x.txt", "/b/x.txt"}, got)
 }
 
 func TestListPathInDirSortedByComponents(t *testing.T) {

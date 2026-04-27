@@ -39,7 +39,9 @@ func NewSortablePath(pth string) (SortablePath, error) {
 }
 
 // BySortablePathComponents sorts SortablePath values by component depth
-// (shallowest first), breaking ties alphabetically on the base name.
+// (shallowest first), breaking ties alphabetically on the base name and
+// falling back to the absolute and original paths to keep the order
+// deterministic when same-depth same-base entries exist.
 type BySortablePathComponents []SortablePath
 
 func (s BySortablePathComponents) Len() int      { return len(s) }
@@ -48,7 +50,14 @@ func (s BySortablePathComponents) Less(i, j int) bool {
 	if len(s[i].Components) != len(s[j].Components) {
 		return len(s[i].Components) < len(s[j].Components)
 	}
-	return filepath.Base(s[i].AbsPth) < filepath.Base(s[j].AbsPth)
+	baseI, baseJ := filepath.Base(s[i].AbsPth), filepath.Base(s[j].AbsPth)
+	if baseI != baseJ {
+		return baseI < baseJ
+	}
+	if s[i].AbsPth != s[j].AbsPth {
+		return s[i].AbsPth < s[j].AbsPth
+	}
+	return s[i].Pth < s[j].Pth
 }
 
 // SortPathsByComponents returns paths sorted by directory depth.

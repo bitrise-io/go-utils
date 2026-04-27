@@ -79,11 +79,12 @@ func ComponentFilter(component string, allowed bool) FilterFunc {
 }
 
 // ComponentWithExtensionFilter matches entries whose path has at least one
-// component with the given extension.
+// component with the given extension (case-insensitive, leading dot
+// included, e.g. ".xcodeproj").
 func ComponentWithExtensionFilter(ext string, allowed bool) FilterFunc {
 	return func(pth string, _ fs.DirEntry) (bool, error) {
 		found := slices.ContainsFunc(strings.Split(pth, "/"), func(c string) bool {
-			return path.Ext(c) == ext
+			return strings.EqualFold(path.Ext(c), ext)
 		})
 		return allowed == found, nil
 	}

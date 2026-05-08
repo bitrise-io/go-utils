@@ -2,7 +2,6 @@ package git
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,12 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-type nonTemplateAction struct{}
-
-func (nonTemplateAction) Create(stdOut, stdErr io.Writer, envs []string) command.Command {
-	return nil
-}
 
 func TestNewFactory_CreatesDir(t *testing.T) {
 	tmp := t.TempDir()
@@ -104,8 +97,7 @@ func TestFactory_TemplatesBuildExpectedArgsAndOpts(t *testing.T) {
 		{name: "new branch", template: func(f Factory) Template { return f.NewBranch("feature") }, wantArgs: []string{"checkout", "-b", "feature"}},
 
 		{name: "submodule update", template: func(f Factory) Template { return f.SubmoduleUpdate("--force") }, wantArgs: []string{"submodule", "update", "--init", "--recursive", "--force"}},
-		{name: "submodule foreach (template action)", template: func(f Factory) Template { return f.SubmoduleForeach(f.Checkout("main")) }, wantArgs: []string{"submodule", "foreach", "checkout", "main"}},
-		{name: "submodule foreach (non-template action)", template: func(f Factory) Template { return f.SubmoduleForeach(nonTemplateAction{}) }, wantArgs: []string{"submodule", "foreach"}},
+		{name: "submodule foreach", template: func(f Factory) Template { return f.SubmoduleForeach("checkout", "main") }, wantArgs: []string{"submodule", "foreach", "checkout", "main"}},
 
 		{name: "log", template: func(f Factory) Template { return f.Log("%H", "--no-color") }, wantArgs: []string{"log", "-1", "--format=%H", "--no-color"}},
 		{name: "rev-list", template: func(f Factory) Template { return f.RevList("HEAD", "--max-count", "1") }, wantArgs: []string{"rev-list", "HEAD", "--max-count", "1"}},

@@ -25,7 +25,7 @@ type Factory interface {
 	NewBranch(branch string) Template
 
 	SubmoduleUpdate(opts ...string) Template
-	SubmoduleForeach(action Template) Template
+	SubmoduleForeach(args ...string) Template
 
 	Log(format string, opts ...string) Template
 	RevList(commit string, opts ...string) Template
@@ -155,12 +155,9 @@ func (f *factory) Log(format string, opts ...string) Template {
 }
 
 // SubmoduleForeach ...
-func (f *factory) SubmoduleForeach(action Template) Template {
-	args := []string{"submodule", "foreach"}
-	if t, ok := action.(*template); ok {
-		args = append(args, t.args...)
-	}
-	return f.template(args...)
+func (f *factory) SubmoduleForeach(args ...string) Template {
+	a := append([]string{"submodule", "foreach"}, args...)
+	return f.template(a...)
 }
 
 // SubmoduleUpdate ...

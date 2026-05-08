@@ -20,11 +20,15 @@ type template struct {
 
 // Create ...
 func (t *template) Create(stdOut, stdErr io.Writer, envs []string) command.Command {
+	mergedEnv := make([]string, 0, len(t.envs)+len(envs))
+	mergedEnv = append(mergedEnv, t.envs...)
+	mergedEnv = append(mergedEnv, envs...)
+
 	opts := &command.Opts{
 		Stdout: stdOut,
 		Stderr: stdErr,
 		Dir:    t.dir,
-		Env:    append(t.envs, envs...),
+		Env:    mergedEnv,
 	}
 
 	return t.cmdFactory.Create("git", t.args, opts)

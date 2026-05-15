@@ -23,7 +23,7 @@ const (
 // ColorFunc ...
 type ColorFunc func(a ...interface{}) string
 
-func addColor(color Color, msg string) string {
+func AddColor(color Color, msg string) string {
 	return string(color) + msg + string(resetColor)
 }
 
@@ -34,37 +34,37 @@ func NoColor(a ...interface{}) string {
 
 // Black ...
 func Black(a ...interface{}) string {
-	return addColor(blackColor, fmt.Sprint(a...))
+	return AddColor(blackColor, fmt.Sprint(a...))
 }
 
 // Red ...
 func Red(a ...interface{}) string {
-	return addColor(redColor, fmt.Sprint(a...))
+	return AddColor(redColor, fmt.Sprint(a...))
 }
 
 // Green ...
 func Green(a ...interface{}) string {
-	return addColor(greenColor, fmt.Sprint(a...))
+	return AddColor(greenColor, fmt.Sprint(a...))
 }
 
 // Yellow ...
 func Yellow(a ...interface{}) string {
-	return addColor(yellowColor, fmt.Sprint(a...))
+	return AddColor(yellowColor, fmt.Sprint(a...))
 }
 
 // Blue ...
 func Blue(a ...interface{}) string {
-	return addColor(blueColor, fmt.Sprint(a...))
+	return AddColor(blueColor, fmt.Sprint(a...))
 }
 
 // Magenta ...
 func Magenta(a ...interface{}) string {
-	return addColor(magentaColor, fmt.Sprint(a...))
+	return AddColor(magentaColor, fmt.Sprint(a...))
 }
 
 // Cyan ...
 func Cyan(a ...interface{}) string {
-	return addColor(cyanColor, fmt.Sprint(a...))
+	return AddColor(cyanColor, fmt.Sprint(a...))
 }
 
 // ColorfFunc ...

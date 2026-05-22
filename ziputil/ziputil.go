@@ -10,7 +10,10 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 )
 
-// ZipDir ...
+// ZipDir zips sourceDirPth into destinationZipPth.
+// isContentOnly=false: archive contains the directory under its own basename (e.g. "mydir/file.txt").
+// isContentOnly=true: archive contains the directory's contents directly (e.g. "file.txt").
+// Directory modification times are preserved. Symlinks are stored as symlinks (not followed).
 func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 	if exist, err := pathutil.IsDirExists(sourceDirPth); err != nil {
 		return err
@@ -30,7 +33,11 @@ func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 
 }
 
-// ZipDirs ...
+// ZipDirs zips multiple directories into a single archive, each under its own basename.
+// When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
+// their contents are merged: files unique to either directory are preserved, and files
+// with the same name are resolved in favour of the last directory in the list.
+// If the temporary directory cleanup fails, the process is terminated via log.Fatal.
 func ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 	for _, path := range sourceDirPths {
 		if exist, err := pathutil.IsDirExists(path); err != nil {
@@ -62,9 +69,9 @@ func ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 }
 
 func internalZipDir(destinationZipPth, zipTarget, workDir string) error {
-	// -r - Travel the directory structure recursively
-	// -T - Test the integrity of the new zip file
-	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
+	// -r: recurse into directories
+	// -T: test archive integrity after creation; deletes the archive on failure
+	// -y: store symlinks as symlinks instead of following them
 	cmd := command.New("/usr/bin/zip", "-rTy", destinationZipPth, zipTarget)
 	cmd.SetDir(workDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
@@ -74,12 +81,15 @@ func internalZipDir(destinationZipPth, zipTarget, workDir string) error {
 	return nil
 }
 
-// ZipFile ...
+// ZipFile zips a single file into destinationZipPth.
 func ZipFile(sourceFilePth, destinationZipPth string) error {
 	return ZipFiles([]string{sourceFilePth}, destinationZipPth)
 }
 
-// ZipFiles ...
+// ZipFiles zips multiple files into destinationZipPth without preserving directory structure.
+// Each file is stored under its base name only (-j junk paths).
+// If two source files share the same base name, the command fails and the destination
+// file is not created.
 func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 	for _, path := range sourceFilePths {
 		if exist, err := pathutil.IsPathExists(path); err != nil {
@@ -89,9 +99,9 @@ func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 		}
 	}
 
-	// -T - Test the integrity of the new zip file
-	// -y - Store symbolic links as such in the zip archive, instead of compressing and storing the file referred to by the link
-	// -j - Do not recreate the directory structure inside the zip. Kind of equivalent of copying all the files in one folder and zipping it.
+	// -T: test archive integrity after creation; deletes the archive on failure
+	// -y: store symlinks as symlinks instead of following them
+	// -j: junk directory paths, store files under their base names only
 	parameters := []string{"-Tyj", destinationZipPth}
 	parameters = append(parameters, sourceFilePths...)
 	cmd := command.New("/usr/bin/zip", parameters...)
@@ -102,7 +112,10 @@ func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 	return nil
 }
 
-// UnZip ...
+// UnZip extracts the zip archive at zipPth into intoDir.
+// Entries with path-traversal components (e.g. "../../escape") are not rejected;
+// instead the system unzip strips those components, extracts the file inside intoDir,
+// and returns a non-zero exit code. The exact behaviour is macOS unzip version dependent.
 func UnZip(zip, intoDir string) error {
 	cmd := command.New("/usr/bin/unzip", zip, "-d", intoDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {

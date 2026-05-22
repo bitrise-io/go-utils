@@ -1,9 +1,11 @@
 package ziputil
 
 import (
+	"archive/zip"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -401,4 +403,140 @@ func TestUnZipDirectory(t *testing.T) {
 		require.NoError(t, revokeFn())
 		// ---
 	}
+}
+
+// TestZipDirPreservesDirMtime verifies that directory entry modification times are stored
+// in the archive.
+func TestZipDirPreservesDirMtime(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	require.NoError(t, err)
+
+	sourceDir := filepath.Join(tmpDir, "sourceDir")
+	require.NoError(t, os.MkdirAll(sourceDir, 0755))
+
+	knownTime := time.Date(2020, 1, 1, 12, 0, 0, 0, time.UTC)
+	require.NoError(t, os.Chtimes(sourceDir, knownTime, knownTime))
+
+	destinationZip := filepath.Join(tmpDir, "out.zip")
+	// isContentOnly=true so sourceDir/ is a direct top-level entry with a predictable name.
+	require.NoError(t, ZipDir(tmpDir, destinationZip, true))
+
+	r, err := zip.OpenReader(destinationZip)
+	require.NoError(t, err)
+	defer r.Close() //nolint:errcheck
+
+	var found bool
+	for _, f := range r.File {
+		if f.Name == "sourceDir/" {
+			found = true
+			stored := f.Modified.UTC()
+			require.Equal(t, knownTime.Year(), stored.Year())
+			require.Equal(t, knownTime.Month(), stored.Month())
+			require.Equal(t, knownTime.Day(), stored.Day())
+			break
+		}
+	}
+	require.True(t, found, "sourceDir/ entry not found in archive")
+}
+
+// TestZipDirsSameBasenamesMerge verifies the merge behaviour when two entries in
+// sourceDirPths share the same basename. Files unique to either directory are preserved;
+// conflicting files (same name) are resolved in favour of the last directory in the list.
+func TestZipDirsSameBasenamesMerge(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	require.NoError(t, err)
+
+	// /a/shared and /b/shared share the basename "shared".
+	dirA := filepath.Join(tmpDir, "a", "shared")
+	dirB := filepath.Join(tmpDir, "b", "shared")
+	require.NoError(t, os.MkdirAll(dirA, 0755))
+	require.NoError(t, os.MkdirAll(dirB, 0755))
+
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "only_in_a.txt"), "from_a"))
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "only_in_b.txt"), "from_b"))
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "conflict.txt"), "first"))
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "conflict.txt"), "second"))
+
+	destinationZip := filepath.Join(tmpDir, "out.zip")
+	require.NoError(t, ZipDirs([]string{dirA, dirB}, destinationZip))
+
+	unzipDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+	require.NoError(t, err)
+	require.NoError(t, UnZip(destinationZip, unzipDir))
+
+	// Files unique to each directory are both present.
+	onlyA, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "only_in_a.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "from_a", onlyA)
+
+	onlyB, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "only_in_b.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "from_b", onlyB)
+
+	// Conflicting file resolves to the last directory in the list.
+	conflict, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "conflict.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "second", conflict)
+}
+
+// TestZipFilesDuplicateBasenameNoOutputCreated verifies that when two source files share
+// the same base name, ZipFiles returns an error and does not create the destination file.
+func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	require.NoError(t, err)
+
+	dirA := filepath.Join(tmpDir, "a")
+	dirB := filepath.Join(tmpDir, "b")
+	require.NoError(t, os.MkdirAll(dirA, 0755))
+	require.NoError(t, os.MkdirAll(dirB, 0755))
+
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "file.txt"), "a"))
+	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "file.txt"), "b"))
+
+	destinationZip := filepath.Join(tmpDir, "out.zip")
+	require.Error(t, ZipFiles([]string{
+		filepath.Join(dirA, "file.txt"),
+		filepath.Join(dirB, "file.txt"),
+	}, destinationZip))
+
+	// The destination file must not be left behind after the failure.
+	exist, err := pathutil.IsPathExists(destinationZip)
+	require.NoError(t, err)
+	require.False(t, exist, "destination zip must not be created when duplicate base names are detected")
+}
+
+// TestUnZipZipSlipHandling verifies the behaviour for archives with path-traversal entries.
+// The system unzip strips the "../" components, extracts the file inside intoDir,
+// and returns a non-zero exit code (which UnZip surfaces as an error).
+func TestUnZipZipSlipHandling(t *testing.T) {
+	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	require.NoError(t, err)
+
+	evilZip := filepath.Join(tmpDir, "evil.zip")
+	zf, err := os.Create(evilZip)
+	require.NoError(t, err)
+	zw := zip.NewWriter(zf)
+	w, err := zw.CreateHeader(&zip.FileHeader{Name: "../../escape.txt", Method: zip.Store})
+	require.NoError(t, err)
+	_, err = w.Write([]byte("escaped"))
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+	require.NoError(t, zf.Close())
+
+	destDir := filepath.Join(tmpDir, "dest")
+	require.NoError(t, os.MkdirAll(destDir, 0755))
+
+	// UnZip returns an error because unzip exits non-zero for path-traversal warnings.
+	err = UnZip(evilZip, destDir)
+	require.Error(t, err)
+
+	// Despite the error, the file is extracted inside destDir with the traversal stripped.
+	exist, statErr := pathutil.IsPathExists(filepath.Join(destDir, "escape.txt"))
+	require.NoError(t, statErr)
+	require.True(t, exist, "system unzip strips '../' and extracts inside dest")
+
+	// The file must not have escaped outside destDir.
+	escaped, statErr := pathutil.IsPathExists(filepath.Join(tmpDir, "escape.txt"))
+	require.NoError(t, statErr)
+	require.False(t, escaped, "file must not escape outside intoDir")
 }

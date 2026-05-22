@@ -236,10 +236,20 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
 		if err != nil {
 			return err
 		}
+		targetStr := string(target)
+		if filepath.IsAbs(targetStr) {
+			return fmt.Errorf("symlink target %q is absolute", targetStr)
+		}
+		resolvedTarget := filepath.Clean(filepath.Join(filepath.Dir(destPath), targetStr))
+		cleanDest := filepath.Clean(intoDir)
+		sep := string(os.PathSeparator)
+		if resolvedTarget != cleanDest && !strings.HasPrefix(resolvedTarget, cleanDest+sep) {
+			return fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
+		}
 		if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 			return err
 		}
-		return z.osProxy.Symlink(string(target), destPath)
+		return z.osProxy.Symlink(targetStr, destPath)
 	}
 
 	if f.FileInfo().IsDir() {
@@ -275,5 +285,5 @@ func sanitizeExtractPath(name, destDir string) (string, error) {
 	if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+sep) {
 		return "", fmt.Errorf("illegal path in zip entry: %s", name)
 	}
-	return destPath, nil
+	return cleanPath, nil
 }

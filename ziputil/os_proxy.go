@@ -22,6 +22,6 @@ func (RealOS) Open(name string) (*os.File, error)           { return os.Open(nam
 func (RealOS) Create(name string) (*os.File, error)         { return os.Create(name) }              //nolint:revive
 func (RealOS) MkdirAll(path string, perm os.FileMode) error { return os.MkdirAll(path, perm) }      //nolint:revive
 func (RealOS) Symlink(oldname, newname string) error        { return os.Symlink(oldname, newname) } //nolint:revive
-func (RealOS) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+func (RealOS) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) { //nolint:revive
 	return os.OpenFile(name, flag, perm)
 }

@@ -42,7 +42,7 @@ func TestZipFiles(t *testing.T) {
 		}
 	}
 
-	t.Log("create zip from files with the same name")
+	t.Log("duplicate base names cause an error")
 	{
 		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
 		require.NoError(t, err)
@@ -284,8 +284,7 @@ func TestZipDirPreservesDirMtime(t *testing.T) {
 	require.NoError(t, os.Chtimes(sourceDir, knownTime, knownTime))
 
 	destinationZip := filepath.Join(tmpDir, "out.zip")
-	// isContentOnly=true so sourceDir/ is a direct top-level entry with a predictable name.
-	require.NoError(t, ZipDir(tmpDir, destinationZip, true))
+	require.NoError(t, ZipDir(sourceDir, destinationZip, false))
 
 	r, err := zip.OpenReader(destinationZip)
 	require.NoError(t, err)

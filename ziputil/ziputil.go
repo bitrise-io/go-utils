@@ -35,8 +35,8 @@ func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 
 // ZipDirs zips multiple directories into a single archive, each under its own basename.
 // When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
-// their contents are merged: files unique to either directory are preserved, and files
-// with the same name are resolved in favour of the last directory in the list.
+// their contents are merged via rsync (-ar); the outcome for conflicting filenames depends
+// on rsync's overwrite rules and the files' mtimes at the time of the call.
 // If the temporary directory cleanup fails, the process is terminated via log.Fatal.
 func ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 	for _, path := range sourceDirPths {
@@ -115,7 +115,7 @@ func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 // UnZip extracts the zip archive at zipPth into intoDir.
 // Entries with path-traversal components (e.g. "../../escape") are not rejected;
 // instead the system unzip strips those components, extracts the file inside intoDir,
-// and returns a non-zero exit code. The exact behaviour is macOS unzip version dependent.
+// and returns a non-zero exit code.
 func UnZip(zip, intoDir string) error {
 	cmd := command.New("/usr/bin/unzip", zip, "-d", intoDir)
 	if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {

@@ -108,6 +108,9 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 }
 
 // UnZip extracts the zip archive at zipPth into intoDir, restoring permissions and symlinks.
+// Entries with path-traversal components are not rejected; instead the traversal components
+// are stripped and the file is extracted to the sanitized path inside intoDir. An error is
+// returned after extraction to signal that traversal was detected.
 func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	r, err := zip.OpenReader(zipPth)
 	if err != nil {
@@ -115,12 +118,17 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	}
 	defer r.Close() //nolint:errcheck
 
+	var traversalErr error
 	for _, f := range r.File {
-		if err := z.extractEntry(f, intoDir); err != nil {
+		stripped, err := z.extractEntry(f, intoDir)
+		if err != nil {
 			return err
 		}
+		if stripped && traversalErr == nil {
+			traversalErr = fmt.Errorf("path traversal detected in zip entry %q; components stripped", f.Name)
+		}
 	}
-	return nil
+	return traversalErr
 }
 
 func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) error {
@@ -160,8 +168,9 @@ func (z *ZipManager) addDirToZip(zw *zip.Writer, sourceDirPth, baseDir string) e
 				return err
 			}
 			hdr := &zip.FileHeader{
-				Name:   relPath + "/",
-				Method: zip.Store,
+				Name:     relPath + "/",
+				Method:   zip.Store,
+				Modified: info.ModTime(),
 			}
 			hdr.SetMode(info.Mode())
 			_, err = zw.CreateHeader(hdr)
@@ -219,71 +228,78 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 	return err
 }
 
-func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
-	destPath, err := sanitizeExtractPath(f.Name, intoDir)
-	if err != nil {
-		return err
-	}
+func (z *ZipManager) extractEntry(f *zip.File, intoDir string) (bool, error) {
+	destPath, stripped := sanitizeExtractPath(f.Name, intoDir)
 
 	if f.Mode()&os.ModeSymlink != 0 {
 		rc, err := f.Open()
 		if err != nil {
-			return err
+			return stripped, err
 		}
 		defer rc.Close() //nolint:errcheck
 
 		target, err := io.ReadAll(rc)
 		if err != nil {
-			return err
+			return stripped, err
 		}
 		targetStr := string(target)
 		if filepath.IsAbs(targetStr) {
-			return fmt.Errorf("symlink target %q is absolute", targetStr)
+			return stripped, fmt.Errorf("symlink target %q is absolute", targetStr)
 		}
 		resolvedTarget := filepath.Clean(filepath.Join(filepath.Dir(destPath), targetStr))
 		cleanDest := filepath.Clean(intoDir)
 		sep := string(os.PathSeparator)
 		if resolvedTarget != cleanDest && !strings.HasPrefix(resolvedTarget, cleanDest+sep) {
-			return fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
+			return stripped, fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
 		}
 		if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-			return err
+			return stripped, err
 		}
-		return z.osProxy.Symlink(targetStr, destPath)
+		return stripped, z.osProxy.Symlink(targetStr, destPath)
 	}
 
 	if f.FileInfo().IsDir() {
-		return z.osProxy.MkdirAll(destPath, f.Mode().Perm())
+		return stripped, z.osProxy.MkdirAll(destPath, f.Mode().Perm())
 	}
 
 	if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return err
+		return stripped, err
 	}
 
 	rc, err := f.Open()
 	if err != nil {
-		return err
+		return stripped, err
 	}
 	defer rc.Close() //nolint:errcheck
 
 	dest, err := z.osProxy.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode().Perm())
 	if err != nil {
-		return err
+		return stripped, err
 	}
 	defer dest.Close() //nolint:errcheck
 
 	_, err = io.Copy(dest, rc)
-	return err
+	return stripped, err
 }
 
-// sanitizeExtractPath guards against zip-slip: entries whose name would escape intoDir are rejected.
-func sanitizeExtractPath(name, destDir string) (string, error) {
+// sanitizeExtractPath returns the sanitized destination path. If the entry's path would
+// escape destDir, traversal components are stripped and the second return value is true.
+func sanitizeExtractPath(name, destDir string) (string, bool) {
 	cleanDest := filepath.Clean(destDir)
 	destPath := filepath.Join(cleanDest, name)
 	cleanPath := filepath.Clean(destPath)
 	sep := string(os.PathSeparator)
-	if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+sep) {
-		return "", fmt.Errorf("illegal path in zip entry: %s", name)
+	if cleanPath == cleanDest || strings.HasPrefix(cleanPath, cleanDest+sep) {
+		return cleanPath, false
 	}
-	return cleanPath, nil
+	var safeParts []string
+	for _, p := range strings.Split(filepath.ToSlash(name), "/") {
+		if p != ".." && p != "." && p != "" {
+			safeParts = append(safeParts, p)
+		}
+	}
+	if len(safeParts) == 0 {
+		return cleanDest, true
+	}
+	return filepath.Join(cleanDest, filepath.Join(safeParts...)), true
 }

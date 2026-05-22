@@ -9,53 +9,52 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestZipFilesCompat(t *testing.T) {
 	t.Log("files from different directories are stored under their base names (junk paths)")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		var sourceFilePaths []string
 		for _, name := range []string{"A", "B", "C"} {
 			baseDir := filepath.Join(tmpDir, name)
-			require.NoError(t, pathutil.EnsureDirExist(baseDir))
+			require.NoError(t, os.MkdirAll(baseDir, 0755))
 
 			sourceFile := filepath.Join(baseDir, "sourceFile"+name)
-			require.NoError(t, fileutil.WriteStringToFile(sourceFile, name))
+			require.NoError(t, os.WriteFile(sourceFile, []byte(name), 0644))
 			sourceFilePaths = append(sourceFilePaths, sourceFile)
 		}
 
 		destinationZip := filepath.Join(tmpDir, "dest.zip")
 		require.NoError(t, newManager().ZipFiles(sourceFilePaths, destinationZip))
 
-		unzipDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+		unzipDir, err := pathutil.NewPathProvider().CreateTempDir("unzip")
 		require.NoError(t, err)
 		require.NoError(t, newManager().UnZip(destinationZip, unzipDir))
 
 		for _, name := range []string{"A", "B", "C"} {
-			content, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "sourceFile"+name))
+			b, err := os.ReadFile(filepath.Join(unzipDir, "sourceFile"+name))
 			require.NoError(t, err)
-			require.Equal(t, name, content)
+			require.Equal(t, name, string(b))
 		}
 	}
 
 	t.Log("duplicate base names cause an error")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		var sourceFilePaths []string
 		for _, name := range []string{"A", "B"} {
 			baseDir := filepath.Join(tmpDir, name)
-			require.NoError(t, pathutil.EnsureDirExist(baseDir))
+			require.NoError(t, os.MkdirAll(baseDir, 0755))
 
 			sourceFile := filepath.Join(baseDir, "sourceFile")
-			require.NoError(t, fileutil.WriteStringToFile(sourceFile, name))
+			require.NoError(t, os.WriteFile(sourceFile, []byte(name), 0644))
 			sourceFilePaths = append(sourceFilePaths, sourceFile)
 		}
 
@@ -67,59 +66,59 @@ func TestZipFilesCompat(t *testing.T) {
 func TestZipDirectories(t *testing.T) {
 	t.Log("dirs at different parent paths are each stored under their own basename")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		dirA := filepath.Join(tmpDir, "main", "A")
 		require.NoError(t, os.MkdirAll(dirA, 0755))
-		require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "fileA.txt"), "from_a"))
+		require.NoError(t, os.WriteFile(filepath.Join(dirA, "fileA.txt"), []byte("from_a"), 0644))
 
 		subDir := filepath.Join(tmpDir, "sub")
 		require.NoError(t, os.MkdirAll(subDir, 0755))
 		dirB := filepath.Join(subDir, "B")
 		require.NoError(t, os.MkdirAll(dirB, 0755))
-		require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "fileB.txt"), "from_b"))
+		require.NoError(t, os.WriteFile(filepath.Join(dirB, "fileB.txt"), []byte("from_b"), 0644))
 
 		destinationZip := filepath.Join(tmpDir, "dest.zip")
 		require.NoError(t, newManager().ZipDirs([]string{dirA, dirB}, destinationZip))
 
-		unzipDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+		unzipDir, err := pathutil.NewPathProvider().CreateTempDir("unzip")
 		require.NoError(t, err)
 		require.NoError(t, newManager().UnZip(destinationZip, unzipDir))
 
-		contentA, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "A", "fileA.txt"))
+		contentA, err := os.ReadFile(filepath.Join(unzipDir, "A", "fileA.txt"))
 		require.NoError(t, err)
-		require.Equal(t, "from_a", contentA)
+		require.Equal(t, "from_a", string(contentA))
 
-		contentB, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "B", "fileB.txt"))
+		contentB, err := os.ReadFile(filepath.Join(unzipDir, "B", "fileB.txt"))
 		require.NoError(t, err)
-		require.Equal(t, "from_b", contentB)
+		require.Equal(t, "from_b", string(contentB))
 	}
 }
 
 func TestUnZipFileCompat(t *testing.T) {
 	t.Log("unzip zipped file")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		sourceFile := filepath.Join(tmpDir, "source", "sourceFile")
 		require.NoError(t, os.MkdirAll(filepath.Dir(sourceFile), 0755))
-		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+		require.NoError(t, os.WriteFile(sourceFile, []byte(""), 0644))
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
 		require.NoError(t, newManager().ZipFile(sourceFile, destinationZip))
 
 		require.NoError(t, newManager().UnZip(destinationZip, tmpDir))
 
-		content, err := fileutil.ReadStringFromFile(filepath.Join(tmpDir, "sourceFile"))
+		b, err := os.ReadFile(filepath.Join(tmpDir, "sourceFile"))
 		require.NoError(t, err)
-		require.Equal(t, "", content)
+		require.Equal(t, "", string(b))
 	}
 
 	t.Log("unzip zipped files")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		sourceDir := filepath.Join(tmpDir, "source")
@@ -128,7 +127,7 @@ func TestUnZipFileCompat(t *testing.T) {
 		var sourceFilePaths []string
 		for _, name := range []string{"A", "B", "C"} {
 			sourceFile := filepath.Join(sourceDir, "sourceFile"+name)
-			require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+			require.NoError(t, os.WriteFile(sourceFile, []byte(""), 0644))
 			sourceFilePaths = append(sourceFilePaths, sourceFile)
 		}
 
@@ -138,9 +137,9 @@ func TestUnZipFileCompat(t *testing.T) {
 		require.NoError(t, newManager().UnZip(destinationZip, tmpDir))
 
 		for _, path := range sourceFilePaths {
-			content, err := fileutil.ReadStringFromFile(filepath.Join(tmpDir, filepath.Base(path)))
+			b, err := os.ReadFile(filepath.Join(tmpDir, filepath.Base(path)))
 			require.NoError(t, err)
-			require.Equal(t, "", content)
+			require.Equal(t, "", string(b))
 		}
 	}
 }
@@ -148,7 +147,7 @@ func TestUnZipFileCompat(t *testing.T) {
 func TestUnZipDirectoryCompat(t *testing.T) {
 	t.Log("unzip zipped dir")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		sourceDir := filepath.Join(tmpDir, "sourceDir")
@@ -159,14 +158,14 @@ func TestUnZipDirectoryCompat(t *testing.T) {
 
 		require.NoError(t, newManager().UnZip(destinationZip, tmpDir))
 
-		isDir, err := pathutil.IsDirExists(filepath.Join(tmpDir, "sourceDir"))
+		isDir, err := pathutil.NewPathChecker().IsDirExists(filepath.Join(tmpDir, "sourceDir"))
 		require.NoError(t, err)
 		require.Equal(t, true, isDir)
 	}
 
 	t.Log("unzip zipped directories")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("zip")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("zip")
 		require.NoError(t, err)
 
 		mainDir := filepath.Join(tmpDir, "main")
@@ -178,23 +177,23 @@ func TestUnZipDirectoryCompat(t *testing.T) {
 		destinationZip := filepath.Join(tmpDir, "destinationDir.zip")
 		require.NoError(t, newManager().ZipDirs([]string{dirA, dirB}, destinationZip))
 
-		destTmpDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+		destTmpDir, err := pathutil.NewPathProvider().CreateTempDir("unzip")
 		require.NoError(t, err)
 
 		require.NoError(t, newManager().UnZip(destinationZip, destTmpDir))
 
-		exist, err := pathutil.IsPathExists(filepath.Join(destTmpDir, "A"))
+		exist, err := pathutil.NewPathChecker().IsPathExists(filepath.Join(destTmpDir, "A"))
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 
-		exist, err = pathutil.IsPathExists(filepath.Join(destTmpDir, "B"))
+		exist, err = pathutil.NewPathChecker().IsPathExists(filepath.Join(destTmpDir, "B"))
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 	}
 
 	t.Log("unzip zipped content of dir")
 	{
-		tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 		require.NoError(t, err)
 
 		contentOfDirToZip := filepath.Join(tmpDir, "source")
@@ -204,7 +203,7 @@ func TestUnZipDirectoryCompat(t *testing.T) {
 		require.NoError(t, os.MkdirAll(sourceDir, 0777))
 
 		sourceFile := filepath.Join(contentOfDirToZip, "sourceFile")
-		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+		require.NoError(t, os.WriteFile(sourceFile, []byte(""), 0644))
 
 		destinationZip := filepath.Join(tmpDir, "destinationFile.zip")
 		require.NoError(t, newManager().ZipDir(contentOfDirToZip, destinationZip, true))
@@ -213,70 +212,71 @@ func TestUnZipDirectoryCompat(t *testing.T) {
 
 		require.NoError(t, newManager().UnZip(destinationZip, tmpDir))
 
-		isDir, err := pathutil.IsDirExists(filepath.Join(tmpDir, "sourceDir"))
+		isDir, err := pathutil.NewPathChecker().IsDirExists(filepath.Join(tmpDir, "sourceDir"))
 		require.NoError(t, err)
 		require.Equal(t, true, isDir)
 
-		content, err := fileutil.ReadStringFromFile(filepath.Join(tmpDir, "sourceFile"))
+		b, err := os.ReadFile(filepath.Join(tmpDir, "sourceFile"))
 		require.NoError(t, err)
-		require.Equal(t, "", content)
+		require.Equal(t, "", string(b))
 	}
 
 	t.Log("unzip into different dir")
 	{
-		sourceTmpDir, err := pathutil.NormalizedOSTempDirPath("__1__")
+		sourceTmpDir, err := pathutil.NewPathProvider().CreateTempDir("__1__")
 		require.NoError(t, err)
 
 		sourceFile := filepath.Join(sourceTmpDir, "sourceFile")
-		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+		require.NoError(t, os.WriteFile(sourceFile, []byte(""), 0644))
 
 		destinationZip := filepath.Join(sourceTmpDir, "destinationFile.zip")
 		require.NoError(t, newManager().ZipFile(sourceFile, destinationZip))
 
-		destTmpDir, err := pathutil.NormalizedOSTempDirPath("__2__")
+		destTmpDir, err := pathutil.NewPathProvider().CreateTempDir("__2__")
 		require.NoError(t, err)
 
 		require.NoError(t, newManager().UnZip(destinationZip, destTmpDir))
-		exist, err := pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		exist, err := pathutil.NewPathChecker().IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 	}
 
 	t.Log("relative path")
 	{
-		sourceTmpDir, err := pathutil.NormalizedOSTempDirPath("__1__")
+		sourceTmpDir, err := pathutil.NewPathProvider().CreateTempDir("__1__")
 		require.NoError(t, err)
 
-		revokeFn, err := pathutil.RevokableChangeDir(sourceTmpDir)
+		origDir, err := os.Getwd()
 		require.NoError(t, err)
+		require.NoError(t, os.Chdir(sourceTmpDir))
 		defer func() {
-			require.NoError(t, revokeFn())
+			require.NoError(t, os.Chdir(origDir))
 		}()
 
 		sourceFile := filepath.Join(sourceTmpDir, "sourceFile")
-		require.NoError(t, fileutil.WriteStringToFile(sourceFile, ""))
+		require.NoError(t, os.WriteFile(sourceFile, []byte(""), 0644))
 
 		require.NoError(t, newManager().ZipFile("./sourceFile", "./destinationFile.zip"))
 
 		require.NoError(t, newManager().UnZip("./destinationFile.zip", "./unzipped"))
-		exist, err := pathutil.IsPathExists("./unzipped/sourceFile")
+		exist, err := pathutil.NewPathChecker().IsPathExists("./unzipped/sourceFile")
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 
-		destTmpDir, err := pathutil.NormalizedOSTempDirPath("__2__")
+		destTmpDir, err := pathutil.NewPathProvider().CreateTempDir("__2__")
 		require.NoError(t, err)
 
 		require.NoError(t, newManager().UnZip("./destinationFile.zip", destTmpDir))
-		exist, err = pathutil.IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
+		exist, err = pathutil.NewPathChecker().IsPathExists(filepath.Join(destTmpDir, "sourceFile"))
 		require.NoError(t, err)
 		require.Equal(t, true, exist)
 
-		require.NoError(t, revokeFn())
+		require.NoError(t, os.Chdir(origDir))
 	}
 }
 
 func TestZipDirPreservesDirMtime(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
 
 	sourceDir := filepath.Join(tmpDir, "sourceDir")
@@ -310,7 +310,7 @@ func TestZipDirPreservesDirMtime(t *testing.T) {
 // sourceDirPths share the same basename. Files unique to either directory are preserved;
 // conflicting files (same name) are resolved in favour of the last directory in the list.
 func TestZipDirsSameBasenamesMerge(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
 
 	// /a/shared and /b/shared share the basename "shared".
@@ -319,37 +319,37 @@ func TestZipDirsSameBasenamesMerge(t *testing.T) {
 	require.NoError(t, os.MkdirAll(dirA, 0755))
 	require.NoError(t, os.MkdirAll(dirB, 0755))
 
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "only_in_a.txt"), "from_a"))
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "only_in_b.txt"), "from_b"))
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "conflict.txt"), "first"))
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "conflict.txt"), "second"))
+	require.NoError(t, os.WriteFile(filepath.Join(dirA, "only_in_a.txt"), []byte("from_a"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dirB, "only_in_b.txt"), []byte("from_b"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dirA, "conflict.txt"), []byte("first"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dirB, "conflict.txt"), []byte("second"), 0644))
 
 	destinationZip := filepath.Join(tmpDir, "out.zip")
 	require.NoError(t, newManager().ZipDirs([]string{dirA, dirB}, destinationZip))
 
-	unzipDir, err := pathutil.NormalizedOSTempDirPath("unzip")
+	unzipDir, err := pathutil.NewPathProvider().CreateTempDir("unzip")
 	require.NoError(t, err)
 	require.NoError(t, newManager().UnZip(destinationZip, unzipDir))
 
 	// Files unique to each directory are both present.
-	onlyA, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "only_in_a.txt"))
+	onlyA, err := os.ReadFile(filepath.Join(unzipDir, "shared", "only_in_a.txt"))
 	require.NoError(t, err)
-	require.Equal(t, "from_a", onlyA)
+	require.Equal(t, "from_a", string(onlyA))
 
-	onlyB, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "only_in_b.txt"))
+	onlyB, err := os.ReadFile(filepath.Join(unzipDir, "shared", "only_in_b.txt"))
 	require.NoError(t, err)
-	require.Equal(t, "from_b", onlyB)
+	require.Equal(t, "from_b", string(onlyB))
 
 	// Conflicting file resolves to the last directory in the list.
-	conflict, err := fileutil.ReadStringFromFile(filepath.Join(unzipDir, "shared", "conflict.txt"))
+	conflict, err := os.ReadFile(filepath.Join(unzipDir, "shared", "conflict.txt"))
 	require.NoError(t, err)
-	require.Equal(t, "second", conflict)
+	require.Equal(t, "second", string(conflict))
 }
 
 // TestZipFilesDuplicateBasenameNoOutputCreated verifies that when two source files share
 // the same base name, ZipFiles returns an error and does not create the destination file.
 func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
 
 	dirA := filepath.Join(tmpDir, "a")
@@ -357,8 +357,8 @@ func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
 	require.NoError(t, os.MkdirAll(dirA, 0755))
 	require.NoError(t, os.MkdirAll(dirB, 0755))
 
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirA, "file.txt"), "a"))
-	require.NoError(t, fileutil.WriteStringToFile(filepath.Join(dirB, "file.txt"), "b"))
+	require.NoError(t, os.WriteFile(filepath.Join(dirA, "file.txt"), []byte("a"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dirB, "file.txt"), []byte("b"), 0644))
 
 	destinationZip := filepath.Join(tmpDir, "out.zip")
 	require.Error(t, newManager().ZipFiles([]string{
@@ -367,16 +367,16 @@ func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
 	}, destinationZip))
 
 	// The destination file must not be left behind after the failure.
-	exist, err := pathutil.IsPathExists(destinationZip)
+	exist, err := pathutil.NewPathChecker().IsPathExists(destinationZip)
 	require.NoError(t, err)
 	require.False(t, exist, "destination zip must not be created when duplicate base names are detected")
 }
 
 // TestUnZipZipSlipHandling verifies the behaviour for archives with path-traversal entries.
-// The system unzip strips the "../" components, extracts the file inside intoDir,
-// and returns a non-zero exit code (which UnZip surfaces as an error).
+// Path-traversal components are stripped and the file is extracted inside intoDir;
+// an error is returned to signal that path traversal was detected.
 func TestUnZipZipSlipHandling(t *testing.T) {
-	tmpDir, err := pathutil.NormalizedOSTempDirPath("test")
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
 
 	evilZip := filepath.Join(tmpDir, "evil.zip")
@@ -393,17 +393,16 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 	destDir := filepath.Join(tmpDir, "dest")
 	require.NoError(t, os.MkdirAll(destDir, 0755))
 
-	// UnZip returns an error because unzip exits non-zero for path-traversal warnings.
 	err = newManager().UnZip(evilZip, destDir)
 	require.Error(t, err)
 
 	// Despite the error, the file is extracted inside destDir with the traversal stripped.
-	exist, statErr := pathutil.IsPathExists(filepath.Join(destDir, "escape.txt"))
+	exist, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(destDir, "escape.txt"))
 	require.NoError(t, statErr)
-	require.True(t, exist, "system unzip strips '../' and extracts inside dest")
+	require.True(t, exist, "path traversal is stripped and file is extracted inside dest")
 
 	// The file must not have escaped outside destDir.
-	escaped, statErr := pathutil.IsPathExists(filepath.Join(tmpDir, "escape.txt"))
+	escaped, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(tmpDir, "escape.txt"))
 	require.NoError(t, statErr)
 	require.False(t, escaped, "file must not escape outside intoDir")
 }

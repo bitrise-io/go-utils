@@ -373,8 +373,7 @@ func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
 }
 
 // TestUnZipZipSlipHandling verifies the behaviour for archives with path-traversal entries.
-// Path-traversal components are stripped and the file is extracted inside intoDir;
-// an error is returned to signal that path traversal was detected.
+// Traversal entries are skipped (not extracted); an error is returned to signal detection.
 func TestUnZipZipSlipHandling(t *testing.T) {
 	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
@@ -396,12 +395,12 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 	err = newManager().UnZip(evilZip, destDir)
 	require.Error(t, err)
 
-	// Despite the error, the file is extracted inside destDir with the traversal stripped.
+	// The traversal entry is skipped entirely: no file is created inside destDir.
 	exist, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(destDir, "escape.txt"))
 	require.NoError(t, statErr)
-	require.True(t, exist, "path traversal is stripped and file is extracted inside dest")
+	require.False(t, exist, "traversal entry must not be extracted")
 
-	// The file must not have escaped outside destDir.
+	// The file must not have escaped outside destDir either.
 	escaped, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(tmpDir, "escape.txt"))
 	require.NoError(t, statErr)
 	require.False(t, escaped, "file must not escape outside intoDir")

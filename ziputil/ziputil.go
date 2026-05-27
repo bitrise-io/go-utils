@@ -234,8 +234,13 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 }
 
 func (z *ZipManager) extractEntry(f *zip.File, intoDir string) (bool, error) {
-	destPath, err := sanitizeExtractPath(f.Name, intoDir)
-	if err != nil {
+	// Guard against zip-slip: verify the entry's cleaned path stays within intoDir.
+	// The check is inlined so CodeQL's intra-procedural analysis can see that every
+	// file-system operation below only executes when destPath has passed the HasPrefix guard.
+	cleanDest := filepath.Clean(intoDir)
+	sep := string(os.PathSeparator)
+	destPath := filepath.Clean(filepath.Join(cleanDest, f.Name))
+	if destPath != cleanDest && !strings.HasPrefix(destPath, cleanDest+sep) {
 		// Traversal entry: skip extraction; caller records the error and continues.
 		return true, nil
 	}
@@ -256,8 +261,6 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) (bool, error) {
 			return false, fmt.Errorf("symlink target %q is absolute", targetStr)
 		}
 		resolvedTarget := filepath.Clean(filepath.Join(filepath.Dir(destPath), targetStr))
-		cleanDest := filepath.Clean(intoDir)
-		sep := string(os.PathSeparator)
 		if resolvedTarget != cleanDest && !strings.HasPrefix(resolvedTarget, cleanDest+sep) {
 			return false, fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
 		}
@@ -289,17 +292,4 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) (bool, error) {
 
 	_, err = io.Copy(dest, rc)
 	return false, err
-}
-
-// sanitizeExtractPath guards against zip-slip: entries whose cleaned path would escape destDir
-// are rejected. Returns the cleaned safe path, or an error if the entry would escape destDir.
-func sanitizeExtractPath(name, destDir string) (string, error) {
-	cleanDest := filepath.Clean(destDir)
-	destPath := filepath.Join(cleanDest, name)
-	cleanPath := filepath.Clean(destPath)
-	sep := string(os.PathSeparator)
-	if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+sep) {
-		return "", fmt.Errorf("illegal path in zip entry: %s", name)
-	}
-	return cleanPath, nil
 }

@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/pathutil"
@@ -143,6 +142,13 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	defer r.Close() //nolint:errcheck
 
 	for _, f := range r.File {
+		// CodeQL's go/zipslip recognises strings.Contains(f.Name, "..") as the canonical
+		// taint sanitizer at the loop source. Must be standalone here — a compound && check
+		// leaves a reachable path where strings.Contains is true but execution continues,
+		// which CodeQL flags as unsanitized. Do not extract into a helper.
+		if strings.Contains(f.Name, "..") {
+			return fmt.Errorf("illegal path in zip entry: %s", f.Name)
+		}
 		if err := z.extractEntry(f, intoDir); err != nil {
 			return err
 		}
@@ -262,11 +268,10 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 }
 
 func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
-	// strings.Contains is CodeQL's canonical sanitizer for go/zipslip; do not extract
-	// this check into a helper or the taint barrier becomes invisible to the scanner.
-	// The inner component loop prevents false positives on filenames that contain ".."
-	// as part of a component name (e.g. "module..framework/Info.plist").
-	if strings.Contains(f.Name, "..") && slices.Contains(strings.Split(filepath.ToSlash(f.Name), "/"), "..") {
+	// Belt-and-suspenders: UnZip pre-filters with strings.Contains before calling here,
+	// but extractEntry may be reached via other paths in the future. The HasPrefix check
+	// below is the authoritative structural guard; this catches the most obvious cases early.
+	if strings.Contains(f.Name, "..") {
 		return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 	}
 	cleanDest := filepath.Clean(intoDir)

@@ -376,8 +376,7 @@ func TestZipFilesSymlink(t *testing.T) {
 }
 
 func TestUnZipTraversal(t *testing.T) {
-	t.Run("double-dot inside a component name is not rejected", func(t *testing.T) {
-		// "module..framework" contains ".." as a substring but is not a traversal component.
+	t.Run("entry with .. as a path component is rejected", func(t *testing.T) {
 		provider := pathutil.NewPathProvider()
 		tmpDir, err := provider.CreateTempDir("test")
 		require.NoError(t, err)
@@ -386,20 +385,16 @@ func TestUnZipTraversal(t *testing.T) {
 		zf, err := os.Create(evilZip)
 		require.NoError(t, err)
 		zw := zip.NewWriter(zf)
-		w, err := zw.CreateHeader(&zip.FileHeader{Name: "module..framework/Info.plist", Method: zip.Store})
+		w, err := zw.CreateHeader(&zip.FileHeader{Name: "subdir/../escape.txt", Method: zip.Store})
 		require.NoError(t, err)
-		_, err = w.Write([]byte("plist"))
+		_, err = w.Write([]byte("escaped"))
 		require.NoError(t, err)
 		require.NoError(t, zw.Close())
 		require.NoError(t, zf.Close())
 
 		destDir := filepath.Join(tmpDir, "dest")
 		require.NoError(t, os.MkdirAll(destDir, 0755))
-		require.NoError(t, newManager().UnZip(evilZip, destDir))
-
-		content, err := os.ReadFile(filepath.Join(destDir, "module..framework", "Info.plist"))
-		require.NoError(t, err)
-		require.Equal(t, "plist", string(content))
+		require.Error(t, newManager().UnZip(evilZip, destDir))
 	})
 }
 

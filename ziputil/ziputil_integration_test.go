@@ -373,7 +373,7 @@ func TestZipFilesDuplicateBasenameNoOutputCreated(t *testing.T) {
 }
 
 // TestUnZipZipSlipHandling verifies the behaviour for archives with path-traversal entries.
-// Traversal entries are skipped (not extracted); an error is returned to signal detection.
+// UnZip returns an error immediately on the first traversal entry; no file is extracted.
 func TestUnZipZipSlipHandling(t *testing.T) {
 	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
 	require.NoError(t, err)
@@ -395,7 +395,7 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 	err = newManager().UnZip(evilZip, destDir)
 	require.Error(t, err)
 
-	// The traversal entry is skipped entirely: no file is created inside destDir.
+	// Extraction aborted: no file is created inside destDir.
 	exist, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(destDir, "escape.txt"))
 	require.NoError(t, statErr)
 	require.False(t, exist, "traversal entry must not be extracted")

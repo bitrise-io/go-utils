@@ -114,8 +114,8 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 }
 
 // UnZip extracts the zip archive at zipPth into intoDir, restoring permissions and symlinks.
-// Entries with path-traversal components (e.g. "../../escape") are skipped rather than extracted.
-// An error is returned after all entries are processed to signal that traversal was detected.
+// Entries with path-traversal components (e.g. "../../escape") are rejected and an error is
+// returned immediately; no further entries are extracted after a traversal is detected.
 func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	r, err := zip.OpenReader(zipPth)
 	if err != nil {
@@ -123,17 +123,12 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	}
 	defer r.Close() //nolint:errcheck
 
-	var traversalErr error
 	for _, f := range r.File {
-		skipped, err := z.extractEntry(f, intoDir)
-		if err != nil {
+		if err := z.extractEntry(f, intoDir); err != nil {
 			return err
 		}
-		if skipped && traversalErr == nil {
-			traversalErr = fmt.Errorf("path traversal detected in zip entry %q; entry skipped", f.Name)
-		}
 	}
-	return traversalErr
+	return nil
 }
 
 func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) error {
@@ -233,63 +228,72 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 	return err
 }
 
-func (z *ZipManager) extractEntry(f *zip.File, intoDir string) (bool, error) {
-	// Guard against zip-slip: verify the entry's cleaned path stays within intoDir.
-	// The check is inlined so CodeQL's intra-procedural analysis can see that every
-	// file-system operation below only executes when destPath has passed the HasPrefix guard.
-	cleanDest := filepath.Clean(intoDir)
-	sep := string(os.PathSeparator)
-	destPath := filepath.Clean(filepath.Join(cleanDest, f.Name))
-	if destPath != cleanDest && !strings.HasPrefix(destPath, cleanDest+sep) {
-		// Traversal entry: skip extraction; caller records the error and continues.
-		return true, nil
+func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
+	destPath, err := sanitizeExtractPath(f.Name, intoDir)
+	if err != nil {
+		return err
 	}
 
 	if f.Mode()&os.ModeSymlink != 0 {
 		rc, err := f.Open()
 		if err != nil {
-			return false, err
+			return err
 		}
 		defer rc.Close() //nolint:errcheck
 
 		target, err := io.ReadAll(rc)
 		if err != nil {
-			return false, err
+			return err
 		}
 		targetStr := string(target)
 		if filepath.IsAbs(targetStr) {
-			return false, fmt.Errorf("symlink target %q is absolute", targetStr)
+			return fmt.Errorf("symlink target %q is absolute", targetStr)
 		}
 		resolvedTarget := filepath.Clean(filepath.Join(filepath.Dir(destPath), targetStr))
+		cleanDest := filepath.Clean(intoDir)
+		sep := string(os.PathSeparator)
 		if resolvedTarget != cleanDest && !strings.HasPrefix(resolvedTarget, cleanDest+sep) {
-			return false, fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
+			return fmt.Errorf("symlink target %q escapes extraction directory", targetStr)
 		}
 		if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-			return false, err
+			return err
 		}
-		return false, z.osProxy.Symlink(targetStr, destPath)
+		return z.osProxy.Symlink(targetStr, destPath)
 	}
 
 	if f.FileInfo().IsDir() {
-		return false, z.osProxy.MkdirAll(destPath, f.Mode().Perm())
+		return z.osProxy.MkdirAll(destPath, f.Mode().Perm())
 	}
 
 	if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return false, err
+		return err
 	}
 
 	rc, err := f.Open()
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer rc.Close() //nolint:errcheck
 
 	dest, err := z.osProxy.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode().Perm())
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer dest.Close() //nolint:errcheck
 
 	_, err = io.Copy(dest, rc)
-	return false, err
+	return err
+}
+
+// sanitizeExtractPath guards against zip-slip: entries whose cleaned path would escape destDir
+// are rejected. Returns the cleaned safe path, or an error if the entry would escape destDir.
+func sanitizeExtractPath(name, destDir string) (string, error) {
+	cleanDest := filepath.Clean(destDir)
+	destPath := filepath.Join(cleanDest, name)
+	cleanPath := filepath.Clean(destPath)
+	sep := string(os.PathSeparator)
+	if cleanPath != cleanDest && !strings.HasPrefix(cleanPath, cleanDest+sep) {
+		return "", fmt.Errorf("illegal path in zip entry: %s", name)
+	}
+	return cleanPath, nil
 }

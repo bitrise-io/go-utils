@@ -143,6 +143,12 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	defer r.Close() //nolint:errcheck
 
 	for _, f := range r.File {
+		// Zip-slip guard at the loop level: CodeQL's go/zipslip taint analysis traces
+		// from f.Name at this site; the check must be here (not only inside extractEntry)
+		// so the barrier is visible without interprocedural reasoning.
+		if strings.Contains(f.Name, "..") && slices.Contains(strings.Split(filepath.ToSlash(f.Name), "/"), "..") {
+			return fmt.Errorf("illegal path in zip entry: %s", f.Name)
+		}
 		if err := z.extractEntry(f, intoDir); err != nil {
 			return err
 		}

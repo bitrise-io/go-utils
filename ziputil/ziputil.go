@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/pathutil"
@@ -46,7 +47,7 @@ func (z *ZipManager) ZipDir(sourceDirPth, destinationZipPth string, isContentOnl
 // When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
 // their contents are merged: files unique to either directory are preserved, and conflicting
 // files (same relative path) resolve in favour of the last directory in the list.
-func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) error {
+func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) (retErr error) {
 	for _, path := range sourceDirPths {
 		if exist, err := z.pathChecker.IsDirExists(path); err != nil {
 			return err
@@ -60,9 +61,18 @@ func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) e
 		return err
 	}
 	defer dest.Close() //nolint:errcheck
+	defer func() {
+		if retErr != nil {
+			os.Remove(destinationZipPth) //nolint:errcheck
+		}
+	}()
 
 	zw := zip.NewWriter(dest)
-	defer zw.Close() //nolint:errcheck
+	defer func() {
+		if cerr := zw.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 
 	for _, sourceDirPth := range sourceDirPths {
 		if err := z.addDirToZip(zw, sourceDirPth, filepath.Dir(sourceDirPth)); err != nil {
@@ -78,10 +88,10 @@ func (z *ZipManager) ZipFile(sourceFilePth, destinationZipPth string) error {
 }
 
 // ZipFiles zips multiple files into destinationZipPth without preserving directory structure.
-// Each file is stored under its base name only.
+// Each file is stored under its base name only. Symlinks are stored as symlinks (not followed).
 // If two source files share the same base name, an error is returned before the destination
 // file is created.
-func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string) error {
+func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string) (retErr error) {
 	seen := make(map[string]bool)
 	for _, path := range sourceFilePths {
 		if exist, err := z.pathChecker.IsPathExists(path); err != nil {
@@ -101,9 +111,18 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 		return err
 	}
 	defer dest.Close() //nolint:errcheck
+	defer func() {
+		if retErr != nil {
+			os.Remove(destinationZipPth) //nolint:errcheck
+		}
+	}()
 
 	zw := zip.NewWriter(dest)
-	defer zw.Close() //nolint:errcheck
+	defer func() {
+		if cerr := zw.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 
 	for _, filePath := range sourceFilePths {
 		if err := z.addFileToZip(zw, filePath, filepath.Base(filePath)); err != nil {
@@ -131,15 +150,24 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	return nil
 }
 
-func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) error {
+func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) (retErr error) {
 	dest, err := z.osProxy.Create(destinationZipPth)
 	if err != nil {
 		return err
 	}
 	defer dest.Close() //nolint:errcheck
+	defer func() {
+		if retErr != nil {
+			os.Remove(destinationZipPth) //nolint:errcheck
+		}
+	}()
 
 	zw := zip.NewWriter(dest)
-	defer zw.Close() //nolint:errcheck
+	defer func() {
+		if cerr := zw.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 
 	return z.addDirToZip(zw, sourceDirPth, baseDir)
 }
@@ -207,6 +235,11 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 		return err
 	}
 
+	// If the path is a symlink, store it as a symlink rather than following it.
+	if info.Mode()&os.ModeSymlink != 0 {
+		return z.addSymlinkToZip(zw, path, name)
+	}
+
 	hdr, err := zip.FileInfoHeader(info)
 	if err != nil {
 		return err
@@ -229,11 +262,11 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 }
 
 func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
-	// Primary zip-slip guard: CodeQL's go/zipslip recognises strings.Contains("..") on the
-	// raw entry name as the canonical taint sanitizer. This check operates directly on f.Name
-	// before any path derivation, making the barrier visible to both intra- and inter-procedural
-	// analysis without going through a helper function.
-	if strings.Contains(f.Name, "..") {
+	// strings.Contains is CodeQL's canonical sanitizer for go/zipslip; do not extract
+	// this check into a helper or the taint barrier becomes invisible to the scanner.
+	// The inner component loop prevents false positives on filenames that contain ".."
+	// as part of a component name (e.g. "module..framework/Info.plist").
+	if strings.Contains(f.Name, "..") && slices.Contains(strings.Split(filepath.ToSlash(f.Name), "/"), "..") {
 		return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 	}
 	cleanDest := filepath.Clean(intoDir)
@@ -291,6 +324,19 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
 
 	if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 		return err
+	}
+	// Resolve pre-existing symlinks in the parent path to catch chained-symlink escapes
+	// where a previously extracted entry makes the parent resolve outside intoDir.
+	realDest, err := z.osProxy.EvalSymlinks(cleanDest)
+	if err != nil {
+		return err
+	}
+	realParent, err := z.osProxy.EvalSymlinks(filepath.Dir(destPath))
+	if err != nil {
+		return err
+	}
+	if realParent != realDest && !strings.HasPrefix(realParent, realDest+sep) {
+		return fmt.Errorf("file parent %q escapes extraction directory", filepath.Dir(destPath))
 	}
 
 	rc, err := f.Open()

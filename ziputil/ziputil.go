@@ -266,6 +266,22 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
 		if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 			return err
 		}
+		// Resolve pre-existing symlinks in both the extraction root and the parent path
+		// (go/unsafe-unzip-symlink): a previously extracted symlink could make the parent
+		// resolve outside intoDir even though the syntactic path appears inside it.
+		// Both sides must be resolved so the comparison is in canonical form (required on
+		// macOS where /tmp is itself a symlink to /private/tmp).
+		realDest, err := z.osProxy.EvalSymlinks(cleanDest)
+		if err != nil {
+			return err
+		}
+		realParent, err := z.osProxy.EvalSymlinks(filepath.Dir(destPath))
+		if err != nil {
+			return err
+		}
+		if realParent != realDest && !strings.HasPrefix(realParent, realDest+sep) {
+			return fmt.Errorf("symlink parent %q escapes extraction directory", filepath.Dir(destPath))
+		}
 		return z.osProxy.Symlink(targetStr, destPath)
 	}
 

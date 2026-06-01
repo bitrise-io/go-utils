@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 
 	"github.com/bitrise-io/go-utils/v2/fileutil/mocks/osproxy"
 	"github.com/stretchr/testify/assert"
@@ -165,6 +166,90 @@ func TestCopyFile_GivenDstFileTimesChangeFailure_WillFail(t *testing.T) {
 	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
 
 	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
+}
+
+func TestCopyFileFS(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// Expect dst file open for writing
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+
+	// Expect dst file ownership, permissions and times to be set
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	assert.NoError(t, sut.CopyFileFS(os.DirFS(srcDir), "file1", filepath.Join(dstDir, "file1"), nil))
+}
+
+func TestCopyFileFS_WithOverwrite(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+	// Pre-create the destination file so overwrite is exercised
+	require.NoError(t, os.WriteFile(filepath.Join(dstDir, "file1"), []byte("old"), 0644))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// Expect dst file open for writing with TRUNC flag (overwrite)
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+
+	// Expect dst file ownership, permissions and times to be set
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	assert.NoError(t, sut.CopyFileFS(os.DirFS(srcDir), "file1", filepath.Join(dstDir, "file1"), &CopyOptions{Overwrite: true}))
+}
+
+func TestCopyFileFS_GivenInMemoryFS_SkipsOwnershipPreservation(t *testing.T) {
+	dstDir := t.TempDir()
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// fstest.MapFS does not expose a *syscall.Stat_t, so ownership and times
+	// cannot be preserved. Lchown and Chtimes must not be called, while the file
+	// mode is still set.
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+
+	srcFS := fstest.MapFS{"file1": {Data: []byte("hello")}}
+
+	assert.NoError(t, sut.CopyFileFS(srcFS, "file1", filepath.Join(dstDir, "file1"), nil))
+}
+
+func TestCopyFileFS_GivenMissingSrc_WillFail(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	assert.Error(t, sut.CopyFileFS(os.DirFS(srcDir), "missing", filepath.Join(dstDir, "missing"), nil))
 }
 
 func TestCopyDir(t *testing.T) {

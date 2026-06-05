@@ -31,7 +31,7 @@ func (z *ZipManager) ZipDir(sourceDirPth, destinationZipPth string, isContentOnl
 	if exist, err := z.pathChecker.IsDirExists(sourceDirPth); err != nil {
 		return err
 	} else if !exist {
-		return fmt.Errorf("dir (%s) not exist", sourceDirPth)
+		return fmt.Errorf("directory (%s) does not exist", sourceDirPth)
 	}
 
 	baseDir := filepath.Dir(sourceDirPth)
@@ -51,7 +51,7 @@ func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) (
 		if exist, err := z.pathChecker.IsDirExists(path); err != nil {
 			return err
 		} else if !exist {
-			return fmt.Errorf("directory (%s) not exist", path)
+			return fmt.Errorf("directory (%s) does not exist", path)
 		}
 	}
 
@@ -96,7 +96,7 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 		if exist, err := z.pathChecker.IsPathExists(path); err != nil {
 			return err
 		} else if !exist {
-			return fmt.Errorf("file (%s) not exist", path)
+			return fmt.Errorf("file (%s) does not exist", path)
 		}
 		baseName := filepath.Base(path)
 		if seen[baseName] {
@@ -141,15 +141,29 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	}
 	defer r.Close() //nolint:errcheck
 
+	cleanDest := filepath.Clean(intoDir)
+	// Ensure intoDir exists so EvalSymlinks can resolve it before processing any entry.
+	if err := z.osProxy.MkdirAll(cleanDest, 0755); err != nil {
+		return err
+	}
+	// Resolve once per call; EvalSymlinks is called per-entry otherwise (O(n) syscalls).
+	// Both cleanDest and realDest are passed to extractEntry to avoid re-computing them.
+	realDest, err := z.osProxy.EvalSymlinks(cleanDest)
+	if err != nil {
+		return err
+	}
+
 	for _, f := range r.File {
 		// CodeQL's go/zipslip recognises strings.Contains(f.Name, "..") as the canonical
 		// taint sanitizer at the loop source. Must be standalone here — a compound && check
 		// leaves a reachable path where strings.Contains is true but execution continues,
 		// which CodeQL flags as unsanitized. Do not extract into a helper.
+		// Tradeoff: any entry whose name contains ".." as a substring is rejected, including
+		// names like "module..framework". No such names appear in iOS/Xcode artifact formats.
 		if strings.Contains(f.Name, "..") {
 			return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 		}
-		if err := z.extractEntry(f, intoDir); err != nil {
+		if err := z.extractEntry(f, cleanDest, realDest); err != nil {
 			return err
 		}
 	}
@@ -267,17 +281,17 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 	return err
 }
 
-func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
+// extractEntry extracts a single zip entry into cleanDest.
+// cleanDest must be filepath.Clean(intoDir); realDest must be EvalSymlinks(cleanDest).
+// Both are pre-computed by UnZip to avoid redundant syscalls across entries.
+func (z *ZipManager) extractEntry(f *zip.File, cleanDest, realDest string) error {
 	// Belt-and-suspenders: UnZip pre-filters with strings.Contains before calling here,
-	// but extractEntry may be reached via other paths in the future. The HasPrefix check
-	// below is the authoritative structural guard; this catches the most obvious cases early.
+	// but this guard protects against any future direct callers.
 	if strings.Contains(f.Name, "..") {
 		return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 	}
-	cleanDest := filepath.Clean(intoDir)
 	sep := string(os.PathSeparator)
 	destPath := filepath.Clean(filepath.Join(cleanDest, f.Name))
-	// Belt-and-suspenders: verify the cleaned path is still within intoDir.
 	if destPath != cleanDest && !strings.HasPrefix(destPath, cleanDest+sep) {
 		return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 	}
@@ -304,15 +318,9 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
 		if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 			return err
 		}
-		// Resolve pre-existing symlinks in both the extraction root and the parent path
-		// (go/unsafe-unzip-symlink): a previously extracted symlink could make the parent
-		// resolve outside intoDir even though the syntactic path appears inside it.
-		// Both sides must be resolved so the comparison is in canonical form (required on
-		// macOS where /tmp is itself a symlink to /private/tmp).
-		realDest, err := z.osProxy.EvalSymlinks(cleanDest)
-		if err != nil {
-			return err
-		}
+		// Resolve pre-existing symlinks in the parent path (go/unsafe-unzip-symlink): a
+		// previously extracted symlink could make the parent resolve outside cleanDest even
+		// though the syntactic path appears inside it.
 		realParent, err := z.osProxy.EvalSymlinks(filepath.Dir(destPath))
 		if err != nil {
 			return err
@@ -330,12 +338,7 @@ func (z *ZipManager) extractEntry(f *zip.File, intoDir string) error {
 	if err := z.osProxy.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 		return err
 	}
-	// Resolve pre-existing symlinks in the parent path to catch chained-symlink escapes
-	// where a previously extracted entry makes the parent resolve outside intoDir.
-	realDest, err := z.osProxy.EvalSymlinks(cleanDest)
-	if err != nil {
-		return err
-	}
+	// Same chained-symlink check for regular files.
 	realParent, err := z.osProxy.EvalSymlinks(filepath.Dir(destPath))
 	if err != nil {
 		return err

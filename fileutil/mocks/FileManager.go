@@ -6,9 +6,10 @@ package mocks
 
 import (
 	"io"
+	"io/fs"
 	"os"
 
-	fileutil "github.com/bitrise-io/go-utils/v2/fileutil"
+	"github.com/bitrise-io/go-utils/v2/fileutil"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -161,6 +162,75 @@ func (_c *FileManager_CopyFile_Call) Return(err error) *FileManager_CopyFile_Cal
 }
 
 func (_c *FileManager_CopyFile_Call) RunAndReturn(run func(src string, dst string, opts *fileutil.CopyOptions) error) *FileManager_CopyFile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CopyFileFS provides a mock function for the type FileManager
+func (_mock *FileManager) CopyFileFS(fsys fs.FS, src string, dst string, opts *fileutil.CopyOptions) error {
+	ret := _mock.Called(fsys, src, dst, opts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CopyFileFS")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(fs.FS, string, string, *fileutil.CopyOptions) error); ok {
+		r0 = returnFunc(fsys, src, dst, opts)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// FileManager_CopyFileFS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CopyFileFS'
+type FileManager_CopyFileFS_Call struct {
+	*mock.Call
+}
+
+// CopyFileFS is a helper method to define mock.On call
+//   - fsys fs.FS
+//   - src string
+//   - dst string
+//   - opts *fileutil.CopyOptions
+func (_e *FileManager_Expecter) CopyFileFS(fsys interface{}, src interface{}, dst interface{}, opts interface{}) *FileManager_CopyFileFS_Call {
+	return &FileManager_CopyFileFS_Call{Call: _e.mock.On("CopyFileFS", fsys, src, dst, opts)}
+}
+
+func (_c *FileManager_CopyFileFS_Call) Run(run func(fsys fs.FS, src string, dst string, opts *fileutil.CopyOptions)) *FileManager_CopyFileFS_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 fs.FS
+		if args[0] != nil {
+			arg0 = args[0].(fs.FS)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 *fileutil.CopyOptions
+		if args[3] != nil {
+			arg3 = args[3].(*fileutil.CopyOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *FileManager_CopyFileFS_Call) Return(err error) *FileManager_CopyFileFS_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *FileManager_CopyFileFS_Call) RunAndReturn(run func(fsys fs.FS, src string, dst string, opts *fileutil.CopyOptions) error) *FileManager_CopyFileFS_Call {
 	_c.Call.Return(run)
 	return _c
 }

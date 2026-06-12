@@ -216,8 +216,43 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 	require.NoError(t, statErr)
 	require.False(t, exist, "traversal entry must not be extracted")
 
-	// The file must not have escaped outside destDir either.
-	escaped, statErr := pathutil.NewPathChecker().IsPathExists(filepath.Join(tmpDir, "escape.txt"))
+	// The file must not have escaped outside destDir either. The entry has two "../"
+	// components and destDir is one level below tmpDir, so a real escape would land at the
+	// parent of tmpDir; that is the path to check.
+	escapeTarget := filepath.Join(filepath.Dir(tmpDir), "escape.txt")
+	escaped, statErr := pathutil.NewPathChecker().IsPathExists(escapeTarget)
 	require.NoError(t, statErr)
 	require.False(t, escaped, "file must not escape outside intoDir")
+}
+
+// TestZipPreservesExistingDestinationOnFailure verifies that when zipping fails mid-write, a
+// pre-existing destination archive is left untouched. This mirrors v1, where `zip -T` validated
+// a temporary archive before overwriting the destination, leaving it in its prior state on failure.
+func TestZipPreservesExistingDestinationOnFailure(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("an unreadable file cannot trigger a read failure when running as root")
+	}
+
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
+	require.NoError(t, err)
+
+	// A pre-existing destination archive with known content.
+	destinationZip := filepath.Join(tmpDir, "out.zip")
+	require.NoError(t, os.WriteFile(destinationZip, []byte("original"), 0644))
+
+	// An unreadable source file forces ZipFiles to fail while writing the archive.
+	unreadable := filepath.Join(tmpDir, "unreadable.txt")
+	require.NoError(t, os.WriteFile(unreadable, []byte("secret"), 0000))
+	defer os.Chmod(unreadable, 0644) //nolint:errcheck
+
+	require.Error(t, newManager().ZipFiles([]string{unreadable}, destinationZip))
+
+	// The pre-existing destination must be intact, and no temporary archive left behind.
+	content, err := os.ReadFile(destinationZip)
+	require.NoError(t, err)
+	require.Equal(t, "original", string(content), "pre-existing destination must be preserved on failure")
+
+	exist, err := pathutil.NewPathChecker().IsPathExists(destinationZip + ".tmp")
+	require.NoError(t, err)
+	require.False(t, exist, "temporary archive must be cleaned up on failure")
 }

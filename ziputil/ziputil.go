@@ -46,7 +46,7 @@ func (z *ZipManager) ZipDir(sourceDirPth, destinationZipPth string, isContentOnl
 // When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
 // their contents are merged: files unique to either directory are preserved, and conflicting
 // files (same relative path) resolve in favour of the last directory in the list.
-func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) (retErr error) {
+func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 	for _, path := range sourceDirPths {
 		if exist, err := z.pathChecker.IsDirExists(path); err != nil {
 			return err
@@ -55,30 +55,14 @@ func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) (
 		}
 	}
 
-	dest, err := z.osProxy.Create(destinationZipPth)
-	if err != nil {
-		return err
-	}
-	defer dest.Close() //nolint:errcheck
-	defer func() {
-		if retErr != nil {
-			os.Remove(destinationZipPth) //nolint:errcheck
+	return z.createZipFile(destinationZipPth, func(zw *zip.Writer) error {
+		for _, sourceDirPth := range sourceDirPths {
+			if err := z.addDirToZip(zw, sourceDirPth, filepath.Dir(sourceDirPth)); err != nil {
+				return err
+			}
 		}
-	}()
-
-	zw := zip.NewWriter(dest)
-	defer func() {
-		if cerr := zw.Close(); cerr != nil && retErr == nil {
-			retErr = cerr
-		}
-	}()
-
-	for _, sourceDirPth := range sourceDirPths {
-		if err := z.addDirToZip(zw, sourceDirPth, filepath.Dir(sourceDirPth)); err != nil {
-			return err
-		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // ZipFile zips a single file into destinationZipPth.
@@ -90,7 +74,7 @@ func (z *ZipManager) ZipFile(sourceFilePth, destinationZipPth string) error {
 // Each file is stored under its base name only. Symlinks are stored as symlinks (not followed).
 // If two source files share the same base name, an error is returned before the destination
 // file is created.
-func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string) (retErr error) {
+func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 	seen := make(map[string]bool)
 	for _, path := range sourceFilePths {
 		if exist, err := z.pathChecker.IsPathExists(path); err != nil {
@@ -105,30 +89,14 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 		seen[baseName] = true
 	}
 
-	dest, err := z.osProxy.Create(destinationZipPth)
-	if err != nil {
-		return err
-	}
-	defer dest.Close() //nolint:errcheck
-	defer func() {
-		if retErr != nil {
-			os.Remove(destinationZipPth) //nolint:errcheck
+	return z.createZipFile(destinationZipPth, func(zw *zip.Writer) error {
+		for _, filePath := range sourceFilePths {
+			if err := z.addFileToZip(zw, filePath, filepath.Base(filePath)); err != nil {
+				return err
+			}
 		}
-	}()
-
-	zw := zip.NewWriter(dest)
-	defer func() {
-		if cerr := zw.Close(); cerr != nil && retErr == nil {
-			retErr = cerr
-		}
-	}()
-
-	for _, filePath := range sourceFilePths {
-		if err := z.addFileToZip(zw, filePath, filepath.Base(filePath)); err != nil {
-			return err
-		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // UnZip extracts the zip archive at zipPth into intoDir, restoring permissions and symlinks.
@@ -170,26 +138,44 @@ func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	return nil
 }
 
-func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) (retErr error) {
-	dest, err := z.osProxy.Create(destinationZipPth)
+func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir string) error {
+	return z.createZipFile(destinationZipPth, func(zw *zip.Writer) error {
+		return z.addDirToZip(zw, sourceDirPth, baseDir)
+	})
+}
+
+// createZipFile builds a zip archive at destinationZipPth, delegating entry creation to
+// addEntries. It writes to a temporary file in the destination directory and renames it over
+// destinationZipPth only after writing succeeds, so a pre-existing destination is left
+// untouched on failure. This mirrors v1, where `zip -T` validated a temporary archive before
+// promoting it to the destination.
+func (z *ZipManager) createZipFile(destinationZipPth string, addEntries func(zw *zip.Writer) error) (retErr error) {
+	tmpPath := destinationZipPth + ".tmp"
+
+	dest, err := z.osProxy.Create(tmpPath)
 	if err != nil {
 		return err
 	}
-	defer dest.Close() //nolint:errcheck
 	defer func() {
 		if retErr != nil {
-			os.Remove(destinationZipPth) //nolint:errcheck
+			z.osProxy.Remove(tmpPath) //nolint:errcheck
 		}
 	}()
 
 	zw := zip.NewWriter(dest)
-	defer func() {
-		if cerr := zw.Close(); cerr != nil && retErr == nil {
-			retErr = cerr
-		}
-	}()
+	if err := addEntries(zw); err != nil {
+		dest.Close() //nolint:errcheck
+		return err
+	}
+	if err := zw.Close(); err != nil {
+		dest.Close() //nolint:errcheck
+		return err
+	}
+	if err := dest.Close(); err != nil {
+		return err
+	}
 
-	return z.addDirToZip(zw, sourceDirPth, baseDir)
+	return z.osProxy.Rename(tmpPath, destinationZipPth)
 }
 
 func (z *ZipManager) addDirToZip(zw *zip.Writer, sourceDirPth, baseDir string) error {

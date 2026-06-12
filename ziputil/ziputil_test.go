@@ -400,8 +400,11 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 	require.NoError(t, statErr)
 	require.True(t, exist, "system unzip strips '../' and extracts inside dest")
 
-	// The file must not have escaped outside destDir.
-	escaped, statErr := pathutil.IsPathExists(filepath.Join(tmpDir, "escape.txt"))
+	// The file must not have escaped outside destDir. The entry has two "../" components
+	// and destDir is one level below tmpDir, so a real escape would land at the parent of
+	// tmpDir; that is the path to check.
+	escapeTarget := filepath.Join(filepath.Dir(tmpDir), "escape.txt")
+	escaped, statErr := pathutil.IsPathExists(escapeTarget)
 	require.NoError(t, statErr)
 	require.False(t, escaped, "file must not escape outside intoDir")
 }

@@ -34,9 +34,9 @@ func ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 }
 
 // ZipDirs zips multiple directories into a single archive, each under its own basename.
-// When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
-// their contents are merged via rsync (-ar); the outcome for conflicting filenames depends
-// on rsync's overwrite rules and the files' mtimes at the time of the call.
+// When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and
+// "/b/shared"), their contents are merged; files unique to either are preserved,
+// and conflicting filenames are overwritten by entries later in sourceDirPths.
 // If the temporary directory cleanup fails, the process is terminated via log.Fatal.
 func ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 	for _, path := range sourceDirPths {
@@ -70,7 +70,8 @@ func ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 
 func internalZipDir(destinationZipPth, zipTarget, workDir string) error {
 	// -r: recurse into directories
-	// -T: test archive integrity after creation; deletes the archive on failure
+	// -T: test the temp archive with unzip before overwriting the destination;
+	//     on failure the destination is left in its prior state
 	// -y: store symlinks as symlinks instead of following them
 	cmd := command.New("/usr/bin/zip", "-rTy", destinationZipPth, zipTarget)
 	cmd.SetDir(workDir)
@@ -99,7 +100,8 @@ func ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 		}
 	}
 
-	// -T: test archive integrity after creation; deletes the archive on failure
+	// -T: test the temp archive with unzip before overwriting the destination;
+	//     on failure the destination is left in its prior state
 	// -y: store symlinks as symlinks instead of following them
 	// -j: junk directory paths, store files under their base names only
 	parameters := []string{"-Tyj", destinationZipPth}

@@ -446,3 +446,108 @@ func TestRelativePath(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, exist)
 }
+
+// writeZipWithSymlink creates a zip at zipPath containing a single symlink entry named name
+// whose stored target is target. The malicious payload lives in the symlink target (not the
+// entry name), so it passes UnZip's ".." name guard and reaches extractEntry's symlink checks.
+func writeZipWithSymlink(t *testing.T, zipPath, name, target string) {
+	t.Helper()
+	zf, err := os.Create(zipPath)
+	require.NoError(t, err)
+	zw := zip.NewWriter(zf)
+	hdr := &zip.FileHeader{Name: name, Method: zip.Store}
+	hdr.SetMode(os.ModeSymlink | 0777)
+	w, err := zw.CreateHeader(hdr)
+	require.NoError(t, err)
+	_, err = w.Write([]byte(target))
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+	require.NoError(t, zf.Close())
+}
+
+// TestUnZipSymlinkAbsoluteTargetRejected verifies that a symlink entry whose target is an
+// absolute path is rejected and not created (ziputil.go IsAbs guard).
+func TestUnZipSymlinkAbsoluteTargetRejected(t *testing.T) {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
+	require.NoError(t, err)
+
+	zipPath := filepath.Join(tmpDir, "evil.zip")
+	writeZipWithSymlink(t, zipPath, "link", "/etc/passwd")
+
+	destDir := filepath.Join(tmpDir, "dest")
+	require.Error(t, newManager().UnZip(zipPath, destDir))
+
+	_, statErr := os.Lstat(filepath.Join(destDir, "link"))
+	require.True(t, os.IsNotExist(statErr), "absolute-target symlink must not be created")
+}
+
+// TestUnZipSymlinkRelativeEscapeRejected verifies that a symlink entry whose relative target
+// resolves outside the extraction directory is rejected and not created (resolvedTarget guard).
+func TestUnZipSymlinkRelativeEscapeRejected(t *testing.T) {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
+	require.NoError(t, err)
+
+	zipPath := filepath.Join(tmpDir, "evil.zip")
+	writeZipWithSymlink(t, zipPath, "link", "../../escape")
+
+	destDir := filepath.Join(tmpDir, "dest")
+	require.Error(t, newManager().UnZip(zipPath, destDir))
+
+	_, statErr := os.Lstat(filepath.Join(destDir, "link"))
+	require.True(t, os.IsNotExist(statErr), "escaping-target symlink must not be created")
+}
+
+// TestUnZipChainedSymlinkParentRejected verifies the chained-symlink defense: when a parent
+// path component is a pre-existing symlink that resolves outside the extraction directory, the
+// entry is rejected via the EvalSymlinks parent check and nothing is written through it. The
+// check guards both the regular-file and the symlink extraction branches.
+func TestUnZipChainedSymlinkParentRejected(t *testing.T) {
+	// setupEscapingParent creates destDir with a pre-existing "evil" symlink pointing to a
+	// sibling "outside" directory, simulating a parent component that resolves outside the
+	// extraction root (a dirty destination, or a symlink planted by an earlier entry).
+	setupEscapingParent := func(t *testing.T) (destDir, outside string) {
+		t.Helper()
+		tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
+		require.NoError(t, err)
+		destDir = filepath.Join(tmpDir, "dest")
+		require.NoError(t, os.MkdirAll(destDir, 0755))
+		outside = filepath.Join(tmpDir, "outside")
+		require.NoError(t, os.MkdirAll(outside, 0755))
+		require.NoError(t, os.Symlink(outside, filepath.Join(destDir, "evil")))
+		return destDir, outside
+	}
+
+	t.Run("regular-file entry through escaping parent", func(t *testing.T) {
+		destDir, outside := setupEscapingParent(t)
+
+		zipPath := filepath.Join(filepath.Dir(destDir), "archive.zip")
+		zf, err := os.Create(zipPath)
+		require.NoError(t, err)
+		zw := zip.NewWriter(zf)
+		w, err := zw.CreateHeader(&zip.FileHeader{Name: "evil/file.txt", Method: zip.Store})
+		require.NoError(t, err)
+		_, err = w.Write([]byte("payload"))
+		require.NoError(t, err)
+		require.NoError(t, zw.Close())
+		require.NoError(t, zf.Close())
+
+		require.Error(t, newManager().UnZip(zipPath, destDir))
+
+		_, statErr := os.Lstat(filepath.Join(outside, "file.txt"))
+		require.True(t, os.IsNotExist(statErr), "file must not be written through a parent symlink that escapes")
+	})
+
+	t.Run("symlink entry through escaping parent", func(t *testing.T) {
+		destDir, outside := setupEscapingParent(t)
+
+		// The entry's own target is relative and stays inside destDir syntactically, so it
+		// passes the IsAbs/resolvedTarget guards; only the EvalSymlinks parent check catches it.
+		zipPath := filepath.Join(filepath.Dir(destDir), "archive.zip")
+		writeZipWithSymlink(t, zipPath, "evil/link", "harmless")
+
+		require.Error(t, newManager().UnZip(zipPath, destDir))
+
+		_, statErr := os.Lstat(filepath.Join(outside, "link"))
+		require.True(t, os.IsNotExist(statErr), "symlink must not be created through a parent symlink that escapes")
+	})
+}

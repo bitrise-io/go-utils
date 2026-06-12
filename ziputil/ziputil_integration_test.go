@@ -256,3 +256,45 @@ func TestZipPreservesExistingDestinationOnFailure(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, exist, "temporary archive must be cleaned up on failure")
 }
+
+// TestZipDirDeepTreeRoundTrip exercises addDirToZip + WalkDir + per-entry routing together on a
+// deeper fixture: nested subdirectories, a symlink inside a subdirectory, and an empty
+// subdirectory. It verifies the full structure and contents survive a ZipDir/UnZip round-trip.
+func TestZipDirDeepTreeRoundTrip(t *testing.T) {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("test")
+	require.NoError(t, err)
+
+	sourceDir := filepath.Join(tmpDir, "sourceDir")
+	require.NoError(t, os.MkdirAll(filepath.Join(sourceDir, "sub"), 0755))
+	require.NoError(t, os.MkdirAll(filepath.Join(sourceDir, "empty"), 0755))
+
+	require.NoError(t, os.WriteFile(filepath.Join(sourceDir, "top.txt"), []byte("top"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(sourceDir, "sub", "nested.txt"), []byte("nested"), 0644))
+	require.NoError(t, os.Symlink("nested.txt", filepath.Join(sourceDir, "sub", "link.txt")))
+
+	destinationZip := filepath.Join(tmpDir, "out.zip")
+	require.NoError(t, newManager().ZipDir(sourceDir, destinationZip, false))
+
+	unzipDir, err := pathutil.NewPathProvider().CreateTempDir("unzip")
+	require.NoError(t, err)
+	require.NoError(t, newManager().UnZip(destinationZip, unzipDir))
+
+	// Regular files at the top level and inside a nested subdir.
+	top, err := os.ReadFile(filepath.Join(unzipDir, "sourceDir", "top.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "top", string(top))
+
+	nested, err := os.ReadFile(filepath.Join(unzipDir, "sourceDir", "sub", "nested.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "nested", string(nested))
+
+	// Symlink inside the subdir is restored as a symlink with its relative target.
+	linkTarget, err := os.Readlink(filepath.Join(unzipDir, "sourceDir", "sub", "link.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "nested.txt", linkTarget)
+
+	// Empty subdirectory is preserved.
+	info, err := os.Stat(filepath.Join(unzipDir, "sourceDir", "empty"))
+	require.NoError(t, err)
+	require.True(t, info.IsDir(), "empty subdirectory must be preserved")
+}

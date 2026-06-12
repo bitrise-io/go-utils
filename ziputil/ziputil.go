@@ -102,6 +102,9 @@ func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string)
 // UnZip extracts the zip archive at zipPth into intoDir, restoring permissions and symlinks.
 // Entries with path-traversal components (e.g. "../../escape") are rejected and an error is
 // returned immediately; no further entries are extracted after a traversal is detected.
+// Rejection is by substring: any entry whose name contains ".." anywhere is refused, including
+// otherwise-legitimate names like "foo..bar". This is broader than strict path-component
+// traversal, but is required for the repo's static analysis to recognise the sanitizer.
 func (z *ZipManager) UnZip(zipPth, intoDir string) error {
 	r, err := zip.OpenReader(zipPth)
 	if err != nil {
@@ -271,8 +274,10 @@ func (z *ZipManager) addFileToZip(zw *zip.Writer, path, name string) error {
 // cleanDest must be filepath.Clean(intoDir); realDest must be EvalSymlinks(cleanDest).
 // Both are pre-computed by UnZip to avoid redundant syscalls across entries.
 func (z *ZipManager) extractEntry(f *zip.File, cleanDest, realDest string) error {
-	// Belt-and-suspenders: UnZip pre-filters with strings.Contains before calling here,
-	// but this guard protects against any future direct callers.
+	// Duplicates UnZip's strings.Contains pre-filter on purpose: it keeps the ".." sanitizer in
+	// the same function as the file-system sinks below, which is what CodeQL's go/zipslip query
+	// needs to treat them as sanitized. It is also genuine defense-in-depth. Do not remove it
+	// just because UnZip already rejects these names before calling extractEntry.
 	if strings.Contains(f.Name, "..") {
 		return fmt.Errorf("illegal path in zip entry: %s", f.Name)
 	}

@@ -153,9 +153,8 @@ func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir s
 // createZipFile builds a zip archive at destinationZipPth, delegating entry creation to
 // addEntries. If destinationZipPth has no file extension, ".zip" is appended (an existing
 // extension is left unchanged). It writes to a temporary file in the destination directory and
-// renames it over the destination only after writing succeeds, so a pre-existing destination is
-// left untouched on failure. This mirrors v1, where `zip` appended ".zip" to extensionless names
-// and `zip -T` validated a temporary archive before promoting it to the destination.
+// renames it over the destination only after writing succeeds, so a failed write leaves a
+// pre-existing destination untouched.
 func (z *ZipManager) createZipFile(destinationZipPth string, addEntries func(zw *zip.Writer) error) (retErr error) {
 	if filepath.Ext(destinationZipPth) == "" {
 		destinationZipPth += ".zip"

@@ -552,9 +552,8 @@ func TestUnZipChainedSymlinkParentRejected(t *testing.T) {
 	})
 }
 
-// TestZipDestinationExtension locks in the destination-naming rule inherited from v1's zip:
-// ".zip" is appended only when the destination has no extension; any existing extension
-// (including ".zip") is left unchanged.
+// TestZipDestinationExtension locks in the destination-naming rule: ".zip" is appended only when
+// the destination has no extension; any existing extension (including ".zip") is left unchanged.
 func TestZipDestinationExtension(t *testing.T) {
 	zipSrc := func(t *testing.T) (dir, src string) {
 		t.Helper()

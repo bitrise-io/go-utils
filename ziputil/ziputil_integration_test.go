@@ -226,8 +226,8 @@ func TestUnZipZipSlipHandling(t *testing.T) {
 }
 
 // TestZipPreservesExistingDestinationOnFailure verifies that when zipping fails mid-write, a
-// pre-existing destination archive is left untouched. This mirrors v1, where `zip -T` validated
-// a temporary archive before overwriting the destination, leaving it in its prior state on failure.
+// pre-existing destination archive is left untouched: the archive is written to a temporary file
+// and only renamed over the destination once writing succeeds.
 func TestZipPreservesExistingDestinationOnFailure(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("an unreadable file cannot trigger a read failure when running as root")

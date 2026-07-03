@@ -551,3 +551,60 @@ func TestUnZipChainedSymlinkParentRejected(t *testing.T) {
 		require.True(t, os.IsNotExist(statErr), "symlink must not be created through a parent symlink that escapes")
 	})
 }
+
+// TestZipDestinationExtension locks in the destination-naming rule inherited from v1's zip:
+// ".zip" is appended only when the destination has no extension; any existing extension
+// (including ".zip") is left unchanged.
+func TestZipDestinationExtension(t *testing.T) {
+	zipSrc := func(t *testing.T) (dir, src string) {
+		t.Helper()
+		dir, err := pathutil.NewPathProvider().CreateTempDir("test")
+		require.NoError(t, err)
+		src = filepath.Join(dir, "src.txt")
+		require.NoError(t, os.WriteFile(src, []byte("x"), 0644))
+		return dir, src
+	}
+	checker := pathutil.NewPathChecker()
+
+	t.Run("no extension gets .zip appended", func(t *testing.T) {
+		dir, src := zipSrc(t)
+		dest := filepath.Join(dir, "out")
+		require.NoError(t, newManager().ZipFile(src, dest))
+
+		exist, err := checker.IsPathExists(dest + ".zip")
+		require.NoError(t, err)
+		require.True(t, exist, "expected .zip to be appended")
+
+		exist, err = checker.IsPathExists(dest)
+		require.NoError(t, err)
+		require.False(t, exist, "the literal extensionless path must not be created")
+	})
+
+	t.Run(".zip extension is left unchanged", func(t *testing.T) {
+		dir, src := zipSrc(t)
+		dest := filepath.Join(dir, "out.zip")
+		require.NoError(t, newManager().ZipFile(src, dest))
+
+		exist, err := checker.IsPathExists(dest)
+		require.NoError(t, err)
+		require.True(t, exist)
+
+		exist, err = checker.IsPathExists(dest + ".zip")
+		require.NoError(t, err)
+		require.False(t, exist, "must not double-append .zip")
+	})
+
+	t.Run("non-zip extension is left unchanged", func(t *testing.T) {
+		dir, src := zipSrc(t)
+		dest := filepath.Join(dir, "out.tar")
+		require.NoError(t, newManager().ZipFile(src, dest))
+
+		exist, err := checker.IsPathExists(dest)
+		require.NoError(t, err)
+		require.True(t, exist)
+
+		exist, err = checker.IsPathExists(dest + ".zip")
+		require.NoError(t, err)
+		require.False(t, exist, "must not append .zip when an extension is present")
+	})
+}

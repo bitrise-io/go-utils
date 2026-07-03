@@ -27,6 +27,7 @@ func NewZipManager(pathChecker pathutil.PathChecker) *ZipManager {
 // isContentOnly=false: archive contains the directory under its own basename (e.g. "mydir/file.txt").
 // isContentOnly=true: archive contains the directory's contents directly (e.g. "file.txt").
 // Directory modification times are preserved. Symlinks are stored as symlinks (not followed).
+// If destinationZipPth has no file extension, ".zip" is appended.
 func (z *ZipManager) ZipDir(sourceDirPth, destinationZipPth string, isContentOnly bool) error {
 	if exist, err := z.pathChecker.IsDirExists(sourceDirPth); err != nil {
 		return err
@@ -46,6 +47,7 @@ func (z *ZipManager) ZipDir(sourceDirPth, destinationZipPth string, isContentOnl
 // When two entries in sourceDirPths share the same basename (e.g. "/a/shared" and "/b/shared"),
 // their contents are merged: files unique to either directory are preserved, and conflicting
 // files (same relative path) resolve in favour of the last directory in the list.
+// If destinationZipPth has no file extension, ".zip" is appended.
 func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) error {
 	for _, path := range sourceDirPths {
 		if exist, err := z.pathChecker.IsDirExists(path); err != nil {
@@ -66,6 +68,7 @@ func (z *ZipManager) ZipDirs(sourceDirPths []string, destinationZipPth string) e
 }
 
 // ZipFile zips a single file into destinationZipPth.
+// If destinationZipPth has no file extension, ".zip" is appended.
 func (z *ZipManager) ZipFile(sourceFilePth, destinationZipPth string) error {
 	return z.ZipFiles([]string{sourceFilePth}, destinationZipPth)
 }
@@ -73,7 +76,7 @@ func (z *ZipManager) ZipFile(sourceFilePth, destinationZipPth string) error {
 // ZipFiles zips multiple files into destinationZipPth without preserving directory structure.
 // Each file is stored under its base name only. Symlinks are stored as symlinks (not followed).
 // If two source files share the same base name, an error is returned before the destination
-// file is created.
+// file is created. If destinationZipPth has no file extension, ".zip" is appended.
 func (z *ZipManager) ZipFiles(sourceFilePths []string, destinationZipPth string) error {
 	seen := make(map[string]bool)
 	for _, path := range sourceFilePths {
@@ -148,11 +151,15 @@ func (z *ZipManager) createZipFromDir(destinationZipPth, sourceDirPth, baseDir s
 }
 
 // createZipFile builds a zip archive at destinationZipPth, delegating entry creation to
-// addEntries. It writes to a temporary file in the destination directory and renames it over
-// destinationZipPth only after writing succeeds, so a pre-existing destination is left
-// untouched on failure. This mirrors v1, where `zip -T` validated a temporary archive before
-// promoting it to the destination.
+// addEntries. If destinationZipPth has no file extension, ".zip" is appended (an existing
+// extension is left unchanged). It writes to a temporary file in the destination directory and
+// renames it over the destination only after writing succeeds, so a pre-existing destination is
+// left untouched on failure. This mirrors v1, where `zip` appended ".zip" to extensionless names
+// and `zip -T` validated a temporary archive before promoting it to the destination.
 func (z *ZipManager) createZipFile(destinationZipPth string, addEntries func(zw *zip.Writer) error) (retErr error) {
+	if filepath.Ext(destinationZipPth) == "" {
+		destinationZipPth += ".zip"
+	}
 	tmpPath := destinationZipPth + ".tmp"
 
 	dest, err := z.osProxy.Create(tmpPath)

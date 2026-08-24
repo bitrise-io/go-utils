@@ -3,6 +3,8 @@ package fileutil
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"syscall"
 	"testing"
 	"testing/fstest"
 
@@ -90,6 +92,39 @@ func TestCopyFile_GivenDstFileOpenFailure_WillFail(t *testing.T) {
 	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
 }
 
+// TestCopyFile_OwnershipPermissionErrorIsTolerated: only root may chown to
+// another user, so a non-root process copying a file owned by someone else
+// (e.g. a build artifact written by a root container) always gets EPERM from
+// Lchown — after the content was copied. The copy must succeed owned by the
+// caller instead of failing.
+func TestCopyFile_OwnershipPermissionErrorIsTolerated(t *testing.T) {
+	tmpDir := t.TempDir()
+	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
+	dstDir := filepath.Join(tmpDir, "dst-dir")
+	assert.NoError(t, os.MkdirAll(dstDir, 0755))
+
+	osProxy := osproxy.NewOsProxy(t)
+
+	sut := fileManager{osProxy: osProxy}
+
+	// Expect srcDir check
+	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
+
+	// Expect dst file open for writing
+	osProxy.EXPECT().
+		OpenFile(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).
+		Return(os.OpenFile(filepath.Join(dstDir, "file1"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, os.FileMode(0o777))).
+		Once()
+
+	// Ownership copy is denied, the rest of the copy must still complete
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
+	osProxy.EXPECT().Chmod(filepath.Join(dstDir, "file1"), mock.Anything).Return(nil).Once()
+	osProxy.EXPECT().Chtimes(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(nil).Once()
+
+	assert.NoError(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil))
+}
+
+// Non-permission ownership errors still fail the copy.
 func TestCopyFile_GivenDstFileOwnershipChangeFailure_WillFail(t *testing.T) {
 	tmpDir := t.TempDir()
 	srcDir := createSrcDirWithFiles(t, t.TempDir(), []string{"file1"})
@@ -110,9 +145,38 @@ func TestCopyFile_GivenDstFileOwnershipChangeFailure_WillFail(t *testing.T) {
 		Once()
 
 	// Expect dst file ownership, permissions and times to be set
-	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "file1"), mock.Anything, mock.Anything).Return(os.ErrInvalid).Once()
 
-	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyFile(srcDir+"/file1", dstDir+"/file1", nil), os.ErrInvalid.Error())
+}
+
+// TestCopyFile_SourceOwnedByAnotherUser reproduces the failure on the real
+// filesystem: /etc/passwd is root-owned and world-readable, so for a non-root
+// test process the byte copy succeeds and the ownership copy gets EPERM.
+func TestCopyFile_SourceOwnedByAnotherUser(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("unix ownership semantics")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("root may chown freely; the regression needs a non-root copier")
+	}
+
+	src := "/etc/passwd"
+	info, err := os.Stat(src)
+	require.NoError(t, err)
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	require.True(t, ok)
+	require.NotEqual(t, uint32(os.Geteuid()), stat.Uid, "test premise: source must be owned by another user")
+
+	dst := filepath.Join(t.TempDir(), "copy")
+	require.NoError(t, NewFileManager().CopyFile(src, dst, nil),
+		"a non-root copy of another user's file must succeed with best-effort ownership")
+
+	copied, err := os.ReadFile(dst)
+	require.NoError(t, err)
+	original, err := os.ReadFile(src)
+	require.NoError(t, err)
+	assert.Equal(t, original, copied)
 }
 
 func TestCopyFile_GivenDstFileModeChangeFailure_WillFail(t *testing.T) {
@@ -350,12 +414,13 @@ func TestCopyDir_GivenDstOwnershipChangeFailure_WillFail(t *testing.T) {
 
 	// Expect changes for dstDir
 	osProxy.EXPECT().MkdirAll(dstDir, mock.Anything).Return(nil).Once()
-	osProxy.EXPECT().Lchown(dstDir, mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
+	// permission errors are tolerated (best-effort ownership); others fail
+	osProxy.EXPECT().Lchown(dstDir, mock.Anything, mock.Anything).Return(os.ErrInvalid).Once()
 
 	// Expect file copy expectations for file1
 	osProxy.EXPECT().DirFS(srcDir).Return(os.DirFS(srcDir)).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrInvalid.Error())
 }
 
 func TestCopyDir_GivenDstModeChangeFailure_WillFail(t *testing.T) {
@@ -501,9 +566,10 @@ func TestCopyDir_SymlinkLChownFailure_WillFail(t *testing.T) {
 	// Expect symlink copy expectations for link
 	osProxy.EXPECT().Readlink(filepath.Join(srcDir, "link")).Return(linkTarget, nil).Once()
 	osProxy.EXPECT().Symlink(linkTarget, filepath.Join(dstDir, "link")).Return(nil).Once()
-	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "link"), mock.Anything, mock.Anything).Return(os.ErrPermission).Once()
+	// permission errors are tolerated (best-effort ownership); others fail
+	osProxy.EXPECT().Lchown(filepath.Join(dstDir, "link"), mock.Anything, mock.Anything).Return(os.ErrInvalid).Once()
 
-	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrPermission.Error())
+	assert.ErrorContains(t, sut.CopyDir(srcDir, dstDir, nil), os.ErrInvalid.Error())
 }
 
 // ---------------------------

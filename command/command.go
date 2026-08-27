@@ -17,13 +17,12 @@ type ErrorFinder func(out string) []string
 
 // Opts ...
 type Opts struct {
-	Stdout       io.Writer
-	Stderr       io.Writer
-	Stdin        io.Reader
-	Env          []string
-	Dir          string
-	ErrorFinder  ErrorFinder
-	ProcessGroup bool
+	Stdout      io.Writer
+	Stderr      io.Writer
+	Stdin       io.Reader
+	Env         []string
+	Dir         string
+	ErrorFinder ErrorFinder
 }
 
 // Factory ...
@@ -60,15 +59,10 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 		// current process's environment.
 		cmd.Env = append(f.envRepository.List(), opts.Env...)
 		cmd.Dir = opts.Dir
-
-		if opts.ProcessGroup {
-			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-		}
 	}
 	return &command{
 		cmd:            cmd,
 		errorCollector: collector,
-		processGroup:   opts != nil && opts.ProcessGroup,
 	}
 }
 
@@ -88,7 +82,6 @@ type Command interface {
 type command struct {
 	cmd            *exec.Cmd
 	errorCollector *errorCollector
-	processGroup   bool
 }
 
 // ErrProcessNotStarted ...
@@ -175,19 +168,10 @@ func (c command) Signal(sig os.Signal) error {
 	if c.cmd.Process == nil {
 		return ErrProcessNotStarted
 	}
-	// Wait releases the process once it exits, after which the PID can be reused by an
-	// unrelated process.
-	if c.cmd.ProcessState != nil {
-		return ErrProcessFinished
-	}
-
-	var err error
-	if c.processGroup {
-		err = signalGroup(c.cmd.Process.Pid, sig)
-	} else {
-		err = c.cmd.Process.Signal(sig)
-	}
-
+	// os.Process tracks completion itself, so signalling after Wait reports ErrProcessDone
+	// instead of reaching a process that reused the PID. Reading cmd.ProcessState here would
+	// race with Wait.
+	err := c.cmd.Process.Signal(sig)
 	if errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH) {
 		return ErrProcessFinished
 	}
@@ -201,15 +185,6 @@ func (c command) Signal(sig os.Signal) error {
 // Kill ...
 func (c command) Kill() error {
 	return c.Signal(os.Kill)
-}
-
-func signalGroup(pid int, sig os.Signal) error {
-	sysSig, ok := sig.(syscall.Signal)
-	if !ok {
-		return fmt.Errorf("unsupported signal: %v", sig)
-	}
-
-	return syscall.Kill(-pid, sysSig)
 }
 
 func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {

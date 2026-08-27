@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/bitrise-io/go-utils/v2/env"
 )
@@ -86,10 +85,6 @@ type command struct {
 
 // ErrProcessNotStarted ...
 var ErrProcessNotStarted = errors.New("command has not been started")
-
-// ErrProcessFinished is returned when the process exited before the signal could be delivered.
-// A process can exit on its own at any point, so this is an expected outcome, not a failure.
-var ErrProcessFinished = errors.New("process has already finished")
 
 // PrintableCommandArgs ...
 func (c command) PrintableCommandArgs() string {
@@ -171,11 +166,7 @@ func (c command) Signal(sig os.Signal) error {
 	// os.Process tracks completion itself, so signalling after Wait reports ErrProcessDone
 	// instead of reaching a process that reused the PID. Reading cmd.ProcessState here would
 	// race with Wait.
-	err := c.cmd.Process.Signal(sig)
-	if errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH) {
-		return ErrProcessFinished
-	}
-	if err != nil {
+	if err := c.cmd.Process.Signal(sig); err != nil {
 		return fmt.Errorf("signalling command failed (%s): %w", c.PrintableCommandArgs(), err)
 	}
 

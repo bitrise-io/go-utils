@@ -1,6 +1,7 @@
 package command
 
 import (
+	"os"
 	"syscall"
 	"testing"
 	"time"
@@ -37,14 +38,14 @@ func TestKillStopsRunningCommand(t *testing.T) {
 	}
 }
 
-func TestSignalAfterExitReportsProcessFinished(t *testing.T) {
+func TestSignalAfterExitReportsProcessDone(t *testing.T) {
 	factory := NewFactory(env.NewRepository())
 	cmd := factory.Create("true", nil, nil)
 
 	require.NoError(t, cmd.Start())
 	require.NoError(t, cmd.Wait())
 
-	assert.ErrorIs(t, cmd.Kill(), ErrProcessFinished)
+	assert.ErrorIs(t, cmd.Kill(), os.ErrProcessDone)
 }
 
 func TestSignalDeliversTermToCommand(t *testing.T) {

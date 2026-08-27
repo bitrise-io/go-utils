@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/bitrise-io/go-utils/v2/env"
 )
@@ -15,12 +17,13 @@ type ErrorFinder func(out string) []string
 
 // Opts ...
 type Opts struct {
-	Stdout      io.Writer
-	Stderr      io.Writer
-	Stdin       io.Reader
-	Env         []string
-	Dir         string
-	ErrorFinder ErrorFinder
+	Stdout       io.Writer
+	Stderr       io.Writer
+	Stdin        io.Reader
+	Env          []string
+	Dir          string
+	ErrorFinder  ErrorFinder
+	ProcessGroup bool
 }
 
 // Factory ...
@@ -57,10 +60,15 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 		// current process's environment.
 		cmd.Env = append(f.envRepository.List(), opts.Env...)
 		cmd.Dir = opts.Dir
+
+		if opts.ProcessGroup {
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		}
 	}
 	return &command{
 		cmd:            cmd,
 		errorCollector: collector,
+		processGroup:   opts != nil && opts.ProcessGroup,
 	}
 }
 
@@ -73,12 +81,22 @@ type Command interface {
 	RunAndReturnTrimmedCombinedOutput() (string, error)
 	Start() error
 	Wait() error
+	Signal(sig os.Signal) error
+	Kill() error
 }
 
 type command struct {
 	cmd            *exec.Cmd
 	errorCollector *errorCollector
+	processGroup   bool
 }
+
+// ErrProcessNotStarted ...
+var ErrProcessNotStarted = errors.New("command has not been started")
+
+// ErrProcessFinished is returned when the process exited before the signal could be delivered.
+// A process can exit on its own at any point, so this is an expected outcome, not a failure.
+var ErrProcessFinished = errors.New("process has already finished")
 
 // PrintableCommandArgs ...
 func (c command) PrintableCommandArgs() string {
@@ -150,6 +168,48 @@ func (c command) Wait() error {
 	}
 
 	return err
+}
+
+// Signal ...
+func (c command) Signal(sig os.Signal) error {
+	if c.cmd.Process == nil {
+		return ErrProcessNotStarted
+	}
+	// Wait releases the process once it exits, after which the PID can be reused by an
+	// unrelated process.
+	if c.cmd.ProcessState != nil {
+		return ErrProcessFinished
+	}
+
+	var err error
+	if c.processGroup {
+		err = signalGroup(c.cmd.Process.Pid, sig)
+	} else {
+		err = c.cmd.Process.Signal(sig)
+	}
+
+	if errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH) {
+		return ErrProcessFinished
+	}
+	if err != nil {
+		return fmt.Errorf("signalling command failed (%s): %w", c.PrintableCommandArgs(), err)
+	}
+
+	return nil
+}
+
+// Kill ...
+func (c command) Kill() error {
+	return c.Signal(os.Kill)
+}
+
+func signalGroup(pid int, sig os.Signal) error {
+	sysSig, ok := sig.(syscall.Signal)
+	if !ok {
+		return fmt.Errorf("unsupported signal: %v", sig)
+	}
+
+	return syscall.Kill(-pid, sysSig)
 }
 
 func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {

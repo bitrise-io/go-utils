@@ -5,11 +5,19 @@ import (
 	"time"
 )
 
-// Action ...
+// Action receives the number of attempts that have already failed: 0 on the first execution, 1 on
+// the first retry, and so on. So `attempt > 0` means "this is a retry".
+//
+// Use NumberedAction with TryNumbered instead when the action wants to name the attempt it is
+// running, which is the more natural thing to log.
 type Action func(attempt uint) error
 
-// AbortableAction ...
+// AbortableAction receives the same attempt count as Action.
 type AbortableAction func(attempt uint) (error, bool)
+
+// NumberedAction receives the 1-based number of the attempt it is running: 1 on the first
+// execution, 2 on the first retry, and so on.
+type NumberedAction func(attempt uint) error
 
 // Sleeper is an interface for sleeping.
 type Sleeper interface {
@@ -74,6 +82,28 @@ func (m *Model) WithSleeper(sleeper Sleeper) *Model {
 func (m *Model) Try(action Action) error {
 	return m.TryWithAbort(func(attempt uint) (error, bool) {
 		return action(attempt), false
+	})
+}
+
+// TryNumbered is Try, with the attempt numbered from 1 rather than counted from 0.
+//
+// It exists because the number an action wants to report is almost always the attempt it is running,
+// and deriving that from Action's failure count is easy to get wrong: `attempt+1` inside an
+// `attempt > 0` branch reports the attempt about to start, not the one that just failed.
+//
+//	err := retry.Times(2).TryNumbered(func(attempt uint) error {
+//		logger.Printf("attempt %d of 3", attempt)
+//		return doSomething()
+//	})
+//
+// With TryNumbered, "this is a retry" is attempt > 1.
+func (m *Model) TryNumbered(action NumberedAction) error {
+	if action == nil {
+		return fmt.Errorf("no action specified")
+	}
+
+	return m.TryWithAbort(func(attempt uint) (error, bool) {
+		return action(attempt + 1), false
 	})
 }
 

@@ -38,10 +38,11 @@ type Factory interface {
 
 	Reset(mode, commit string) Template
 	Clean(options ...string) Template
-	Add(pathspec string) Template
+	Add(pathspec string, opts ...string) Template
 	Apply(patch string) Template
 	Commit(message string) Template
 	Status(opts ...string) Template
+	Diff(opts ...string) Template
 }
 
 // NewFactory ...
@@ -87,6 +88,12 @@ func (f *factory) Status(opts ...string) Template {
 	return f.template(args...)
 }
 
+// Diff ...
+func (f *factory) Diff(opts ...string) Template {
+	args := append([]string{"diff"}, opts...)
+	return f.template(args...)
+}
+
 // Commit ...
 func (f *factory) Commit(message string) Template {
 	return f.template("commit", "-m", message)
@@ -98,8 +105,11 @@ func (f *factory) Apply(patch string) Template {
 }
 
 // Add ...
-func (f *factory) Add(pathspec string) Template {
-	return f.template("add", pathspec)
+func (f *factory) Add(pathspec string, opts ...string) Template {
+	args := []string{"add"}
+	args = append(args, opts...)
+	args = append(args, pathspec)
+	return f.template(args...)
 }
 
 // Reset ...

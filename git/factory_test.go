@@ -112,9 +112,11 @@ func TestFactory_TemplatesBuildExpectedArgsAndOpts(t *testing.T) {
 		{name: "reset", template: func(f Factory) Template { return f.Reset("--hard", "HEAD") }, wantArgs: []string{"reset", "--hard", "HEAD"}},
 		{name: "clean", template: func(f Factory) Template { return f.Clean("-fdx") }, wantArgs: []string{"clean", "-fdx"}},
 		{name: "add", template: func(f Factory) Template { return f.Add(".") }, wantArgs: []string{"add", "."}},
+		{name: "add with options", template: func(f Factory) Template { return f.Add(".", "-A") }, wantArgs: []string{"add", "-A", "."}},
 		{name: "apply", template: func(f Factory) Template { return f.Apply("/tmp/patch.diff") }, wantArgs: []string{"apply", "--index", "/tmp/patch.diff"}},
 		{name: "commit", template: func(f Factory) Template { return f.Commit("msg") }, wantArgs: []string{"commit", "-m", "msg"}},
 		{name: "status", template: func(f Factory) Template { return f.Status("--porcelain") }, wantArgs: []string{"status", "--porcelain"}},
+		{name: "diff", template: func(f Factory) Template { return f.Diff(":(exclude)foo", ":(exclude)bar") }, wantArgs: []string{"diff", ":(exclude)foo", ":(exclude)bar"}},
 	}
 
 	for _, tt := range tests {

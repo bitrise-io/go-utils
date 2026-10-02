@@ -19,3 +19,9 @@ packages:
         config:
           dir: "{{.InterfaceDir}}/mocks/osproxy"
           pkgname: osproxy
+  github.com/bitrise-io/go-utils/v2/ziputil:
+    interfaces:
+      OsProxy:
+        config:
+          dir: "{{.InterfaceDir}}/mocks/osproxy"
+          pkgname: osproxy

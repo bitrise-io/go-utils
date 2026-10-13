@@ -151,6 +151,57 @@ func TestRetry(t *testing.T) {
 	}
 }
 
+func TestTryNumbered(t *testing.T) {
+	t.Log("it numbers the first attempt 1")
+	{
+		var attempts []uint
+
+		err := Times(2).TryNumbered(func(attempt uint) error {
+			attempts = append(attempts, attempt)
+			return nil
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, []uint{1}, attempts)
+	}
+
+	t.Log("it numbers the retries in order")
+	{
+		var attempts []uint
+
+		err := Times(2).TryNumbered(func(attempt uint) error {
+			attempts = append(attempts, attempt)
+			return errors.New("error")
+		})
+
+		require.Error(t, err)
+		require.Equal(t, []uint{1, 2, 3}, attempts)
+	}
+
+	t.Log("it stops at the attempt that succeeds")
+	{
+		var attempts []uint
+
+		err := Times(5).TryNumbered(func(attempt uint) error {
+			attempts = append(attempts, attempt)
+			if attempt < 3 {
+				return errors.New("error")
+			}
+			return nil
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, []uint{1, 2, 3}, attempts)
+	}
+
+	t.Log("it reports a missing action")
+	{
+		err := Times(2).TryNumbered(nil)
+
+		require.EqualError(t, err, "no action specified")
+	}
+}
+
 func TestWait(t *testing.T) {
 	t.Log("it creates retry model with wait time")
 	{

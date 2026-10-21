@@ -231,54 +231,54 @@ func (c *command) failureReason() []string {
 }
 
 func (c *command) wrapOutputs() {
-	if c.matcherCollector != nil {
-		c.wrapOutputsForMatcher()
-		return
-	}
-
-	if c.errorCollector == nil {
+	wrap := c.outputWrapper()
+	if wrap == nil {
 		return
 	}
 
 	// os/exec gives the child a single pipe and a single copy goroutine for stdout and stderr only while
-	// cmd.Stdout and cmd.Stderr compare equal. Two separate MultiWriters would break that and hand a writer the
+	// cmd.Stdout and cmd.Stderr compare equal. Wrapping the two separately would break that and hand a writer the
 	// caller shares between the two streams (a bytes.Buffer, a filter) to two goroutines at once. Wrap once instead.
 	if c.cmd.Stderr != nil && interfaceEqual(c.cmd.Stdout, c.cmd.Stderr) {
-		shared := c.collectFrom(c.cmd.Stdout)
+		shared := wrap(c.cmd.Stdout)
 		c.cmd.Stdout = shared
 		c.cmd.Stderr = shared
+
 		return
 	}
 
-	c.cmd.Stdout = c.collectFrom(c.cmd.Stdout)
-	c.cmd.Stderr = c.collectFrom(c.cmd.Stderr)
+	c.cmd.Stdout = wrap(c.cmd.Stdout)
+	c.cmd.Stderr = wrap(c.cmd.Stderr)
+}
+
+// outputWrapper returns how one stream's writer is wrapped so that what the command prints reaches
+// the collector as well, or nil when nothing collects.
+func (c *command) outputWrapper() func(io.Writer) io.Writer {
+	switch {
+	case c.matcherCollector != nil:
+		return c.collectLinesFrom
+	case c.errorCollector != nil:
+		return c.collectFrom
+	default:
+		return nil
+	}
+}
+
+// collectLinesFrom keeps the writer it builds, because the matcher is owed a last line without a
+// newline once the process ends.
+func (c *command) collectLinesFrom(w io.Writer) io.Writer {
+	lines := c.matcherCollector.collectFromWriter(orDiscard(w))
+	c.lineWriters = append(c.lineWriters, lines)
+
+	return lines
 }
 
 func (c *command) collectFrom(w io.Writer) io.Writer {
 	if w == nil {
 		return c.errorCollector
 	}
+
 	return io.MultiWriter(c.errorCollector, w)
-}
-
-// wrapOutputsForMatcher gives each stream a writer that forwards to the caller's and feeds the
-// matcher its lines. The streams share one when the caller shares one, for the reason wrapOutputs
-// gives.
-func (c *command) wrapOutputsForMatcher() {
-	if c.cmd.Stderr != nil && interfaceEqual(c.cmd.Stdout, c.cmd.Stderr) {
-		shared := c.matcherCollector.collectFromWriter(c.cmd.Stdout)
-		c.cmd.Stdout = shared
-		c.cmd.Stderr = shared
-		c.lineWriters = []*lineWriter{shared}
-
-		return
-	}
-
-	stdout := c.matcherCollector.collectFromWriter(orDiscard(c.cmd.Stdout))
-	stderr := c.matcherCollector.collectFromWriter(orDiscard(c.cmd.Stderr))
-	c.cmd.Stdout = stdout
-	c.cmd.Stderr = stderr
-	c.lineWriters = []*lineWriter{stdout, stderr}
 }
 
 // closeOutputs hands the matcher a last line the command left without a newline. The caller's writers
@@ -295,9 +295,8 @@ func (c *command) closeOutputs() {
 func (c *command) collectFromOutput(output string) {
 	switch {
 	case c.matcherCollector != nil:
-		w := c.matcherCollector.collectFromWriter(io.Discard)
-		_, _ = io.WriteString(w, output)
-		_ = w.Close()
+		_, _ = io.WriteString(c.collectLinesFrom(nil), output)
+		c.closeOutputs()
 	case c.errorCollector != nil:
 		c.errorCollector.collectErrors(output)
 	}

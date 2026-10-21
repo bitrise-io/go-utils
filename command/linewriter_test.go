@@ -31,9 +31,9 @@ func TestLineWriter(t *testing.T) {
 			want:   []string{"Execution failed for task ':app:compileDebugKotlin'."},
 		},
 		{
-			name:   "an escape sequence split across writes",
+			name:   "an escape sequence split across writes is handed over whole",
 			writes: []string{"\x1b[3", "1mred\x1b[0m\n"},
-			want:   []string{"red"},
+			want:   []string{"\x1b[31mred\x1b[0m"},
 		},
 		{
 			name:   "a last line with no newline is flushed on close",

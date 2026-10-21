@@ -11,7 +11,10 @@ import (
 // held in memory on its way to it.
 const maxLineLength = 64 * 1024
 
-var newline = []byte{'\n'}
+var (
+	newline        = []byte{'\n'}
+	carriageReturn = []byte{'\r'}
+)
 
 // lineWriter forwards everything written to it and assembles the lines behind it, so that the matcher
 // is given complete lines however the output was chunked. An escape sequence split across two writes
@@ -44,7 +47,7 @@ func (w *lineWriter) Close() error {
 	w.closed = true
 
 	if len(w.pending) > 0 {
-		w.emit()
+		w.emit(w.pending)
 	}
 
 	return nil
@@ -58,7 +61,7 @@ func (w *lineWriter) consume(p []byte) {
 			return
 		}
 
-		w.emit()
+		w.emitLine()
 		p = rest
 	}
 }
@@ -73,8 +76,14 @@ func (w *lineWriter) hold(b []byte) {
 	w.pending = append(w.pending, trimPartialRune(b[:room])...)
 }
 
-func (w *lineWriter) emit() {
-	w.collector.consumeLine(w.pending)
+// emitLine hands over a line that ended in a newline, without the carriage return of a CRLF: the two
+// bytes are one terminator, the way bufio.ScanLines reads them.
+func (w *lineWriter) emitLine() {
+	w.emit(bytes.TrimSuffix(w.pending, carriageReturn))
+}
+
+func (w *lineWriter) emit(line []byte) {
+	w.collector.consumeLine(line)
 	w.pending = w.pending[:0]
 }
 

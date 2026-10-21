@@ -38,14 +38,17 @@ func TestErrorMatcher_ReadsALineWithNoTrailingNewline(t *testing.T) {
 	require.Equal(t, "error: no newline after me", collectedErrorOutput(t, err))
 }
 
-func TestErrorMatcher_StripsEscapeSequencesFromTheReason(t *testing.T) {
+// TestErrorMatcher_GivesTheLineAsWritten pins what a matcher is handed: the bytes the tool wrote,
+// escape sequences included. A tool that colors its output is the matcher's problem, not this layer's.
+func TestErrorMatcher_GivesTheLineAsWritten(t *testing.T) {
 	var out bytes.Buffer
+	matcher := &recordingMatcher{}
 	const colored = `printf '\033[31;1merror: Compilation error\033[0m\n'; exit 1`
 
-	err := runScript(t, colored, &Opts{Stdout: &out, ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, colored, &Opts{Stdout: &out, ErrorMatcher: matcher})
 
-	require.Equal(t, "error: Compilation error", collectedErrorOutput(t, err))
-	require.NotContains(t, err.Error(), "\x1b")
+	require.Error(t, err)
+	require.Equal(t, []string{"\x1b[31;1merror: Compilation error\x1b[0m"}, matcher.lines)
 	require.Equal(t, "\x1b[31;1merror: Compilation error\x1b[0m\n", out.String(), "the log keeps its colors")
 }
 

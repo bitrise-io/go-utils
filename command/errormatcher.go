@@ -4,8 +4,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-
-	"github.com/bitrise-io/go-utils/v2/ansi"
 )
 
 const (
@@ -17,10 +15,11 @@ const (
 )
 
 // ErrorMatcher reads the output of one tool and reports why it failed. It is given complete lines, in
-// the order the tool wrote them, with escape sequences and control bytes already removed, so that a
-// matcher holds the rules of its tool and no stream handling of its own.
+// the order the tool wrote them, so that a matcher holds the rules of its tool and no stream handling
+// of its own.
 type ErrorMatcher interface {
-	// ConsumeLine is given one line of output without its newline.
+	// ConsumeLine is given one line of output without its newline, as the tool wrote it. A tool that
+	// colors its output leaves the escape sequences in, so a matcher for one has to take them out.
 	ConsumeLine(line string)
 	// Reasons returns the lines that say why the command failed, most telling first, or nothing when
 	// the output held none. Nothing is the right answer for a failure the matcher does not recognise:
@@ -41,7 +40,7 @@ func (c *matcherCollector) consumeLine(line []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.matcher.ConsumeLine(ansi.Strip(string(line)))
+	c.matcher.ConsumeLine(string(line))
 }
 
 // reasons returns why the command failed, cut to maxReasonBytes. Whole lines are dropped at the cap;

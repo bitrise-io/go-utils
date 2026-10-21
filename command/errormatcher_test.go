@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// splitLineScript writes one error line in two pieces, which is what a tool does whenever a line
-// happens to straddle the 32 KB the pipe is read in.
+// splitLineScript writes one error line in two pieces, which is how Gradle writes nearly every line
+// it cares about: its output layer writes each styled span and the newline as separate writes, so a
+// real `FAILURE: Build failed with an exception.` arrives as "FAILURE: ", then the message, then the
+// newline.
 const splitLineScript = `printf "Execution failed for "
 sleep 0.2
 printf "task ':app:compileDebugKotlin'.\n"

@@ -3,12 +3,11 @@ package command
 import (
 	"bytes"
 	"io"
-	"unicode/utf8"
 )
 
-// maxLineLength bounds how much of a line the matcher is given. The stream still forwards a longer
-// line whole; only what the matcher reads is cut, so that one unbroken megabyte of output cannot be
-// held in memory on its way to it.
+// maxLineLength is the longest line a matcher is offered. A longer one is dropped rather than cut
+// short: a reason has to be a short summary, so a line this long is not one, and half of it matching
+// would put the whole line in the error that is stored and shown. The stream still forwards it whole.
 const maxLineLength = 64 * 1024
 
 var (
@@ -25,8 +24,9 @@ type lineWriter struct {
 	dest      io.Writer
 	collector *matcherCollector
 
-	pending []byte
-	closed  bool
+	pending  []byte
+	skipping bool
+	closed   bool
 }
 
 // Write forwards p untouched and feeds the lines it completes to the matcher. Output reaches the
@@ -46,7 +46,7 @@ func (w *lineWriter) Close() error {
 	}
 	w.closed = true
 
-	if len(w.pending) > 0 {
+	if len(w.pending) > 0 || w.skipping {
 		w.emit(w.pending)
 	}
 
@@ -67,13 +67,18 @@ func (w *lineWriter) consume(p []byte) {
 }
 
 func (w *lineWriter) hold(b []byte) {
-	room := maxLineLength - len(w.pending)
-	if len(b) <= room {
-		w.pending = append(w.pending, b...)
+	if w.skipping {
 		return
 	}
 
-	w.pending = append(w.pending, trimPartialRune(b[:room])...)
+	if len(w.pending)+len(b) > maxLineLength {
+		w.pending = w.pending[:0]
+		w.skipping = true
+
+		return
+	}
+
+	w.pending = append(w.pending, b...)
 }
 
 // emitLine hands over a line that ended in a newline, without the carriage return of a CRLF: the two
@@ -82,19 +87,14 @@ func (w *lineWriter) emitLine() {
 	w.emit(bytes.TrimSuffix(w.pending, carriageReturn))
 }
 
+// emit hands the line over. A dropped one is handed over empty rather than not at all, because a
+// matcher reading a multi-line block still has to see that the block ended here.
 func (w *lineWriter) emit(line []byte) {
-	w.collector.consumeLine(line)
-	w.pending = w.pending[:0]
-}
-
-// trimPartialRune drops a multi-byte rune that the cut would leave half written, so that the matcher
-// is never handed an invalid one.
-func trimPartialRune(b []byte) []byte {
-	for i := len(b); i > 0 && i > len(b)-utf8.UTFMax; i-- {
-		if r, size := utf8.DecodeLastRune(b[:i]); r != utf8.RuneError || size > 1 {
-			return b[:i]
-		}
+	if w.skipping {
+		line = nil
 	}
 
-	return b
+	w.collector.consumeLine(line)
+	w.pending = w.pending[:0]
+	w.skipping = false
 }

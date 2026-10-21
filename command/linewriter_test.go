@@ -88,8 +88,8 @@ func TestLineWriterForwardsBeforeTheLineEnds(t *testing.T) {
 	require.Empty(t, matcher.lines)
 }
 
-func TestLineWriterCutsAnOverlongLine(t *testing.T) {
-	long := strings.Repeat("a", maxLineLength+100)
+func TestLineWriterDropsAnOverlongLine(t *testing.T) {
+	long := strings.Repeat("a", maxLineLength+100) + " error: not a reason"
 
 	var dest bytes.Buffer
 	matcher := &recordingMatcher{}
@@ -98,20 +98,30 @@ func TestLineWriterCutsAnOverlongLine(t *testing.T) {
 	_, err := w.Write([]byte(long + "\nshort\n"))
 	require.NoError(t, err)
 
-	require.Equal(t, []string{strings.Repeat("a", maxLineLength), "short"}, matcher.lines)
+	require.Equal(t, []string{"", "short"}, matcher.lines,
+		"the line is offered empty, so nothing in it can match and a multi-line block still ends here")
 	require.Equal(t, long+"\nshort\n", dest.String(), "the caller's writer still gets the line whole")
 }
 
-func TestLineWriterCutsOnARuneBoundary(t *testing.T) {
-	long := strings.Repeat("a", maxLineLength-1) + "ő"
-
+func TestLineWriterDropsAnOverlongLastLine(t *testing.T) {
 	matcher := &recordingMatcher{}
 	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
 
-	_, err := w.Write([]byte(long + "\n"))
+	_, err := w.Write([]byte(strings.Repeat("a", maxLineLength+100)))
+	require.NoError(t, err)
+	require.NoError(t, w.Close())
+
+	require.Equal(t, []string{""}, matcher.lines)
+}
+
+func TestLineWriterRecoversAfterAnOverlongLine(t *testing.T) {
+	matcher := &recordingMatcher{}
+	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
+
+	_, err := w.Write([]byte(strings.Repeat("a", maxLineLength+100) + "\n> Task :app:x FAILED\n"))
 	require.NoError(t, err)
 
-	require.Equal(t, []string{strings.Repeat("a", maxLineLength-1)}, matcher.lines)
+	require.Equal(t, []string{"", "> Task :app:x FAILED"}, matcher.lines)
 }
 
 func TestLineWriterReportsADestinationError(t *testing.T) {

@@ -21,9 +21,12 @@ type ErrorMatcher interface {
 	// ConsumeLine is given one line of output without its newline, as the tool wrote it. A tool that
 	// colors its output leaves the escape sequences in, so a matcher for one has to take them out.
 	ConsumeLine(line string)
-	// Reasons returns the lines that say why the command failed, most telling first, or nothing when
-	// the output held none. Nothing is the right answer for a failure the matcher does not recognise:
-	// the command then reports its generic message rather than a guess.
+	// Reasons returns the lines that say why the command failed, in the order they are to be read, or
+	// nothing when the output held none. Nothing is the right answer for a failure the matcher does not
+	// recognise: the command then reports its generic message rather than a guess.
+	//
+	// A line indented further than the one above it is shown as a detail of it, which is how a tool's
+	// own nesting of causes is carried over.
 	Reasons() []string
 }
 

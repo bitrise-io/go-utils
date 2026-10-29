@@ -45,6 +45,28 @@ func TestFormattedError(t *testing.T) {
       the magic has failed`,
 		},
 		{
+			name: "A reason whose lines are indented relative to each other",
+			error: func() error {
+				return fmt.Errorf("Failed to execute Step main logic: %w", errors.New(
+					"Execution failed for task ':app:compileDebugKotlin'.\n"+
+						"  A failure occurred while executing the Kotlin compiler\n"+
+						"    Foo.kt:4:30: Unresolved reference 'missingHelper'.\n"+
+						"    Foo.kt:6:30: Unresolved reference 'anotherMissingHelper'."))
+			},
+			wantFormattedError: `Failed to execute Step main logic:
+  Execution failed for task ':app:compileDebugKotlin'.
+    A failure occurred while executing the Kotlin compiler
+      Foo.kt:4:30: Unresolved reference 'missingHelper'.
+      Foo.kt:6:30: Unresolved reference 'anotherMissingHelper'.`,
+		},
+		{
+			name: "A reason whose lines are all indented by the same amount",
+			error: func() error {
+				return errors.New("    first line\n    second line")
+			},
+			wantFormattedError: "first line\nsecond line",
+		},
+		{
 			name: "Multiple non-wrapped errors",
 			error: func() error {
 				err := errors.New("the magic has failed")
@@ -134,10 +156,7 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 				err := cmd.Run()
 				return err
 			},
-			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): Error: first error
-Error: second error
-Error: third error
-Error: fourth error`,
+			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): Error: first error Error: second error Error: third error Error: fourth error`,
 			wantMsg: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
   Error: first error
   Error: second error

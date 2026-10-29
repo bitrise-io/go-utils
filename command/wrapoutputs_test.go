@@ -144,15 +144,16 @@ func TestErrorFinder_SharedStreamKeepsContiguousErrorBlocks(t *testing.T) {
 }
 
 // collectedErrorOutput returns the lines the ErrorFinder collected, which ExitStatusError appends after the
-// printable command. The command itself is quoted in the message, so matching on the whole string would also match
-// the script that produced the output.
+// printable command. It reads them from Reason rather than Error, which folds them onto one line. The command
+// itself is quoted in the message, so matching on the whole string would also match the script that produced the
+// output.
 func collectedErrorOutput(t *testing.T, err error) string {
 	t.Helper()
 
 	var exitErr *ExitStatusError
 	require.ErrorAs(t, err, &exitErr)
 
-	msg := exitErr.Error()
+	msg := exitErr.Reason().Error()
 	i := strings.LastIndex(msg, "): ")
 	require.NotEqual(t, -1, i, "unexpected error format: %s", msg)
 

@@ -52,10 +52,7 @@ func TestRunErrors(t *testing.T) {
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
-Error: second error
-Error: third error
-Error: fourth error`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error Error: second error Error: third error Error: fourth error`,
 		},
 	}
 	for _, tt := range tests {
@@ -157,9 +154,7 @@ func TestRunAndReturnTrimmedOutput(t *testing.T) {
 					cmd: c,
 				}
 			}(),
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: third error
-Error: fourth error
-`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: third error Error: fourth error`,
 		},
 		{
 			name: "command with error finder",
@@ -180,8 +175,7 @@ Error: fourth error
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
-Error: second error`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error Error: second error`,
 		},
 	}
 	for _, tt := range tests {
@@ -234,10 +228,7 @@ func TestRunAndReturnTrimmedCombinedOutput(t *testing.T) {
 					errorCollector: &errorCollector{errorFinder: errorFinder},
 				}
 			}(),
-			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error
-Error: second error
-Error: third error
-Error: fourth error`,
+			wantErr: `command failed with exit status 1 (bash "testdata/exit_with_message.sh"): Error: first error Error: second error Error: third error Error: fourth error`,
 		},
 	}
 	for _, tt := range tests {

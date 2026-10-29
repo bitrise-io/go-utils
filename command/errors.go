@@ -32,9 +32,20 @@ func NewExitStatusError(printableCmdArgs string, exitErr *exec.ExitError, errorL
 	}
 }
 
-// Error returns the formatted error message. Does not include the original error message (`exit status 1`).
+// Error returns the reason as a single line. The places that show a command's failure in one line cut
+// the message at its first newline, which would drop every reason line but the first. The layered form
+// is in Reason. Does not include the original error message (`exit status 1`).
 func (e *ExitStatusError) Error() string {
-	return e.readableReason.Error()
+	var parts []string
+	for _, line := range strings.Split(e.readableReason.Error(), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		parts = append(parts, line)
+	}
+
+	return strings.Join(parts, " ")
 }
 
 // Unwrap is needed for errors.Is and errors.As to work correctly.

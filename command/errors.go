@@ -17,19 +17,62 @@ type ExitStatusError struct {
 func NewExitStatusError(printableCmdArgs string, exitErr *exec.ExitError, errorLines []string) error {
 	reasonMsg := fmt.Sprintf("command failed with exit status %d (%s)", exitErr.ExitCode(), printableCmdArgs)
 
-	errorOutput := strings.Join(errorLines, "\n")
-	if len(errorOutput) == 0 {
+	reason := nestedReason(errorLines)
+	if reason == nil {
 		if len(exitErr.Stderr) != 0 {
-			errorOutput = string(exitErr.Stderr)
+			reason = errors.New(string(exitErr.Stderr))
 		} else {
-			errorOutput = "check the command's output for details"
+			reason = errors.New("check the command's output for details")
 		}
 	}
 
 	return &ExitStatusError{
-		readableReason:  fmt.Errorf("%s: %w", reasonMsg, errors.New(errorOutput)),
+		readableReason:  fmt.Errorf("%s: %w", reasonMsg, reason),
 		originalExitErr: exitErr,
 	}
+}
+
+// nestedReason turns the collected lines into a chain of errors, one link per indentation step. A
+// matcher indents a line to say that it is a detail of the line above it, and errorutil.FormattedError
+// prints each link of a chain one level deeper, so the two say the same thing.
+//
+// A chain holds a path, not a tree: once a line is not indented further than the one before it, it joins
+// the deepest link rather than starting a sibling branch that could not be printed.
+func nestedReason(lines []string) error {
+	var (
+		links      []string
+		lastIndent int
+	)
+	for _, line := range lines {
+		text := strings.TrimLeft(line, " ")
+		if text == "" {
+			continue
+		}
+
+		indent := len(line) - len(text)
+		if len(links) > 0 && indent <= lastIndent {
+			links[len(links)-1] += "\n" + text
+
+			continue
+		}
+
+		links = append(links, text)
+		lastIndent = indent
+	}
+
+	var reason error
+	for i := len(links) - 1; i >= 0; i-- {
+		if reason == nil {
+			reason = errors.New(links[i])
+
+			continue
+		}
+
+		// The sentence carries on into the link below, so the punctuation that ended it does not.
+		reason = fmt.Errorf("%s: %w", strings.TrimRight(links[i], " .:"), reason)
+	}
+
+	return reason
 }
 
 // Error returns the reason as a single line. The places that show a command's failure in one line cut

@@ -50,47 +50,25 @@ func appendError(errorMessage, reason string, i int, last bool) string {
 }
 
 func indentedReason(reason string, level int) string {
-	prefix := strings.Repeat("  ", level)
-
-	var indented []string
-	for _, line := range reasonLines(reason) {
-		indented = append(indented, prefix+line)
-	}
-
-	return strings.Join(indented, "\n")
-}
-
-// reasonLines drops the blank lines and the indentation that every line shares, and keeps what is left
-// of each line's own indentation, which is how a tool says that a line is a detail of the one above it.
-func reasonLines(reason string) []string {
 	var lines []string
-	for _, line := range strings.Split(reason, "\n") {
-		line = strings.TrimRight(line, " \n")
-		if strings.TrimSpace(line) == "" {
+	split := strings.Split(reason, "\n")
+	for _, line := range split {
+		line = strings.TrimLeft(line, " ")
+		line = strings.TrimRight(line, "\n")
+		line = strings.TrimRight(line, " ")
+		if line == "" {
 			continue
 		}
 		lines = append(lines, line)
 	}
 
-	shared := sharedIndent(lines)
+	var indented string
 	for i, line := range lines {
-		lines[i] = line[shared:]
-	}
-
-	return lines
-}
-
-func sharedIndent(lines []string) int {
-	shared := -1
-	for _, line := range lines {
-		indent := len(line) - len(strings.TrimLeft(line, " "))
-		if shared == -1 || indent < shared {
-			shared = indent
+		indented += strings.Repeat("  ", level)
+		indented += line
+		if i != len(lines)-1 {
+			indented += "\n"
 		}
 	}
-	if shared < 0 {
-		return 0
-	}
-
-	return shared
+	return indented
 }

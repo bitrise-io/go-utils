@@ -190,13 +190,13 @@ func TestMatcherCollectorReasons(t *testing.T) {
 		},
 		{
 			name:    "whole lines past the cap are dropped",
-			reasons: []string{strings.Repeat("a", maxReasonBytes-10), "this line no longer fits"},
-			want:    []string{strings.Repeat("a", maxReasonBytes-10), truncatedMarker},
+			reasons: []string{strings.Repeat("a", reasonBudget-10), "this line no longer fits"},
+			want:    []string{strings.Repeat("a", reasonBudget-10), truncatedMarker},
 		},
 		{
 			name:    "a first line over the cap on its own is cut",
 			reasons: []string{strings.Repeat("a", maxReasonBytes+10)},
-			want:    []string{strings.Repeat("a", maxReasonBytes), truncatedMarker},
+			want:    []string{strings.Repeat("a", reasonBudget), truncatedMarker},
 		},
 	}
 
@@ -204,7 +204,10 @@ func TestMatcherCollectorReasons(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			collector := &matcherCollector{matcher: &fixedMatcher{reasons: tt.reasons}}
 
-			require.Equal(t, tt.want, collector.reasons())
+			got := collector.reasons()
+
+			require.Equal(t, tt.want, got)
+			require.LessOrEqual(t, len(strings.Join(got, "\n")), maxReasonBytes)
 		})
 	}
 }

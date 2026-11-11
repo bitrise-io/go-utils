@@ -12,6 +12,9 @@ const (
 	maxReasonBytes = 800
 
 	truncatedMarker = "... (truncated)"
+
+	// reasonBudget is held back for the marker up front, so a cut reason stays within maxReasonBytes.
+	reasonBudget = maxReasonBytes - len("\n"+truncatedMarker)
 )
 
 // ErrorMatcher reads the output of one tool and reports why it failed. It is given complete lines, in
@@ -51,7 +54,7 @@ func (c *matcherCollector) reasons() []string {
 	defer c.mu.Unlock()
 
 	var kept []string
-	remaining := maxReasonBytes
+	remaining := reasonBudget
 
 	for _, line := range c.matcher.Reasons() {
 		if len(line) > remaining {

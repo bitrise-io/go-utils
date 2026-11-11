@@ -115,6 +115,22 @@ func TestFormattedErrorWithCommand(t *testing.T) {
     check the command's output for details`,
 		},
 		{
+			name: "command with an error matcher that indents its reasons",
+			cmdFn: func() error {
+				cmd := commandFactory.Create("bash", []string{"../command/testdata/exit_with_message.sh"}, &command.Opts{
+					ErrorMatcher: &gradleShapedMatcher{},
+				})
+
+				return cmd.Run()
+			},
+			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): Execution failed for task ':app:compileDebugKotlin': A failure occurred while executing the Kotlin compiler: Foo.kt:4:30: Unresolved reference 'missingHelper'. Foo.kt:6:30: Unresolved reference 'anotherMissingHelper'.`,
+			wantMsg: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
+  Execution failed for task ':app:compileDebugKotlin':
+    A failure occurred while executing the Kotlin compiler:
+      Foo.kt:4:30: Unresolved reference 'missingHelper'.
+      Foo.kt:6:30: Unresolved reference 'anotherMissingHelper'.`,
+		},
+		{
 			name: "command with error finder",
 			cmdFn: func() error {
 				errorFinder := func(out string) []string {
@@ -134,10 +150,7 @@ func TestFormattedErrorWithCommand(t *testing.T) {
 				err := cmd.Run()
 				return err
 			},
-			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): Error: first error
-Error: second error
-Error: third error
-Error: fourth error`,
+			wantErr: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"): Error: first error Error: second error Error: third error Error: fourth error`,
 			wantMsg: `command failed with exit status 1 (bash "../command/testdata/exit_with_message.sh"):
   Error: first error
   Error: second error
@@ -164,5 +177,20 @@ Error: fourth error`,
 				t.Errorf("FormattedError() error = \n%v\n, wantErr \n%v\n", gotFormattedMsg, tt.wantErr)
 			}
 		})
+	}
+}
+
+// gradleShapedMatcher reports the shape a Gradle run produces: a problem, the cause under it, and the
+// compiler errors under that.
+type gradleShapedMatcher struct{}
+
+func (m *gradleShapedMatcher) ConsumeLine(string) {}
+
+func (m *gradleShapedMatcher) Reasons() []string {
+	return []string{
+		"Execution failed for task ':app:compileDebugKotlin'.",
+		"  A failure occurred while executing the Kotlin compiler",
+		"    Foo.kt:4:30: Unresolved reference 'missingHelper'.",
+		"    Foo.kt:6:30: Unresolved reference 'anotherMissingHelper'.",
 	}
 }

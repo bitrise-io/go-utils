@@ -124,8 +124,9 @@ printf 'xcodebuild: error: Signing requires a development team\n    Reason: No p
 exit 1`
 
 // TestErrorFinder_SharedStreamKeepsContiguousErrorBlocks is the same wiring and the same finder as above, with the
-// block written in one go: it survives intact. Sharing the writer is not what loses the tail -- other-stream bytes
-// landing between the block's lines is, which only a shared stream can do.
+// block written in one go: it survives intact, the indented second line as a link under the first. Sharing the
+// writer is not what loses the tail -- other-stream bytes landing between the block's lines is, which only a shared
+// stream can do.
 // TODO: flaky. It assumes the child's single stderr write arrives as a single chunk, which a pipe
 // does not guarantee: under load the read splits it and the block's tail is lost, exactly as in the
 // test above. Drive the writes through a writer the test controls instead of a real child process.
@@ -139,20 +140,21 @@ func TestErrorFinder_SharedStreamKeepsContiguousErrorBlocks(t *testing.T) {
 
 	err := cmd.Run()
 
-	require.Equal(t, "xcodebuild: error: Signing requires a development team\n    Reason: No profiles matched",
+	require.Equal(t, "xcodebuild: error: Signing requires a development team: Reason: No profiles matched",
 		collectedErrorOutput(t, err))
 }
 
 // collectedErrorOutput returns the lines the ErrorFinder collected, which ExitStatusError appends after the
-// printable command. The command itself is quoted in the message, so matching on the whole string would also match
-// the script that produced the output.
+// printable command. It reads them from Reason rather than Error, which folds them onto one line. The command
+// itself is quoted in the message, so matching on the whole string would also match the script that produced the
+// output.
 func collectedErrorOutput(t *testing.T, err error) string {
 	t.Helper()
 
 	var exitErr *ExitStatusError
 	require.ErrorAs(t, err, &exitErr)
 
-	msg := exitErr.Error()
+	msg := exitErr.Reason().Error()
 	i := strings.LastIndex(msg, "): ")
 	require.NotEqual(t, -1, i, "unexpected error format: %s", msg)
 

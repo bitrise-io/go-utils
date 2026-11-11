@@ -24,16 +24,6 @@ func TestErrorMatcher_ReadsALineSplitAcrossWrites(t *testing.T) {
 	require.Equal(t, "Execution failed for task ':app:compileDebugKotlin'.", collectedErrorOutput(t, err))
 }
 
-// TestErrorFinder_CutsALineSplitAcrossWrites is the same output read by the hook ErrorMatcher
-// replaces, and is why it replaces it.
-func TestErrorFinder_CutsALineSplitAcrossWrites(t *testing.T) {
-	err := runScript(t, splitLineScript, &Opts{ErrorFinder: func(out string) []string {
-		return prefixLines(out, "Execution failed")
-	}})
-
-	require.Equal(t, "Execution failed for ", collectedErrorOutput(t, err), "the chunk ends mid-line, so the finder sees only its first half")
-}
-
 func TestErrorMatcher_ReadsALineWithNoTrailingNewline(t *testing.T) {
 	err := runScript(t, `printf 'error: no newline after me'; exit 1`, &Opts{ErrorMatcher: &prefixMatcher{prefix: "error:"}})
 
@@ -216,17 +206,6 @@ func runScript(t *testing.T, script string, opts *Opts) error {
 	t.Helper()
 
 	return NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, opts).Run()
-}
-
-func prefixLines(out, prefix string) []string {
-	var lines []string
-	for _, line := range strings.Split(out, "\n") {
-		if strings.HasPrefix(line, prefix) {
-			lines = append(lines, line)
-		}
-	}
-
-	return lines
 }
 
 // prefixMatcher keeps every line starting with its prefix. It carries no stream handling at all,

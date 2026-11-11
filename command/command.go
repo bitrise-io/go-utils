@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -137,6 +138,16 @@ func (c *command) RunAndReturnExitCode() (int, error) {
 
 // RunAndReturnTrimmedOutput ...
 func (c *command) RunAndReturnTrimmedOutput() (string, error) {
+	// cmd.Output keeps stderr from the matcher, so a matcher run streams both pipes the way Run does. A Stdout
+	// the caller set is left to cmd.Output, which refuses it.
+	if c.matcherCollector != nil && c.cmd.Stdout == nil {
+		var stdout bytes.Buffer
+		c.cmd.Stdout = &stdout
+		err := c.Run()
+
+		return strings.TrimSpace(stdout.String()), err
+	}
+
 	outBytes, err := c.cmd.Output()
 	outStr := string(outBytes)
 	if err != nil {
@@ -290,8 +301,8 @@ func (c *command) closeOutputs() {
 	c.lineWriters = nil
 }
 
-// collectFromOutput feeds output that was captured whole rather than streamed, so that the two
-// RunAndReturn...Output calls report the same reason as a streamed run.
+// collectFromOutput feeds output that was captured whole rather than streamed, so that a
+// RunAndReturn...Output call reports the same reason as a streamed run.
 func (c *command) collectFromOutput(output string) {
 	switch {
 	case c.matcherCollector != nil:

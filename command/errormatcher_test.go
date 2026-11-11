@@ -111,6 +111,45 @@ func TestErrorMatcher_RunAndReturnTrimmedCombinedOutput(t *testing.T) {
 	require.Equal(t, "error: from captured output", collectedErrorOutput(t, err))
 }
 
+func TestErrorMatcher_RunAndReturnTrimmedOutput(t *testing.T) {
+	const script = `printf 'all quiet\n'; printf 'error: on stderr\n' >&2; exit 1`
+
+	t.Run("stderr not captured by the caller", func(t *testing.T) {
+		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, &Opts{
+			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		})
+
+		out, err := cmd.RunAndReturnTrimmedOutput()
+
+		require.Equal(t, "all quiet", out)
+		require.Equal(t, "error: on stderr", collectedErrorOutput(t, err))
+	})
+
+	t.Run("stderr written to the caller's writer", func(t *testing.T) {
+		var stderr bytes.Buffer
+		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, &Opts{
+			Stderr:       &stderr,
+			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		})
+
+		out, err := cmd.RunAndReturnTrimmedOutput()
+
+		require.Equal(t, "all quiet", out)
+		require.Equal(t, "error: on stderr", collectedErrorOutput(t, err))
+		require.Equal(t, "error: on stderr\n", stderr.String())
+	})
+
+	t.Run("nothing matched does not fall back to raw stderr", func(t *testing.T) {
+		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'noise on stderr\n' >&2; exit 1`}, &Opts{
+			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		})
+
+		_, err := cmd.RunAndReturnTrimmedOutput()
+
+		require.Equal(t, "check the command's output for details", collectedErrorOutput(t, err))
+	})
+}
+
 func TestErrorMatcher_RunAndReturnExitCode(t *testing.T) {
 	cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'error: exit code run\n'; exit 3`}, &Opts{
 		ErrorMatcher: &prefixMatcher{prefix: "error:"},

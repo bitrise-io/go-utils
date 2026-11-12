@@ -33,6 +33,11 @@ type lineWriter struct {
 // caller's writer as it arrives, so a line a command leaves unfinished is on screen while it runs.
 func (w *lineWriter) Write(p []byte) (int, error) {
 	n, err := w.dest.Write(p)
+	// A count outside p is passed back unused, so that io.Copy reports it as an invalid write.
+	if n < 0 || n > len(p) {
+		return n, err
+	}
+
 	w.consume(p[:n])
 
 	return n, err

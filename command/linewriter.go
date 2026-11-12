@@ -6,8 +6,8 @@ import (
 )
 
 // maxLineLength is the longest line a matcher is offered. A longer one is dropped rather than cut
-// short: a reason has to be a short summary, so a line this long is not one, and half of it matching
-// would put the whole line in the error that is stored and shown. The stream still forwards it whole.
+// short, so that a matcher only ever sees complete lines: a line this long is not a failure reason,
+// and a cut one that matched would fill the reason with noise. The stream still forwards it whole.
 const maxLineLength = 64 * 1024
 
 var (

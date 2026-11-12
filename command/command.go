@@ -24,13 +24,17 @@ type Opts struct {
 	Dir    string
 
 	// Deprecated: ErrorFinder is called once per written chunk, so a line that lands in two chunks is
-	// cut in half and matches nothing. Use ErrorMatcher.
+	// cut in half and matches nothing. Use NewErrorMatcher.
 	ErrorFinder ErrorFinder
 
-	// ErrorMatcher is given each complete line of the command's output and says why the command
-	// failed. What it reports becomes the reason of the error Run returns, so a caller reports what
-	// the tool said rather than its exit status. It takes the place of ErrorFinder when both are set.
-	ErrorMatcher ErrorMatcher
+	// NewErrorMatcher returns the matcher that is given each complete line of the command's output and
+	// says why the command failed. What it reports becomes the reason of the error Run returns, so a
+	// caller reports what the tool said rather than its exit status. It takes the place of ErrorFinder
+	// when both are set.
+	//
+	// A matcher keeps what it has read, so Create calls this once per command: an Opts used for several
+	// commands, a retry among them, never carries one run's reason into another.
+	NewErrorMatcher func() ErrorMatcher
 }
 
 // Factory ...
@@ -55,8 +59,8 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 
 	if opts != nil {
 		switch {
-		case opts.ErrorMatcher != nil:
-			matcher = &matcherCollector{matcher: opts.ErrorMatcher}
+		case opts.NewErrorMatcher != nil:
+			matcher = &matcherCollector{matcher: opts.NewErrorMatcher()}
 		case opts.ErrorFinder != nil:
 			collector = &errorCollector{errorFinder: opts.ErrorFinder}
 		}

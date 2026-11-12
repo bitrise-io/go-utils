@@ -19,13 +19,13 @@ printf "task ':app:compileDebugKotlin'.\n"
 exit 1`
 
 func TestErrorMatcher_ReadsALineSplitAcrossWrites(t *testing.T) {
-	err := runScript(t, splitLineScript, &Opts{ErrorMatcher: &prefixMatcher{prefix: "Execution failed"}})
+	err := runScript(t, splitLineScript, &Opts{NewErrorMatcher: matchPrefix("Execution failed")})
 
 	require.Equal(t, "Execution failed for task ':app:compileDebugKotlin'.", collectedErrorOutput(t, err))
 }
 
 func TestErrorMatcher_ReadsALineWithNoTrailingNewline(t *testing.T) {
-	err := runScript(t, `printf 'error: no newline after me'; exit 1`, &Opts{ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, `printf 'error: no newline after me'; exit 1`, &Opts{NewErrorMatcher: matchPrefix("error:")})
 
 	require.Equal(t, "error: no newline after me", collectedErrorOutput(t, err))
 }
@@ -37,7 +37,7 @@ func TestErrorMatcher_GivesTheLineAsWritten(t *testing.T) {
 	matcher := &recordingMatcher{}
 	const colored = `printf '\033[31;1merror: Compilation error\033[0m\n'; exit 1`
 
-	err := runScript(t, colored, &Opts{Stdout: &out, ErrorMatcher: matcher})
+	err := runScript(t, colored, &Opts{Stdout: &out, NewErrorMatcher: func() ErrorMatcher { return matcher }})
 
 	require.Error(t, err)
 	require.Equal(t, []string{"\x1b[31;1merror: Compilation error\x1b[0m"}, matcher.lines)
@@ -48,7 +48,7 @@ func TestErrorMatcher_ReadsBothStreams(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	const script = `printf 'error: on stdout\n'; printf 'error: on stderr\n' >&2; exit 1`
 
-	err := runScript(t, script, &Opts{Stdout: &stdout, Stderr: &stderr, ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, script, &Opts{Stdout: &stdout, Stderr: &stderr, NewErrorMatcher: matchPrefix("error:")})
 
 	require.Contains(t, collectedErrorOutput(t, err), "error: on stdout")
 	require.Contains(t, collectedErrorOutput(t, err), "error: on stderr")
@@ -59,7 +59,7 @@ func TestErrorMatcher_ReadsBothStreams(t *testing.T) {
 func TestErrorMatcher_SharedStdoutStderrHasOneWriter(t *testing.T) {
 	var out bytes.Buffer // not goroutine-safe: only valid while os/exec keeps a single copy goroutine
 
-	err := runScript(t, interleavedScript, &Opts{Stdout: &out, Stderr: &out, ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, interleavedScript, &Opts{Stdout: &out, Stderr: &out, NewErrorMatcher: matchPrefix("error:")})
 
 	require.Contains(t, collectedErrorOutput(t, err), "error: on stderr")
 	require.Equal(t, 4002, strings.Count(out.String(), "\n"))
@@ -67,24 +67,34 @@ func TestErrorMatcher_SharedStdoutStderrHasOneWriter(t *testing.T) {
 }
 
 func TestErrorMatcher_NothingMatchedKeepsTheGenericMessage(t *testing.T) {
-	err := runScript(t, `printf 'all quiet\n'; exit 1`, &Opts{ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, `printf 'all quiet\n'; exit 1`, &Opts{NewErrorMatcher: matchPrefix("error:")})
 
 	require.Equal(t, "check the command's output for details", collectedErrorOutput(t, err))
 }
 
 func TestErrorMatcher_TakesPrecedenceOverErrorFinder(t *testing.T) {
 	err := runScript(t, `printf 'error: the real one\n'; exit 1`, &Opts{
-		ErrorMatcher: &prefixMatcher{prefix: "error:"},
-		ErrorFinder:  func(string) []string { return []string{"from the chunk finder"} },
+		NewErrorMatcher: matchPrefix("error:"),
+		ErrorFinder:     func(string) []string { return []string{"from the chunk finder"} },
 	})
 
 	require.Equal(t, "error: the real one", collectedErrorOutput(t, err))
 }
 
+func TestErrorMatcher_EachCommandGetsItsOwnMatcher(t *testing.T) {
+	opts := &Opts{NewErrorMatcher: matchPrefix("error:")}
+
+	first := runScript(t, `printf 'error: first attempt\n'; exit 1`, opts)
+	second := runScript(t, `printf 'error: second attempt\n'; exit 1`, opts)
+
+	require.Equal(t, "error: first attempt", collectedErrorOutput(t, first))
+	require.Equal(t, "error: second attempt", collectedErrorOutput(t, second), "the first run's reason is not carried over")
+}
+
 func TestErrorMatcher_SuccessfulRunForwardsEverything(t *testing.T) {
 	var out bytes.Buffer
 
-	err := runScript(t, `printf 'first\nsecond without a newline'`, &Opts{Stdout: &out, ErrorMatcher: &prefixMatcher{prefix: "error:"}})
+	err := runScript(t, `printf 'first\nsecond without a newline'`, &Opts{Stdout: &out, NewErrorMatcher: matchPrefix("error:")})
 
 	require.NoError(t, err)
 	require.Equal(t, "first\nsecond without a newline", out.String())
@@ -92,7 +102,7 @@ func TestErrorMatcher_SuccessfulRunForwardsEverything(t *testing.T) {
 
 func TestErrorMatcher_RunAndReturnTrimmedCombinedOutput(t *testing.T) {
 	cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'error: from captured output\n'; exit 1`}, &Opts{
-		ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		NewErrorMatcher: matchPrefix("error:"),
 	})
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
@@ -106,7 +116,7 @@ func TestErrorMatcher_RunAndReturnTrimmedOutput(t *testing.T) {
 
 	t.Run("stderr not captured by the caller", func(t *testing.T) {
 		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, &Opts{
-			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+			NewErrorMatcher: matchPrefix("error:"),
 		})
 
 		out, err := cmd.RunAndReturnTrimmedOutput()
@@ -118,8 +128,8 @@ func TestErrorMatcher_RunAndReturnTrimmedOutput(t *testing.T) {
 	t.Run("stderr written to the caller's writer", func(t *testing.T) {
 		var stderr bytes.Buffer
 		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, &Opts{
-			Stderr:       &stderr,
-			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+			Stderr:          &stderr,
+			NewErrorMatcher: matchPrefix("error:"),
 		})
 
 		out, err := cmd.RunAndReturnTrimmedOutput()
@@ -131,7 +141,7 @@ func TestErrorMatcher_RunAndReturnTrimmedOutput(t *testing.T) {
 
 	t.Run("nothing matched does not fall back to raw stderr", func(t *testing.T) {
 		cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'noise on stderr\n' >&2; exit 1`}, &Opts{
-			ErrorMatcher: &prefixMatcher{prefix: "error:"},
+			NewErrorMatcher: matchPrefix("error:"),
 		})
 
 		_, err := cmd.RunAndReturnTrimmedOutput()
@@ -142,7 +152,7 @@ func TestErrorMatcher_RunAndReturnTrimmedOutput(t *testing.T) {
 
 func TestErrorMatcher_RunAndReturnExitCode(t *testing.T) {
 	cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'error: exit code run\n'; exit 3`}, &Opts{
-		ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		NewErrorMatcher: matchPrefix("error:"),
 	})
 
 	code, err := cmd.RunAndReturnExitCode()
@@ -153,7 +163,7 @@ func TestErrorMatcher_RunAndReturnExitCode(t *testing.T) {
 
 func TestErrorMatcher_StartAndWait(t *testing.T) {
 	cmd := NewFactory(env.NewRepository()).Create("sh", []string{"-c", `printf 'error: started and waited'; exit 1`}, &Opts{
-		ErrorMatcher: &prefixMatcher{prefix: "error:"},
+		NewErrorMatcher: matchPrefix("error:"),
 	})
 
 	require.NoError(t, cmd.Start())
@@ -206,6 +216,10 @@ func runScript(t *testing.T, script string, opts *Opts) error {
 	t.Helper()
 
 	return NewFactory(env.NewRepository()).Create("sh", []string{"-c", script}, opts).Run()
+}
+
+func matchPrefix(prefix string) func() ErrorMatcher {
+	return func() ErrorMatcher { return &prefixMatcher{prefix: prefix} }
 }
 
 // prefixMatcher keeps every line starting with its prefix. It carries no stream handling at all,

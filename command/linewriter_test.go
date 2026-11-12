@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -136,6 +137,18 @@ func TestLineWriterReportsADestinationError(t *testing.T) {
 	require.Empty(t, matcher.lines, "a line that never reached the destination is not consumed")
 }
 
+func TestLineWriterPassesBackAnInvalidWriteCount(t *testing.T) {
+	for _, count := range []int{-1, len("first\n") + 1} {
+		matcher := &recordingMatcher{}
+		w := (&matcherCollector{matcher: matcher}).collectFromWriter(miscountingWriter{count: count})
+
+		_, err := io.Copy(w, io.LimitReader(strings.NewReader("first\n"), 1024))
+
+		require.ErrorContains(t, err, "invalid write result")
+		require.Empty(t, matcher.lines)
+	}
+}
+
 func TestLineWriterCloseIsIdempotent(t *testing.T) {
 	matcher := &recordingMatcher{}
 	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
@@ -161,3 +174,9 @@ type failingWriter struct {
 }
 
 func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
+
+type miscountingWriter struct {
+	count int
+}
+
+func (w miscountingWriter) Write([]byte) (int, error) { return w.count, nil }

@@ -254,7 +254,11 @@ func (c *command) wrapOutputs() {
 	// os/exec gives the child a single pipe and a single copy goroutine for stdout and stderr only while
 	// cmd.Stdout and cmd.Stderr compare equal. Wrapping the two separately would break that and hand a writer the
 	// caller shares between the two streams (a bytes.Buffer, a filter) to two goroutines at once. Wrap once instead.
-	if c.cmd.Stderr != nil && interfaceEqual(c.cmd.Stdout, c.cmd.Stderr) {
+	//
+	// Two files that are one object to the OS are wrapped once as well. A step's os.Stdout and os.Stderr are
+	// the same pipe, and unwrapped the child would inherit both and keep its lines in order. Two pipes of our
+	// own would lose that order, for the log and for the matcher alike.
+	if c.cmd.Stderr != nil && sameDestination(c.cmd.Stdout, c.cmd.Stderr) {
 		shared := wrap(c.cmd.Stdout)
 		c.cmd.Stdout = shared
 		c.cmd.Stderr = shared
@@ -323,6 +327,35 @@ func orDiscard(w io.Writer) io.Writer {
 	}
 
 	return w
+}
+
+// sameDestination reports whether everything written to a and to b ends up in one place: they are the
+// same writer, or they are two files the OS holds as one (a pipe or terminal inherited on both
+// descriptors, one file opened twice).
+func sameDestination(a, b io.Writer) bool {
+	if interfaceEqual(a, b) {
+		return true
+	}
+
+	fileA, ok := a.(*os.File)
+	if !ok {
+		return false
+	}
+	fileB, ok := b.(*os.File)
+	if !ok {
+		return false
+	}
+
+	infoA, err := fileA.Stat()
+	if err != nil {
+		return false
+	}
+	infoB, err := fileB.Stat()
+	if err != nil {
+		return false
+	}
+
+	return os.SameFile(infoA, infoB)
 }
 
 // interfaceEqual compares the two writers the way os/exec does, without panicking on uncomparable dynamic types.

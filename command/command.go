@@ -205,30 +205,32 @@ func (c command) wrapError(err error) error {
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
 }
 
+// wrapOutputs puts a tap in front of the caller's writers so that the ErrorFinder sees the output.
 func (c command) wrapOutputs() {
 	if c.errorCollector == nil {
 		return
 	}
 
 	// os/exec gives the child a single pipe and a single copy goroutine for stdout and stderr only while
-	// cmd.Stdout and cmd.Stderr compare equal. Two separate MultiWriters would break that and hand a writer the
-	// caller shares between the two streams (a bytes.Buffer, a filter) to two goroutines at once. Wrap once instead.
-	if c.cmd.Stderr != nil && interfaceEqual(c.cmd.Stdout, c.cmd.Stderr) {
-		shared := c.collectFrom(c.cmd.Stdout)
+	// cmd.Stdout and cmd.Stderr compare equal. Two separate taps would break that and hand a writer the
+	// caller shares between the two streams (a bytes.Buffer, a filter) to two goroutines at once. Tap once instead.
+	if interfaceEqual(c.cmd.Stdout, c.cmd.Stderr) {
+		shared := c.tapForFinder(c.cmd.Stdout)
 		c.cmd.Stdout = shared
 		c.cmd.Stderr = shared
 		return
 	}
 
-	c.cmd.Stdout = c.collectFrom(c.cmd.Stdout)
-	c.cmd.Stderr = c.collectFrom(c.cmd.Stderr)
+	c.cmd.Stdout = c.tapForFinder(c.cmd.Stdout)
+	c.cmd.Stderr = c.tapForFinder(c.cmd.Stderr)
 }
 
-func (c command) collectFrom(w io.Writer) io.Writer {
+func (c command) tapForFinder(w io.Writer) io.Writer {
 	if w == nil {
-		return c.errorCollector
+		w = io.Discard
 	}
-	return io.MultiWriter(c.errorCollector, w)
+
+	return &tap{dest: w, observer: c.errorCollector}
 }
 
 // interfaceEqual compares the two writers the way os/exec does, without panicking on uncomparable dynamic types.

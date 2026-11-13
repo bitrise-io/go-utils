@@ -12,6 +12,11 @@ require-template-schema-exists: true
 template: testify
 template-schema: "{{.Template}}.schema.json"
 packages:
+  github.com/bitrise-io/go-utils/v2/command:
+    interfaces:
+      Command:
+        config:
+          dir: "{{.InterfaceDir}}/../mocks"
   github.com/bitrise-io/go-utils/v2/fileutil:
     interfaces:
       FileManager:

@@ -16,11 +16,14 @@ type ErrorFinder func(out string) []string
 
 // Opts ...
 type Opts struct {
-	Stdout      io.Writer
-	Stderr      io.Writer
-	Stdin       io.Reader
-	Env         []string
-	Dir         string
+	Stdout io.Writer
+	Stderr io.Writer
+	Stdin  io.Reader
+	Env    []string
+	Dir    string
+
+	// ErrorFinder is called once per written chunk, so a line that lands in two chunks is cut in half
+	// and matches nothing. For a tool that writes its lines in pieces, use Command.RunWithMatcher.
 	ErrorFinder ErrorFinder
 }
 
@@ -69,6 +72,8 @@ func (f factory) Create(name string, args []string, opts *Opts) Command {
 type Command interface {
 	PrintableCommandArgs() string
 	Run() error
+	// RunWithMatcher runs the command like Run and, when it fails, reports what matcher found as the reason.
+	RunWithMatcher(matcher ErrorMatcher) error
 	RunAndReturnExitCode() (int, error)
 	RunAndReturnTrimmedOutput() (string, error)
 	RunAndReturnTrimmedCombinedOutput() (string, error)
@@ -97,6 +102,32 @@ func (c *command) Run() error {
 
 	if err := c.cmd.Run(); err != nil {
 		return c.wrapError(err)
+	}
+
+	return nil
+}
+
+// RunWithMatcher runs the command and, when it fails, reports what matcher found as the reason.
+//
+// The tool gets one pipe for stdout and stderr, so the matcher is given the lines of both in the order the tool
+// wrote them. Two pipes cannot keep that order, so everything the tool prints is forwarded to Opts.Stdout
+// (to Opts.Stderr when only that is set) and nothing is written to the other one. Each byte is forwarded as it
+// arrives. The matcher is shown it afterwards and never holds output back.
+//
+// The pipe stays inside the command: there is no writer for a caller to share between commands or to give to one
+// stream only. The matcher is given for this one run, so nothing it read reaches another run unless the caller
+// passes the same matcher again. An ErrorFinder in Opts is not used by this method.
+func (c *command) RunWithMatcher(matcher ErrorMatcher) error {
+	lines := &lineSplitter{matcher: matcher}
+	output := &tap{dest: c.mergedOutput(), observer: lines}
+	c.cmd.Stdout = output
+	c.cmd.Stderr = output
+
+	err := c.cmd.Run()
+	lines.close()
+
+	if err != nil {
+		return c.exitError(err, capReasons(matcher.Reasons()))
 	}
 
 	return nil
@@ -192,17 +223,34 @@ func printableCommandArgs(isQuoteFirst bool, fullCommandArgs []string) string {
 }
 
 func (c command) wrapError(err error) error {
+	errorLines := []string{}
+	if c.errorCollector != nil {
+		errorLines = c.errorCollector.collectedErrorLines()
+	}
+
+	return c.exitError(err, errorLines)
+}
+
+// exitError builds the error of a failed run from the reasons found in its output.
+func (c command) exitError(err error, reasons []string) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		errorLines := []string{}
-		if c.errorCollector != nil {
-			errorLines = c.errorCollector.collectedErrorLines()
-		}
-
-		return NewExitStatusError(c.PrintableCommandArgs(), exitErr, errorLines)
+		return NewExitStatusError(c.PrintableCommandArgs(), exitErr, reasons)
 	}
 
 	return fmt.Errorf("executing command failed (%s): %w", c.PrintableCommandArgs(), err)
+}
+
+// mergedOutput returns the one writer RunWithMatcher forwards both streams to.
+func (c command) mergedOutput() io.Writer {
+	if c.cmd.Stdout != nil {
+		return c.cmd.Stdout
+	}
+	if c.cmd.Stderr != nil {
+		return c.cmd.Stderr
+	}
+
+	return io.Discard
 }
 
 // wrapOutputs puts a tap in front of the caller's writers so that the ErrorFinder sees the output.

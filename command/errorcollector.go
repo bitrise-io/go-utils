@@ -6,7 +6,7 @@ import (
 )
 
 // errorCollector runs the ErrorFinder over the output. When Stdout and Stderr are different writers, os/exec copies
-// the two pipes on two goroutines, so Write must be goroutine-safe. The finder runs under the same lock, so a finder
+// the two pipes on two goroutines, so observe must be goroutine-safe. The finder runs under the same lock, so a finder
 // that carries state across calls is never entered twice at once.
 type errorCollector struct {
 	mu          sync.Mutex
@@ -14,9 +14,9 @@ type errorCollector struct {
 	errorFinder ErrorFinder
 }
 
-func (e *errorCollector) Write(p []byte) (n int, err error) {
+// observe makes the collector the observer of a tap: the finder is run over each chunk as it was written.
+func (e *errorCollector) observe(p []byte) {
 	e.collectErrors(string(p))
-	return len(p), nil
 }
 
 func (e *errorCollector) collectErrors(output string) {

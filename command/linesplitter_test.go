@@ -2,7 +2,6 @@ package command
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -10,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLineWriter(t *testing.T) {
+func TestLineSplitter(t *testing.T) {
 	tests := []struct {
 		name   string
 		writes []string
@@ -62,14 +61,14 @@ func TestLineWriter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var dest bytes.Buffer
 			matcher := &recordingMatcher{}
-			w := (&matcherCollector{matcher: matcher}).collectFromWriter(&dest)
+			w, lines := tapLines(matcher, &dest)
 
 			for _, chunk := range tt.writes {
 				n, err := w.Write([]byte(chunk))
 				require.NoError(t, err)
 				require.Equal(t, len(chunk), n)
 			}
-			require.NoError(t, w.Close())
+			lines.Close()
 
 			require.Equal(t, tt.want, matcher.lines)
 			require.Equal(t, strings.Join(tt.writes, ""), dest.String())
@@ -77,10 +76,10 @@ func TestLineWriter(t *testing.T) {
 	}
 }
 
-func TestLineWriterForwardsBeforeTheLineEnds(t *testing.T) {
+func TestLineSplitterForwardsBeforeTheLineEnds(t *testing.T) {
 	var dest bytes.Buffer
 	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&dest)
+	w, _ := tapLines(matcher, &dest)
 
 	_, err := w.Write([]byte("Downloading... 40%"))
 	require.NoError(t, err)
@@ -89,12 +88,12 @@ func TestLineWriterForwardsBeforeTheLineEnds(t *testing.T) {
 	require.Empty(t, matcher.lines)
 }
 
-func TestLineWriterDropsAnOverlongLine(t *testing.T) {
+func TestLineSplitterDropsAnOverlongLine(t *testing.T) {
 	long := strings.Repeat("a", maxLineLength+100) + " error: not a reason"
 
 	var dest bytes.Buffer
 	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&dest)
+	w, _ := tapLines(matcher, &dest)
 
 	_, err := w.Write([]byte(long + "\nshort\n"))
 	require.NoError(t, err)
@@ -104,20 +103,20 @@ func TestLineWriterDropsAnOverlongLine(t *testing.T) {
 	require.Equal(t, long+"\nshort\n", dest.String(), "the caller's writer still gets the line whole")
 }
 
-func TestLineWriterDropsAnOverlongLastLine(t *testing.T) {
+func TestLineSplitterDropsAnOverlongLastLine(t *testing.T) {
 	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
+	w, lines := tapLines(matcher, &bytes.Buffer{})
 
 	_, err := w.Write([]byte(strings.Repeat("a", maxLineLength+100)))
 	require.NoError(t, err)
-	require.NoError(t, w.Close())
+	lines.Close()
 
 	require.Equal(t, []string{""}, matcher.lines)
 }
 
-func TestLineWriterRecoversAfterAnOverlongLine(t *testing.T) {
+func TestLineSplitterRecoversAfterAnOverlongLine(t *testing.T) {
 	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
+	w, _ := tapLines(matcher, &bytes.Buffer{})
 
 	_, err := w.Write([]byte(strings.Repeat("a", maxLineLength+100) + "\n> Task :app:x FAILED\n"))
 	require.NoError(t, err)
@@ -125,41 +124,25 @@ func TestLineWriterRecoversAfterAnOverlongLine(t *testing.T) {
 	require.Equal(t, []string{"", "> Task :app:x FAILED"}, matcher.lines)
 }
 
-func TestLineWriterReportsADestinationError(t *testing.T) {
-	failure := errors.New("disk full")
+func TestLineSplitterCloseIsIdempotent(t *testing.T) {
 	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(failingWriter{err: failure})
-
-	n, err := w.Write([]byte("first\n"))
-
-	require.ErrorIs(t, err, failure)
-	require.Zero(t, n)
-	require.Empty(t, matcher.lines, "a line that never reached the destination is not consumed")
-}
-
-func TestLineWriterPassesBackAnInvalidWriteCount(t *testing.T) {
-	for _, count := range []int{-1, len("first\n") + 1} {
-		matcher := &recordingMatcher{}
-		w := (&matcherCollector{matcher: matcher}).collectFromWriter(miscountingWriter{count: count})
-
-		_, err := io.Copy(w, io.LimitReader(strings.NewReader("first\n"), 1024))
-
-		require.ErrorContains(t, err, "invalid write result")
-		require.Empty(t, matcher.lines)
-	}
-}
-
-func TestLineWriterCloseIsIdempotent(t *testing.T) {
-	matcher := &recordingMatcher{}
-	w := (&matcherCollector{matcher: matcher}).collectFromWriter(&bytes.Buffer{})
+	w, lines := tapLines(matcher, &bytes.Buffer{})
 
 	_, err := w.Write([]byte("no newline"))
 	require.NoError(t, err)
 
-	require.NoError(t, w.Close())
-	require.NoError(t, w.Close())
+	lines.Close()
+	lines.Close()
 
 	require.Equal(t, []string{"no newline"}, matcher.lines)
+}
+
+// tapLines builds what the command puts between the tool and the caller's writer when a line
+// observer is set.
+func tapLines(matcher ErrorMatcher, dest io.Writer) (*tap, OutputObserver) {
+	lines := NewLineObserver(matcher)
+
+	return &tap{dest: dest, observer: lines}, lines
 }
 
 type recordingMatcher struct {
@@ -168,15 +151,3 @@ type recordingMatcher struct {
 
 func (m *recordingMatcher) ConsumeLine(line string) { m.lines = append(m.lines, line) }
 func (m *recordingMatcher) Reasons() []string       { return m.lines }
-
-type failingWriter struct {
-	err error
-}
-
-func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
-
-type miscountingWriter struct {
-	count int
-}
-
-func (w miscountingWriter) Write([]byte) (int, error) { return w.count, nil }

@@ -304,7 +304,8 @@ func (c *command) reasons() []string {
 			reasons = append(reasons, observer.Reasons()...)
 		}
 
-		return reasons
+		// An observer can report as much as it likes. The cap is applied here, so it holds for every observer.
+		return capReasons(reasons)
 	}
 
 	if c.errorCollector != nil {

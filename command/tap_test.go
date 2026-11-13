@@ -64,7 +64,9 @@ type recordingObserver struct {
 	seen []string
 }
 
-func (o *recordingObserver) observe(p []byte) { o.seen = append(o.seen, string(p)) }
+func (o *recordingObserver) Observe(p []byte)  { o.seen = append(o.seen, string(p)) }
+func (o *recordingObserver) Close()            {}
+func (o *recordingObserver) Reasons() []string { return nil }
 
 // orderCheckingWriter fails the test if the observer was shown a chunk before the writer got it.
 type orderCheckingWriter struct {
